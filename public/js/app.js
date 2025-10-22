@@ -76,25 +76,37 @@ class App {
             });
         });
 
-        // Logout
-        document.getElementById('logout-btn').addEventListener('click', () => {
-            this.handleLogout();
-        });
+        // Logout (only exists on main screen)
+        const logoutBtn = document.getElementById('logout-btn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', () => {
+                this.handleLogout();
+            });
+        }
 
-        // Generate prompts
-        document.getElementById('generate-btn').addEventListener('click', () => {
-            this.handleGenerate();
-        });
+        // Generate prompts (only exists on main screen)
+        const generateBtn = document.getElementById('generate-btn');
+        if (generateBtn) {
+            generateBtn.addEventListener('click', () => {
+                this.handleGenerate();
+            });
+        }
 
-        // Copy all prompts
-        document.getElementById('copy-all-btn')?.addEventListener('click', () => {
-            this.copyAllPrompts();
-        });
+        // Copy all prompts (only exists on main screen)
+        const copyAllBtn = document.getElementById('copy-all-btn');
+        if (copyAllBtn) {
+            copyAllBtn.addEventListener('click', () => {
+                this.copyAllPrompts();
+            });
+        }
 
-        // Copy session link
-        document.getElementById('copy-session-link')?.addEventListener('click', () => {
-            this.copySessionLink();
-        });
+        // Copy session link (only exists on main screen)
+        const copySessionLinkBtn = document.getElementById('copy-session-link');
+        if (copySessionLinkBtn) {
+            copySessionLinkBtn.addEventListener('click', () => {
+                this.copySessionLink();
+            });
+        }
     }
 
     switchModule(moduleName) {
