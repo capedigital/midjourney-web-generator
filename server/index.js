@@ -19,22 +19,23 @@ async function runMigrations() {
         ssl: sslConfig
     });
 
+    let client;
     try {
         console.log('🔄 Running database migrations...');
+        client = await pool.connect();
         const schema = fs.readFileSync(path.join(__dirname, '../schema.sql'), 'utf8');
-        await pool.query(schema);
+        await client.query(schema);
         console.log('✅ Database migrations completed!');
-        await pool.end();
     } catch (err) {
         // If tables already exist, that's fine
         if (err.message.includes('already exists')) {
             console.log('✅ Database tables already exist');
-            await pool.end();
         } else {
             console.error('⚠️  Migration warning:', err.message);
-            // Don't fail startup if migration has issues
-            await pool.end();
         }
+    } finally {
+        if (client) client.release();
+        await pool.end();
     }
 }
 
