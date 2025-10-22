@@ -1,9 +1,15 @@
 const { Pool } = require('pg');
 
 // Database configuration
+const isLocalDatabase = process.env.DATABASE_URL && 
+    (process.env.DATABASE_URL.includes('localhost') || 
+     process.env.DATABASE_URL.includes('127.0.0.1') ||
+     process.env.DATABASE_URL.includes('::1'));
+
 const config = {
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.DATABASE_URL ? {
+    // Only use SSL for remote databases (Railway, Heroku, etc.)
+    ssl: process.env.DATABASE_URL && !isLocalDatabase ? {
         rejectUnauthorized: false // Railway/Heroku require this
     } : false,
     // Connection pool settings

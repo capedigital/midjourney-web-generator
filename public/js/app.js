@@ -328,7 +328,7 @@ class App {
         }
 
         // Show dashboard by default
-        this.switchModule('dashboard');
+        this.switchModule('dashboard-module');
     }
 
     async loadDashboardStats() {
