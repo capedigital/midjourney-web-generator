@@ -7,15 +7,21 @@ class App {
     }
 
     init() {
+        console.log('App initializing...');
+        console.log('API token:', window.api?.token);
+        
         // Check if user is already logged in
-        if (window.api.token) {
+        if (window.api && window.api.token) {
+            console.log('User logged in, showing main screen');
             this.showMainScreen();
             this.loadHistory();
         } else {
+            console.log('No user logged in, showing auth screen');
             this.showAuthScreen();
         }
 
         this.setupEventListeners();
+        console.log('App initialized');
     }
 
     setupEventListeners() {
