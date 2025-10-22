@@ -1,16 +1,20 @@
 const { Pool } = require('pg');
 
-// Configure SSL for Railway
-// Railway internal network doesn't need SSL, external connections do
-const databaseUrl = process.env.DATABASE_URL;
-const isRailwayInternal = databaseUrl?.includes('railway.internal');
-const sslConfig = isRailwayInternal ? false : {
-    rejectUnauthorized: false
-};
-
+// Railway databases require SSL with rejectUnauthorized: false
 const pool = new Pool({
-    connectionString: databaseUrl,
-    ssl: sslConfig
+    connectionString: process.env.DATABASE_URL,
+    ssl: {
+        rejectUnauthorized: false
+    }
+});
+
+// Test connection
+pool.on('connect', () => {
+    console.log('✅ Connected to PostgreSQL database');
+});
+
+pool.on('error', (err) => {
+    console.error('❌ Unexpected database error:', err);
 });
 
 module.exports = pool;

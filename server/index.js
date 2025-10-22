@@ -10,28 +10,30 @@ const PORT = process.env.PORT || 3000;
 
 // Auto-run database migration on startup
 async function runMigrations() {
-    const databaseUrl = process.env.DATABASE_URL;
-    const isRailwayInternal = databaseUrl?.includes('railway.internal');
-    const sslConfig = isRailwayInternal ? false : { rejectUnauthorized: false };
-    
+    if (!process.env.DATABASE_URL) {
+        console.log('⚠️  No DATABASE_URL found, skipping migrations');
+        return;
+    }
+
     const pool = new Pool({
-        connectionString: databaseUrl,
-        ssl: sslConfig
+        connectionString: process.env.DATABASE_URL,
+        ssl: { rejectUnauthorized: false }
     });
 
     let client;
     try {
         console.log('🔄 Running database migrations...');
         client = await pool.connect();
+        
         const schema = fs.readFileSync(path.join(__dirname, '../schema.sql'), 'utf8');
         await client.query(schema);
-        console.log('✅ Database migrations completed!');
+        
+        console.log('✅ Database migrations completed successfully!');
     } catch (err) {
-        // If tables already exist, that's fine
-        if (err.message.includes('already exists')) {
+        if (err.message && err.message.includes('already exists')) {
             console.log('✅ Database tables already exist');
         } else {
-            console.error('⚠️  Migration warning:', err.message);
+            console.error('⚠️  Migration error:', err.message || err);
         }
     } finally {
         if (client) client.release();
