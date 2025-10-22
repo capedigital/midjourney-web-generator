@@ -10,11 +10,10 @@ const PORT = process.env.PORT || 3000;
 
 // Auto-run database migration on startup
 async function runMigrations() {
+    const isProduction = process.env.NODE_ENV === 'production';
     const pool = new Pool({
         connectionString: process.env.DATABASE_URL,
-        ssl: process.env.DATABASE_URL?.includes('railway') 
-            ? { rejectUnauthorized: false }
-            : false
+        ssl: isProduction ? { rejectUnauthorized: false } : false
     });
 
     try {
@@ -27,8 +26,11 @@ async function runMigrations() {
         // If tables already exist, that's fine
         if (err.message.includes('already exists')) {
             console.log('✅ Database tables already exist');
+            await pool.end();
         } else {
             console.error('⚠️  Migration warning:', err.message);
+            // Don't fail startup if migration has issues
+            await pool.end();
         }
     }
 }
