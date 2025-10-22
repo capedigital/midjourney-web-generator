@@ -96,10 +96,14 @@ app.get('/health', asyncHandler(async (req, res) => {
     });
 }));
 
+// Import AI routes
+const aiRoutes = require('./routes/ai');
+
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/prompts', promptsRoutes);
 app.use('/api/templates', templatesRoutes);
+app.use('/api/ai', aiRoutes);
 
 // Serve frontend for all other routes (SPA support)
 app.get('*', (req, res) => {

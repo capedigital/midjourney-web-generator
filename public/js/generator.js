@@ -224,12 +224,8 @@ window.Generator = {
     },
 
     generateWithChatGPT: async function(promptText, model = 'openai/gpt-4.1-mini') {
-        // API key should be stored securely and accessed through backend proxy
-        const apiKey = window.Config?.OPENROUTER_API_KEY || '';
-        if (!apiKey) {
-            throw new Error('API key not configured. Please set up your OpenRouter API key.');
-        }
-        const apiUrl = 'https://openrouter.ai/api/v1/chat/completions';
+        // Use backend proxy to keep API key secure
+        const apiUrl = '/api/ai/generate';
 
         // Show loading state
         const loadingOverlay = document.querySelector('.loading-overlay');
@@ -246,13 +242,10 @@ window.Generator = {
                     const response = await fetch(apiUrl, {
                         method: 'POST',
                         headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${apiKey}`,
-                            'HTTP-Referer': window.location.href,
-                            'Origin': window.location.origin
+                            'Content-Type': 'application/json'
                         },
                         body: JSON.stringify({
-                            model: model, // Use the passed-in model
+                            model: model,
                             messages: [{
                                 role: 'user',
                                 content: promptText
@@ -260,12 +253,13 @@ window.Generator = {
                         })
                     });
 
-                    if (!response.ok) {
-                        throw new Error(`API error: ${response.status}`);
+                    const result = await response.json();
+                    
+                    if (!result.success) {
+                        throw new Error(result.error || 'API error');
                     }
 
-                    const data = await response.json();
-                    const generatedText = data.choices[0].message.content;
+                    const generatedText = result.data.choices[0].message.content;
 
                     // Parse the prompts into a clean array, without parameters.
                     const prompts = this.parseGeneratedPrompts(generatedText);
