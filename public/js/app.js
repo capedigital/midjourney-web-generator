@@ -43,6 +43,23 @@ class App {
             this.handleRegister();
         });
 
+        // Module navigation
+        document.querySelectorAll('.nav-item').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const module = e.currentTarget.dataset.module;
+                this.switchModule(module);
+            });
+        });
+
+        // Quick actions
+        document.getElementById('quick-action-generate')?.addEventListener('click', () => {
+            this.switchModule('generator');
+        });
+        
+        document.getElementById('quick-action-history')?.addEventListener('click', () => {
+            this.switchModule('history');
+        });
+
         // Logout
         document.getElementById('logout-btn').addEventListener('click', () => {
             this.handleLogout();
@@ -54,14 +71,33 @@ class App {
         });
 
         // Copy all prompts
-        document.getElementById('copy-all-btn').addEventListener('click', () => {
+        document.getElementById('copy-all-btn')?.addEventListener('click', () => {
             this.copyAllPrompts();
         });
 
         // Copy session link
-        document.getElementById('copy-session-link').addEventListener('click', () => {
+        document.getElementById('copy-session-link')?.addEventListener('click', () => {
             this.copySessionLink();
         });
+    }
+
+    switchModule(moduleName) {
+        // Update nav items
+        document.querySelectorAll('.nav-item').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.module === moduleName);
+        });
+
+        // Update modules
+        document.querySelectorAll('.module').forEach(module => {
+            module.classList.toggle('active', module.id === `${moduleName}-module`);
+        });
+
+        // Load data for specific modules
+        if (moduleName === 'history') {
+            this.loadHistory();
+        } else if (moduleName === 'dashboard') {
+            this.loadDashboardStats();
+        }
     }
 
     async handleLogin() {
@@ -73,7 +109,7 @@ class App {
             const data = await window.api.login(email, password);
             this.currentUser = data.user;
             this.showMainScreen();
-            this.loadHistory();
+            this.showToast('Welcome back!', 'success');
         } catch (error) {
             errorEl.textContent = error.message;
         }
@@ -89,7 +125,7 @@ class App {
             const data = await window.api.register(email, password, name);
             this.currentUser = data.user;
             this.showMainScreen();
-            this.loadHistory();
+            this.showToast('Account created successfully!', 'success');
         } catch (error) {
             errorEl.textContent = error.message;
         }
@@ -110,7 +146,7 @@ class App {
         const promptsContainer = document.getElementById('prompts-container');
 
         if (!promptText) {
-            alert('Please enter a prompt');
+            this.showToast('Please enter a prompt', 'error');
             return;
         }
 
@@ -123,9 +159,10 @@ class App {
             this.currentSession = data;
             
             this.displayPrompts(data.prompts, data.sessionId);
-            this.loadHistory(); // Refresh history
+            this.showToast(`Generated ${data.prompts.length} prompts successfully!`, 'success');
+            this.loadDashboardStats(); // Update dashboard stats
         } catch (error) {
-            alert('Error generating prompts: ' + error.message);
+            this.showToast('Error generating prompts: ' + error.message, 'error');
         } finally {
             generateBtn.disabled = false;
             loading.classList.add('hidden');
@@ -160,7 +197,9 @@ class App {
         const prompt = prompts[index];
         
         navigator.clipboard.writeText(prompt).then(() => {
-            alert('Prompt copied!');
+            this.showToast('Prompt copied to clipboard!', 'success');
+        }).catch(() => {
+            this.showToast('Failed to copy prompt', 'error');
         });
     }
 
@@ -169,7 +208,9 @@ class App {
         
         const allPrompts = this.currentSession.prompts.join('\n\n');
         navigator.clipboard.writeText(allPrompts).then(() => {
-            alert('All prompts copied!');
+            this.showToast('All prompts copied to clipboard!', 'success');
+        }).catch(() => {
+            this.showToast('Failed to copy prompts', 'error');
         });
     }
 
@@ -178,7 +219,9 @@ class App {
         
         const link = `${window.location.origin}/api/prompts/session/${this.currentSession.sessionId}`;
         navigator.clipboard.writeText(link).then(() => {
-            alert('Session link copied! Share this with Claude Desktop.');
+            this.showToast('Session link copied! Share this with Claude Desktop.', 'success');
+        }).catch(() => {
+            this.showToast('Failed to copy link', 'error');
         });
     }
 
@@ -195,22 +238,28 @@ class App {
         const list = document.getElementById('history-list');
         
         if (sessions.length === 0) {
-            list.innerHTML = '<p style="color: var(--text-secondary);">No sessions yet. Generate some prompts to get started!</p>';
+            list.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 24px;">No sessions yet. Generate some prompts to get started!</p>';
             return;
         }
 
         list.innerHTML = sessions.map(session => {
             const date = new Date(session.created_at).toLocaleString();
-            const preview = session.input_text.substring(0, 100) + '...';
-            const promptCount = JSON.parse(session.prompts).length;
+            const preview = session.input_text.substring(0, 100);
+            let promptCount = 0;
+            try {
+                promptCount = JSON.parse(session.prompts).length;
+            } catch (e) {
+                promptCount = 0;
+            }
             
             return `
-                <div class="history-item" onclick="app.loadSession(${session.id})">
+                <div class="history-item" onclick="app.loadSessionAndSwitch(${session.id})">
                     <div class="history-item-header">
-                        <strong>${promptCount} prompts generated</strong>
+                        <span class="history-item-model">${session.model || 'Midjourney'}</span>
                         <span class="history-item-date">${date}</span>
                     </div>
-                    <div class="history-item-preview">${preview}</div>
+                    <div class="history-item-preview">${preview}${session.input_text.length > 100 ? '...' : ''}</div>
+                    <div class="history-item-count">${promptCount} prompts</div>
                 </div>
             `;
         }).join('');
@@ -224,8 +273,9 @@ class App {
                 prompts: JSON.parse(data.prompts)
             };
             this.displayPrompts(this.currentSession.prompts, sessionId);
+            this.showToast('Session loaded successfully!', 'success');
         } catch (error) {
-            alert('Error loading session: ' + error.message);
+            this.showToast('Error loading session: ' + error.message, 'error');
         }
     }
 
@@ -240,7 +290,95 @@ class App {
         
         if (this.currentUser) {
             document.getElementById('user-name').textContent = this.currentUser.name || this.currentUser.email;
+            document.getElementById('user-email').textContent = this.currentUser.email;
         }
+
+        // Show dashboard by default
+        this.switchModule('dashboard');
+    }
+
+    async loadDashboardStats() {
+        try {
+            const data = await window.api.getHistory();
+            const sessions = data.sessions;
+            
+            // Calculate total prompts
+            let totalPrompts = 0;
+            sessions.forEach(session => {
+                try {
+                    const prompts = JSON.parse(session.prompts);
+                    totalPrompts += prompts.length;
+                } catch (e) {
+                    // Skip invalid JSON
+                }
+            });
+
+            // Update stats
+            document.getElementById('stat-sessions').textContent = sessions.length;
+            document.getElementById('stat-prompts').textContent = totalPrompts;
+
+            // Display recent sessions on dashboard
+            this.displayRecentSessions(sessions.slice(0, 5));
+        } catch (error) {
+            console.error('Error loading dashboard stats:', error);
+        }
+    }
+
+    displayRecentSessions(sessions) {
+        const list = document.getElementById('recent-sessions');
+        
+        if (sessions.length === 0) {
+            list.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 24px;">No sessions yet. Generate some prompts to get started!</p>';
+            return;
+        }
+
+        list.innerHTML = sessions.map(session => {
+            const date = new Date(session.created_at).toLocaleString();
+            const preview = session.input_text.substring(0, 80);
+            let promptCount = 0;
+            try {
+                promptCount = JSON.parse(session.prompts).length;
+            } catch (e) {
+                promptCount = 0;
+            }
+            
+            return `
+                <div class="history-item" onclick="app.loadSessionAndSwitch(${session.id})">
+                    <div class="history-item-header">
+                        <span class="history-item-model">${session.model || 'Midjourney'}</span>
+                        <span class="history-item-date">${date}</span>
+                    </div>
+                    <div class="history-item-preview">${preview}${session.input_text.length > 80 ? '...' : ''}</div>
+                    <div class="history-item-count">${promptCount} prompts</div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    async loadSessionAndSwitch(sessionId) {
+        await this.loadSession(sessionId);
+        this.switchModule('generator');
+    }
+
+    showToast(message, type = 'info') {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        
+        const icon = type === 'success' ? 'fa-check-circle' : 
+                     type === 'error' ? 'fa-exclamation-circle' : 
+                     'fa-info-circle';
+        
+        toast.innerHTML = `
+            <i class="fas ${icon}"></i>
+            <span>${message}</span>
+        `;
+        
+        container.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.remove();
+        }, 3000);
     }
 }
 

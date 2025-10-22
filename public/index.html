@@ -3,34 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Midjourney Prompt Generator</title>
+    <title>PromptLab - Midjourney Generator</title>
     <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <div id="app">
         <!-- Auth Screen -->
         <div id="auth-screen" class="screen">
             <div class="auth-container">
-                <h1>🎨 Midjourney Generator</h1>
+                <div class="auth-logo">
+                    <i class="fas fa-palette"></i>
+                </div>
+                <h1>PromptLab</h1>
+                <p class="auth-subtitle">Midjourney Prompt Generator</p>
+                
                 <div class="auth-tabs">
-                    <button class="tab-btn active" data-tab="login">Login</button>
-                    <button class="tab-btn" data-tab="register">Register</button>
+                    <button class="tab-btn active" data-tab="login">
+                        <i class="fas fa-sign-in-alt"></i> Login
+                    </button>
+                    <button class="tab-btn" data-tab="register">
+                        <i class="fas fa-user-plus"></i> Register
+                    </button>
                 </div>
                 
                 <!-- Login Form -->
                 <form id="login-form" class="auth-form">
-                    <input type="email" id="login-email" placeholder="Email" required>
-                    <input type="password" id="login-password" placeholder="Password" required>
-                    <button type="submit">Login</button>
+                    <div class="form-group">
+                        <i class="fas fa-envelope form-icon"></i>
+                        <input type="email" id="login-email" placeholder="Email" required>
+                    </div>
+                    <div class="form-group">
+                        <i class="fas fa-lock form-icon"></i>
+                        <input type="password" id="login-password" placeholder="Password" required>
+                    </div>
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-sign-in-alt"></i> Login
+                    </button>
                     <div class="error-message" id="login-error"></div>
                 </form>
                 
                 <!-- Register Form -->
                 <form id="register-form" class="auth-form hidden">
-                    <input type="text" id="register-name" placeholder="Name (optional)">
-                    <input type="email" id="register-email" placeholder="Email" required>
-                    <input type="password" id="register-password" placeholder="Password" required>
-                    <button type="submit">Register</button>
+                    <div class="form-group">
+                        <i class="fas fa-user form-icon"></i>
+                        <input type="text" id="register-name" placeholder="Name (optional)">
+                    </div>
+                    <div class="form-group">
+                        <i class="fas fa-envelope form-icon"></i>
+                        <input type="email" id="register-email" placeholder="Email" required>
+                    </div>
+                    <div class="form-group">
+                        <i class="fas fa-lock form-icon"></i>
+                        <input type="password" id="register-password" placeholder="Password (min 8 characters)" required minlength="8">
+                    </div>
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-user-plus"></i> Create Account
+                    </button>
                     <div class="error-message" id="register-error"></div>
                 </form>
             </div>
@@ -38,57 +67,194 @@
 
         <!-- Main App Screen -->
         <div id="main-screen" class="screen hidden">
-            <header>
-                <h1>🎨 Midjourney Prompt Generator</h1>
-                <div class="user-info">
-                    <span id="user-name"></span>
-                    <button id="logout-btn">Logout</button>
-                </div>
-            </header>
+            <div class="app-container">
+                <!-- Sidebar -->
+                <aside class="sidebar">
+                    <div class="sidebar-header">
+                        <i class="fas fa-palette"></i>
+                        <span>PromptLab</span>
+                    </div>
+                    <nav class="sidebar-nav">
+                        <button class="nav-item active" data-module="dashboard">
+                            <i class="fas fa-home"></i>
+                            <span>Dashboard</span>
+                        </button>
+                        <button class="nav-item" data-module="generator">
+                            <i class="fas fa-magic"></i>
+                            <span>Generator</span>
+                        </button>
+                        <button class="nav-item" data-module="history">
+                            <i class="fas fa-history"></i>
+                            <span>History</span>
+                        </button>
+                        <button class="nav-item" data-module="settings">
+                            <i class="fas fa-cog"></i>
+                            <span>Settings</span>
+                        </button>
+                    </nav>
+                    <div class="sidebar-footer">
+                        <div class="user-profile">
+                            <i class="fas fa-user-circle"></i>
+                            <span id="user-name"></span>
+                        </div>
+                        <button id="logout-btn" class="btn-logout">
+                            <i class="fas fa-sign-out-alt"></i>
+                            Logout
+                        </button>
+                    </div>
+                </aside>
 
-            <main>
-                <div class="generator-container">
-                    <h2>Generate Prompts</h2>
-                    <textarea 
-                        id="prompt-input" 
-                        placeholder="Enter your prompt template or description here..."
-                        rows="6"
-                    ></textarea>
-                    
-                    <div class="controls">
-                        <select id="model-select">
-                            <option value="openai/gpt-4.1-mini">GPT-4.1 Mini</option>
-                            <option value="openai/gpt-4.1-nano">GPT-4.1 Nano</option>
-                            <option value="anthropic/claude-3.5-sonnet">Claude 3.5 Sonnet</option>
-                        </select>
-                        <button id="generate-btn">Generate Prompts</button>
-                    </div>
-                    
-                    <div id="loading" class="hidden">
-                        <div class="spinner"></div>
-                        <p>Generating prompts...</p>
-                    </div>
-                </div>
+                <!-- Main Content -->
+                <main class="main-content">
+                    <!-- Dashboard Module -->
+                    <div id="dashboard-module" class="module active">
+                        <div class="module-header">
+                            <h2><i class="fas fa-home"></i> Dashboard</h2>
+                        </div>
+                        
+                        <div class="dashboard-stats">
+                            <div class="stat-card">
+                                <i class="fas fa-file-alt"></i>
+                                <div class="stat-content">
+                                    <div class="stat-label">Total Sessions</div>
+                                    <div class="stat-value" id="stat-sessions">0</div>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <i class="fas fa-lightbulb"></i>
+                                <div class="stat-content">
+                                    <div class="stat-label">Prompts Generated</div>
+                                    <div class="stat-value" id="stat-prompts">0</div>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <i class="fas fa-calendar"></i>
+                                <div class="stat-content">
+                                    <div class="stat-label">Days Active</div>
+                                    <div class="stat-value" id="stat-days">0</div>
+                                </div>
+                            </div>
+                        </div>
 
-                <div id="prompts-container" class="hidden">
-                    <div class="prompts-header">
-                        <h2>Generated Prompts</h2>
-                        <button id="copy-all-btn">Copy All</button>
-                    </div>
-                    <div id="prompts-list"></div>
-                    <div class="session-info">
-                        Session ID: <code id="session-id"></code>
-                        <button id="copy-session-link">Copy Link for Claude</button>
-                    </div>
-                </div>
+                        <div class="content-card">
+                            <h3><i class="fas fa-star"></i> Quick Start</h3>
+                            <div class="quick-actions">
+                                <button class="action-btn" data-action="new-prompt">
+                                    <i class="fas fa-plus-circle"></i>
+                                    <span>New Prompt</span>
+                                </button>
+                                <button class="action-btn" data-action="view-history">
+                                    <i class="fas fa-history"></i>
+                                    <span>View History</span>
+                                </button>
+                                <button class="action-btn" data-action="settings">
+                                    <i class="fas fa-cog"></i>
+                                    <span>Settings</span>
+                                </button>
+                            </div>
+                        </div>
 
-                <div id="history-container">
-                    <h2>Recent Sessions</h2>
-                    <div id="history-list"></div>
-                </div>
-            </main>
+                        <div class="content-card">
+                            <h3><i class="fas fa-clock"></i> Recent Sessions</h3>
+                            <div id="recent-sessions"></div>
+                        </div>
+                    </div>
+
+                    <!-- Generator Module -->
+                    <div id="generator-module" class="module">
+                        <div class="module-header">
+                            <h2><i class="fas fa-magic"></i> Prompt Generator</h2>
+                        </div>
+
+                        <div class="content-card">
+                            <h3><i class="fas fa-pen"></i> Enter Your Prompt</h3>
+                            <div class="input-group">
+                                <textarea 
+                                    id="prompt-input" 
+                                    placeholder="Describe what you want to create... (e.g., 'Create 5 prompts for a cyberpunk city at night')"
+                                    rows="6"
+                                ></textarea>
+                            </div>
+                            
+                            <div class="controls">
+                                <div class="control-group">
+                                    <label><i class="fas fa-robot"></i> AI Model</label>
+                                    <select id="model-select">
+                                        <option value="openai/gpt-4.1-mini">GPT-4.1 Mini (Fast & Smart)</option>
+                                        <option value="openai/gpt-4.1-nano">GPT-4.1 Nano (Quick & Efficient)</option>
+                                        <option value="anthropic/claude-3.5-sonnet">Claude 3.5 Sonnet (Premium)</option>
+                                        <option value="openai/chatgpt-4o-latest">ChatGPT-4o (Latest)</option>
+                                    </select>
+                                </div>
+                                <button id="generate-btn" class="btn-primary btn-large">
+                                    <i class="fas fa-magic"></i> Generate Prompts
+                                </button>
+                            </div>
+                            
+                            <div id="loading" class="loading hidden">
+                                <div class="spinner"></div>
+                                <p>Generating prompts with AI...</p>
+                            </div>
+                        </div>
+
+                        <div id="prompts-container" class="content-card hidden">
+                            <div class="card-header">
+                                <h3><i class="fas fa-check-circle"></i> Generated Prompts</h3>
+                                <div class="header-actions">
+                                    <button id="copy-all-btn" class="btn-success">
+                                        <i class="fas fa-copy"></i> Copy All
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="prompts-list"></div>
+                            <div class="session-info">
+                                <div class="session-detail">
+                                    <i class="fas fa-link"></i>
+                                    <span>Session ID:</span>
+                                    <code id="session-id"></code>
+                                </div>
+                                <button id="copy-session-link" class="btn-secondary">
+                                    <i class="fas fa-share-alt"></i> Share for Claude
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- History Module -->
+                    <div id="history-module" class="module">
+                        <div class="module-header">
+                            <h2><i class="fas fa-history"></i> Prompt History</h2>
+                            <div class="header-actions">
+                                <input type="search" id="history-search" placeholder="Search sessions...">
+                                <button id="refresh-history" class="btn-secondary">
+                                    <i class="fas fa-sync"></i> Refresh
+                                </button>
+                            </div>
+                        </div>
+                        <div class="content-card">
+                            <div id="history-list"></div>
+                        </div>
+                    </div>
+
+                    <!-- Settings Module -->
+                    <div id="settings-module" class="module">
+                        <div class="module-header">
+                            <h2><i class="fas fa-cog"></i> Settings</h2>
+                        </div>
+                        <div class="content-card">
+                            <h3><i class="fas fa-user"></i> Profile</h3>
+                            <div id="profile-info">
+                                <p>Loading profile...</p>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+            </div>
         </div>
     </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container"></div>
 
     <script src="/js/api.js"></script>
     <script src="/js/app.js"></script>
