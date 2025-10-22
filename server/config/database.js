@@ -1,13 +1,15 @@
 const { Pool } = require('pg');
 
 // Configure SSL for Railway
-const isProduction = process.env.NODE_ENV === 'production';
-const sslConfig = isProduction ? {
+// Railway internal network doesn't need SSL, external connections do
+const databaseUrl = process.env.DATABASE_URL;
+const isRailwayInternal = databaseUrl?.includes('railway.internal');
+const sslConfig = isRailwayInternal ? false : {
     rejectUnauthorized: false
-} : false;
+};
 
 const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
+    connectionString: databaseUrl,
     ssl: sslConfig
 });
 

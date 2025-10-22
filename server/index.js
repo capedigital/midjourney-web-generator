@@ -10,10 +10,13 @@ const PORT = process.env.PORT || 3000;
 
 // Auto-run database migration on startup
 async function runMigrations() {
-    const isProduction = process.env.NODE_ENV === 'production';
+    const databaseUrl = process.env.DATABASE_URL;
+    const isRailwayInternal = databaseUrl?.includes('railway.internal');
+    const sslConfig = isRailwayInternal ? false : { rejectUnauthorized: false };
+    
     const pool = new Pool({
-        connectionString: process.env.DATABASE_URL,
-        ssl: isProduction ? { rejectUnauthorized: false } : false
+        connectionString: databaseUrl,
+        ssl: sslConfig
     });
 
     try {
