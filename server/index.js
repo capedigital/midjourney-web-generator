@@ -15,9 +15,10 @@ async function runMigrations() {
         return;
     }
 
+    // Railway TCP proxy handles SSL, so we don't need SSL config for migrations
     const pool = new Pool({
         connectionString: process.env.DATABASE_URL,
-        ssl: { rejectUnauthorized: false }
+        ssl: false
     });
 
     let client;
