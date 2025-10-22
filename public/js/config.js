@@ -1,6 +1,6 @@
 window.Config = {
-    // API Keys
-    OPENROUTER_API_KEY: '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',
+    // API Keys - DO NOT HARDCODE! Use backend proxy instead
+    OPENROUTER_API_KEY: '', // Removed for security - handled by backend
     
 // Default parameters - SINGLE SOURCE OF TRUTH
 defaultMJParams: {

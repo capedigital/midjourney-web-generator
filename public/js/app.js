@@ -43,21 +43,31 @@ class App {
             this.handleRegister();
         });
 
-        // Module navigation
-        document.querySelectorAll('.nav-item').forEach(btn => {
+        // Module navigation (using menu-item for sidebar, nav-item for legacy)
+        document.querySelectorAll('.menu-item, .nav-item').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const module = e.currentTarget.dataset.module;
                 this.switchModule(module);
             });
         });
 
-        // Quick actions
+        // Quick actions (old IDs for compatibility)
         document.getElementById('quick-action-generate')?.addEventListener('click', () => {
-            this.switchModule('generator');
+            this.switchModule('generator-module');
         });
         
         document.getElementById('quick-action-history')?.addEventListener('click', () => {
-            this.switchModule('history');
+            this.switchModule('history-module');
+        });
+        
+        // Quick navigation buttons on dashboard (new structure)
+        document.querySelectorAll('.quick-navigation .action-button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const targetModule = btn.dataset.module;
+                if (targetModule) {
+                    this.switchModule(targetModule);
+                }
+            });
         });
 
         // Logout
@@ -82,20 +92,26 @@ class App {
     }
 
     switchModule(moduleName) {
-        // Update nav items
-        document.querySelectorAll('.nav-item').forEach(btn => {
+        // Update nav items (menu-item for sidebar, nav-item for legacy)
+        document.querySelectorAll('.menu-item, .nav-item').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.module === moduleName);
         });
 
-        // Update modules
-        document.querySelectorAll('.module').forEach(module => {
-            module.classList.toggle('active', module.id === `${moduleName}-module`);
+        // Update modules (module-content for new structure, module for legacy)
+        document.querySelectorAll('.module-content, .module').forEach(module => {
+            module.classList.remove('active');
         });
+        
+        // Activate the target module
+        const targetModule = document.getElementById(moduleName);
+        if (targetModule) {
+            targetModule.classList.add('active');
+        }
 
         // Load data for specific modules
-        if (moduleName === 'history') {
+        if (moduleName === 'history-module') {
             this.loadHistory();
-        } else if (moduleName === 'dashboard') {
+        } else if (moduleName === 'dashboard-module') {
             this.loadDashboardStats();
         }
     }

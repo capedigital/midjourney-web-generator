@@ -224,7 +224,11 @@ window.Generator = {
     },
 
     generateWithChatGPT: async function(promptText, model = 'openai/gpt-4.1-mini') {
-        const apiKey = window.Config?.OPENROUTER_API_KEY || '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';
+        // API key should be stored securely and accessed through backend proxy
+        const apiKey = window.Config?.OPENROUTER_API_KEY || '';
+        if (!apiKey) {
+            throw new Error('API key not configured. Please set up your OpenRouter API key.');
+        }
         const apiUrl = 'https://openrouter.ai/api/v1/chat/completions';
 
         // Show loading state
