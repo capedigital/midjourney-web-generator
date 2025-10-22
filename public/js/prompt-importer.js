@@ -1,0 +1,500 @@
+/**
+ * Prompt Importer - Handles importing prompts from various formats
+ */
+class PromptImporter {
+    constructor() {
+        this.parsedPrompts = [];
+        this.initializeEventListeners();
+    }
+
+    initializeEventListeners() {
+        document.getElementById('parse-prompts-btn')?.addEventListener('click', () => this.parsePrompts());
+        document.getElementById('clear-import-btn')?.addEventListener('click', () => this.clearImport());
+        document.getElementById('import-prompts-btn')?.addEventListener('click', () => this.importPrompts());
+        document.getElementById('cancel-import-btn')?.addEventListener('click', () => this.cancelImport());
+    }
+
+    parsePrompts() {
+        const input = document.getElementById('prompt-import').value.trim();
+        
+        if (!input) {
+            this.showStatus('Please paste some content to parse.', 'warning');
+            return;
+        }
+
+        try {
+            this.parsedPrompts = this.extractPromptsFromText(input);
+            
+            if (this.parsedPrompts.length === 0) {
+                this.showStatus('No prompts found. Try a different format.', 'error');
+                return;
+            }
+
+            this.showPreview();
+            this.showStatus(`Found ${this.parsedPrompts.length} prompts`, 'success');
+            
+        } catch (error) {
+            console.error('Error parsing prompts:', error);
+            this.showStatus('Error parsing content. Check format and try again.', 'error');
+        }
+    }
+
+    extractPromptsFromText(text) {
+        const prompts = [];
+        
+        // Try JSON format first
+        try {
+            const jsonData = JSON.parse(text);
+            if (jsonData.prompts && Array.isArray(jsonData.prompts)) {
+                return jsonData.prompts.map(p => this.cleanPrompt(p)).filter(p => p);
+            }
+        } catch (e) {
+            // Not JSON, continue with other methods
+        }
+
+        // Split by lines and extract prompts
+        const lines = text.split(/\r?\n/);
+        
+        for (let line of lines) {
+            line = line.trim();
+            if (!line) continue;
+            
+            // Skip common non-prompt lines
+            if (this.isNonPromptLine(line)) continue;
+            
+            // Extract prompts from various formats
+            const extractedPrompts = this.extractFromLine(line);
+            prompts.push(...extractedPrompts);
+        }
+
+        return prompts.filter(p => p && p.length > 10); // Filter out very short "prompts"
+    }
+
+    isNonPromptLine(line) {
+        const skipPatterns = [
+            /^here are \d+/i,
+            /^here's/i,
+            /^\d+\.\s*$/,  // Numbered lists without content
+            /^-\s*$/,  // Empty bullet points
+            /^prompt \d+:\s*$/i,
+            /^version/i,
+            /^based on/i,
+            /^these prompts/i,
+            /^i've created/i,
+            /^each prompt/i,
+            /^sure!/i,
+            /^of course/i
+        ];
+        
+        return skipPatterns.some(pattern => pattern.test(line)) || line.length < 10;
+    }
+
+    extractFromLine(line) {
+        const prompts = [];
+        
+        // Remove common prefixes
+        line = line.replace(/^\d+\.\s*/, '')  // "1. "
+                  .replace(/^-\s*/, '')       // "- "
+                  .replace(/^\*\s*/, '')      // "* "
+                  .replace(/^prompt \d+:\s*/i, '') // "Prompt 1: "
+                  .trim();
+        
+        // Split by multiple prompts in one line (separated by " | " or similar)
+        const splitPrompts = line.split(/\s*\|\s*/);
+        
+        for (let prompt of splitPrompts) {
+            prompt = this.cleanPrompt(prompt);
+            if (prompt && prompt.length > 10) {
+                prompts.push(prompt);
+            }
+        }
+        
+        return prompts;
+    }
+
+    cleanPrompt(prompt) {
+        if (!prompt) return '';
+        
+        // Clean up the prompt
+        prompt = prompt.trim()
+            .replace(/^["']|["']$/g, '')  // Remove surrounding quotes
+            .replace(/^\/imagine\s+prompt:\s*/i, '')  // Remove /imagine prompt: prefix
+            .trim();
+            
+        // Add /imagine prompt: if not present and prompt is substantial
+        if (prompt && !prompt.toLowerCase().startsWith('/imagine')) {
+            prompt = `/imagine prompt: ${prompt}`;
+        }
+        
+        return prompt;
+    }
+
+    showPreview() {
+        const previewSection = document.getElementById('import-preview');
+        const promptsList = document.getElementById('parsed-prompts-list');
+        
+        promptsList.innerHTML = '';
+        
+        this.parsedPrompts.forEach((prompt, index) => {
+            const promptEl = document.createElement('div');
+            promptEl.className = 'parsed-prompt-item';
+            promptEl.textContent = `${index + 1}. ${prompt}`;
+            promptsList.appendChild(promptEl);
+        });
+        
+        previewSection.style.display = 'block';
+    }
+
+    importPrompts() {
+        if (this.parsedPrompts.length === 0) {
+            this.showStatus('No prompts to import.', 'warning');
+            return;
+        }
+
+        // Switch to Prompt Generation module
+        this.switchToPromptGeneration();
+        
+        // Process prompts with parameters using existing system
+        this.processPromptsWithParameters();
+        
+        // Clear the importer
+        this.clearImport();
+        
+        // Show success message
+        this.showNotification(`Successfully imported ${this.parsedPrompts.length} prompts!`, 'success');
+    }
+
+    switchToPromptGeneration() {
+        // Switch to the Prompt Generation module
+        const modules = document.querySelectorAll('.module-content');
+        const menuItems = document.querySelectorAll('.menu-item');
+        
+        modules.forEach(module => module.classList.remove('active'));
+        menuItems.forEach(item => item.classList.remove('active'));
+        
+        // Activate Prompt Generation module
+        const promptGenModule = document.getElementById('prompt-generation-module');
+        const promptGenMenuItem = menuItems[4]; // Adjusted index: Dashboard(0), Template(1), Importer(2), Prompt Gen(3), Style(4), Settings(5)
+        
+        if (promptGenModule) promptGenModule.classList.add('active');
+        if (promptGenMenuItem) promptGenMenuItem.classList.add('active');
+    }
+
+    processPromptsWithParameters() {
+        // Clear existing prompts
+        const generatedPromptsDiv = document.getElementById('generatedPrompts');
+        if (!generatedPromptsDiv) {
+            console.error('Generated prompts div not found');
+            return;
+        }
+
+        // Actually clear the existing content
+        console.log('Clearing existing prompts before importing new ones');
+        generatedPromptsDiv.innerHTML = '';
+
+        // Temporarily disable auto-apply to prevent timing conflicts
+        const originalAutoApply = localStorage.getItem('mj-auto-apply');
+        localStorage.setItem('mj-auto-apply', 'false');
+
+        // Use the existing system to process prompts with parameters
+        // Force manual processing to avoid prompt concatenation issues
+        console.log('PromptImporter: Processing', this.parsedPrompts.length, 'individual prompts');
+        this.parsedPrompts.forEach((prompt, index) => {
+            console.log(`PromptImporter: Adding prompt ${index + 1}:`, prompt.substring(0, 50) + '...');
+            this.addPromptWithParameters(prompt, generatedPromptsDiv);
+        });
+        
+        // After importing, apply current parameters to all prompts (like Template Builder does)
+        setTimeout(() => {
+            if (window.MidjourneyHandler && window.MidjourneyHandler.applyParametersToAll) {
+                console.log('PromptImporter: Applying current parameters to imported prompts');
+                window.MidjourneyHandler.applyParametersToAll();
+            }
+            
+            // Restore original auto-apply setting
+            if (originalAutoApply !== null) {
+                localStorage.setItem('mj-auto-apply', originalAutoApply);
+            } else {
+                localStorage.removeItem('mj-auto-apply');
+            }
+        }, 500); // Increased delay to ensure proper timing
+    }
+
+    addPromptWithParameters(prompt, container) {
+        // Store clean base prompt and let the display system handle parameters like Template Builder
+        const cleanPrompt = prompt.replace(/^\/imagine\s+prompt:\s*/i, '').trim();
+        console.log('🔍 addPromptWithParameters called with clean prompt:', cleanPrompt.substring(0, 100) + '...');
+        
+        // Create prompt element using existing system structure
+        const promptDiv = document.createElement('div');
+        promptDiv.className = 'prompt-item';
+        
+        // Get the prompt index for title
+        const existingPrompts = container.querySelectorAll('.prompt-item');
+        const index = existingPrompts.length + 1;
+        console.log('🔍 Creating prompt element', index, 'existing prompts:', existingPrompts.length);
+        
+        // Create initial display with /imagine prefix but NO parameters yet
+        const initialPrompt = `/imagine prompt: ${cleanPrompt}`;
+        console.log('🔍 Initial prompt value:', initialPrompt.substring(0, 100) + '...');
+        
+        promptDiv.innerHTML = `
+            <div class="prompt-header">
+                <input type="checkbox" class="prompt-selector" checked>
+                <span class="prompt-title">Prompt ${index}</span>
+            </div>
+            <textarea class="prompt-text">${initialPrompt}</textarea>
+            <div class="prompt-actions">
+                <button class="copy-prompt">
+                    <i class="fas fa-copy"></i> Copy
+                </button>
+                <button class="edit-prompt">
+                    <i class="fas fa-edit"></i> Edit
+                </button>
+                <button class="delete-prompt">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
+                <button class="send-midjourney midjourney-btn">
+                    <i class="fas fa-paint-brush"></i> Midjourney
+                </button>
+                <button class="send-ideogram ideogram-btn">
+                    <i class="fas fa-image"></i> Ideogram
+                </button>
+            </div>
+        `;
+        
+        // Add event listeners for all buttons
+        this.attachButtonEventListeners(promptDiv);
+        
+        container.appendChild(promptDiv);
+        
+        // Update button styling to match current browser mode
+        if (window.updateAllButtonsSimple) {
+            window.updateAllButtonsSimple();
+        }
+        
+        // CRITICAL: Store the clean base prompt in the dataset like Template Builder does
+        const textarea = promptDiv.querySelector('.prompt-text');
+        if (textarea) {
+            console.log('🔍 Storing basePrompt for prompt', index, ':', cleanPrompt.substring(0, 50) + '...');
+            textarea.dataset.basePrompt = cleanPrompt;
+            console.log('🔍 Stored dataset.basePrompt length:', textarea.dataset.basePrompt.length);
+        }
+    }
+
+    attachButtonEventListeners(promptDiv) {
+        const textarea = promptDiv.querySelector('.prompt-text');
+        
+        // Copy button
+        const copyBtn = promptDiv.querySelector('.copy-prompt');
+        copyBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(textarea.value).then(() => {
+                this.showNotification('Prompt copied to clipboard!', 'success');
+            }).catch(() => {
+                this.showNotification('Failed to copy prompt', 'error');
+            });
+        });
+
+        // Edit button
+        const editBtn = promptDiv.querySelector('.edit-prompt');
+        editBtn.addEventListener('click', () => {
+            const isReadOnly = textarea.readOnly;
+            textarea.readOnly = !isReadOnly;
+            if (!isReadOnly) {
+                textarea.focus();
+                textarea.select();
+                this.showNotification('Editing enabled - click outside to save', 'info');
+            } else {
+                this.showNotification('Changes saved', 'success');
+            }
+        });
+
+        // Delete button
+        const deleteBtn = promptDiv.querySelector('.delete-prompt');
+        deleteBtn.addEventListener('click', () => {
+            promptDiv.remove();
+            this.showNotification('Prompt deleted!', 'success');
+        });
+
+        // Midjourney button
+        const midjourneyBtn = promptDiv.querySelector('.send-midjourney');
+        midjourneyBtn.addEventListener('click', () => {
+            midjourneyBtn.disabled = true;
+            midjourneyBtn.textContent = 'Sending...';
+            
+            // Use global browser setting
+            if (window.sendPromptWithGlobalSetting) {
+                window.sendPromptWithGlobalSetting(textarea.value, 'midjourney');
+                this.showNotification('Sending prompt to Midjourney...', 'info');
+            } else {
+                // Fallback to old method
+                if (window.ipcRenderer) {
+                    window.ipcRenderer.send('send-to-midjourney', textarea.value);
+                    this.showNotification('Sending prompt to Midjourney...', 'info');
+                } else {
+                    this.showNotification('Midjourney integration not available', 'error');
+                }
+            }
+            
+            // Re-enable button after delay
+            setTimeout(() => {
+                midjourneyBtn.disabled = false;
+                midjourneyBtn.innerHTML = '<i class="fas fa-paint-brush"></i> Midjourney';
+            }, 3000);
+        });
+
+        // Ideogram button
+        const ideogramBtn = promptDiv.querySelector('.send-ideogram');
+        ideogramBtn.addEventListener('click', () => {
+            ideogramBtn.disabled = true;
+            ideogramBtn.textContent = 'Sending...';
+            
+            // Strip ALL Midjourney parameters for Ideogram
+            let ideogramPrompt = textarea.value.replace(/^\/imagine prompt:\s+/i, '');
+            // Remove all Midjourney parameters including newer ones
+            ideogramPrompt = ideogramPrompt.replace(/\s+(--ar\s+[\d:]+|--stylize\s+\d+|--chaos\s+\d+|--c\s+\d+|--weird\s+\d+|--style\s+\w+|--niji\s+\d+|--turbo|--fast|--relax|--v\s+[\d\.]+|--zoom\s+[\d\.]+|--draft|--standard|--mode\s+\w+|--sw\s+\d+|--no\s+[\w\s,]+|--p\s+\w+|--sref\s+[\w\-:/.]+)/g, '');
+            
+            // Use global browser setting
+            if (window.sendPromptWithGlobalSetting) {
+                window.sendPromptWithGlobalSetting(ideogramPrompt.trim(), 'ideogram');
+                this.showNotification('Sending prompt to Ideogram...', 'info');
+            } else {
+                // Fallback to old method
+                if (window.MidjourneyHandler && window.MidjourneyHandler.sendToIdeogram) {
+                    window.MidjourneyHandler.sendToIdeogram(ideogramPrompt.trim());
+                    this.showNotification('Sending prompt to Ideogram...', 'info');
+                } else {
+                    this.showNotification('Ideogram integration not available', 'error');
+                }
+            }
+            
+            // Re-enable button after delay
+            setTimeout(() => {
+                ideogramBtn.disabled = false;
+                ideogramBtn.innerHTML = '<i class="fas fa-image"></i> Ideogram';
+            }, 3000);
+        });
+    }
+
+    applyParameters(prompt) {
+        // Get current Midjourney parameters using existing system
+        let parameterSuffix = '';
+        if (window.MidjourneyHandler && typeof window.MidjourneyHandler.getCurrentMJParameters === 'function') {
+            parameterSuffix = window.MidjourneyHandler.getCurrentMJParameters();
+        } else {
+            // Fallback to manual parameter collection
+            parameterSuffix = this.getCurrentParameters().join(' ');
+        }
+        
+        // Remove existing /imagine prompt: if present
+        let cleanPrompt = prompt.replace(/^\/imagine\s+prompt:\s*/i, '').trim();
+        
+        // Build the full prompt with parameters (same as existing system)
+        let fullPrompt = `/imagine prompt: ${cleanPrompt} ${parameterSuffix}`.replace(/\s+/g, ' ').trim();
+        
+        return fullPrompt;
+    }
+
+    getCurrentParameters() {
+        const params = [];
+        
+        // Get all parameter values from the UI
+        const aspectRatio = document.getElementById('aspect-ratio')?.value;
+        const stylize = document.getElementById('stylize-value')?.value;
+        const chaos = document.getElementById('chaos-value')?.value;
+        const speed = document.getElementById('speed-value')?.value;
+        const styleVersion = document.getElementById('style-version')?.value;
+        const mode = document.getElementById('mode-value')?.value;
+        const version = document.getElementById('version-value')?.value;
+        const styleWeight = document.getElementById('style-weight-value')?.value;
+        const noValue = document.getElementById('no-value')?.value;
+        
+        // Add parameters if they have values
+        if (aspectRatio) params.push(aspectRatio);
+        if (stylize) params.push(stylize);
+        if (chaos) params.push(chaos);
+        if (speed) params.push(speed);
+        if (styleVersion) params.push(styleVersion);
+        if (mode) params.push(mode);
+        if (version) params.push(version);
+        if (styleWeight) params.push(styleWeight);
+        if (noValue) params.push(`--no ${noValue}`);
+        
+        return params;
+    }
+
+    cancelImport() {
+        document.getElementById('import-preview').style.display = 'none';
+        this.parsedPrompts = [];
+        this.showStatus('Import cancelled.', 'info');
+    }
+
+    clearImport() {
+        document.getElementById('prompt-import').value = '';
+        document.getElementById('import-preview').style.display = 'none';
+        this.parsedPrompts = [];
+        this.showStatus('', '');
+    }
+
+    showStatus(message, type) {
+        const statusEl = document.getElementById('import-status');
+        if (!statusEl) return;
+        
+        statusEl.textContent = message;
+        statusEl.className = `import-status ${type}`;
+        
+        // Add CSS for different status types
+        statusEl.style.color = {
+            'success': '#28a745',
+            'error': '#dc3545',
+            'warning': '#ffc107',
+            'info': '#17a2b8'
+        }[type] || 'var(--text-secondary)';
+    }
+
+    showNotification(message, type = 'info') {
+        // Create or update notification
+        let notification = document.getElementById('import-notification');
+        if (!notification) {
+            notification = document.createElement('div');
+            notification.id = 'import-notification';
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 1em 1.5em;
+                border-radius: 6px;
+                color: white;
+                font-weight: 500;
+                z-index: 1000;
+                transition: all 0.3s ease;
+                max-width: 300px;
+                word-wrap: break-word;
+            `;
+            document.body.appendChild(notification);
+        }
+        
+        notification.textContent = message;
+        notification.style.background = {
+            'success': '#28a745',
+            'error': '#dc3545',
+            'warning': '#ffc107',
+            'info': '#17a2b8'
+        }[type] || '#17a2b8';
+        
+        notification.style.transform = 'translateY(0)';
+        notification.style.opacity = '1';
+        
+        // Auto-hide after 3 seconds
+        setTimeout(() => {
+            notification.style.transform = 'translateY(-100%)';
+            notification.style.opacity = '0';
+        }, 3000);
+    }
+}
+
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    window.promptImporter = new PromptImporter();
+    console.log('Prompt Importer initialized');
+});

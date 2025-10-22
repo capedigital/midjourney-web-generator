@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PromptLab - Midjourney Generator</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Auth Screen -->
+        <div id="auth-screen" class="screen">
+            <div class="auth-container">
+                <div class="auth-logo">
+                    <i class="fas fa-palette"></i>
+                </div>
+                <h1>PromptLab</h1>
+                <p class="auth-subtitle">Midjourney Prompt Generator</p>
+                
+                <div class="auth-tabs">
+                    <button class="tab-btn active" data-tab="login">
+                        <i class="fas fa-sign-in-alt"></i> Login
+                    </button>
+                    <button class="tab-btn" data-tab="register">
+                        <i class="fas fa-user-plus"></i> Register
+                    </button>
+                </div>
+                
+                <!-- Login Form -->
+                <form id="login-form" class="auth-form">
+                    <div class="form-group">
+                        <i class="fas fa-envelope form-icon"></i>
+                        <input type="email" id="login-email" placeholder="Email" required>
+                    </div>
+                    <div class="form-group">
+                        <i class="fas fa-lock form-icon"></i>
+                        <input type="password" id="login-password" placeholder="Password" required>
+                    </div>
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-sign-in-alt"></i> Login
+                    </button>
+                    <div class="error-message" id="login-error"></div>
+                </form>
+                
+                <!-- Register Form -->
+                <form id="register-form" class="auth-form hidden">
+                    <div class="form-group">
+                        <i class="fas fa-user form-icon"></i>
+                        <input type="text" id="register-name" placeholder="Name (optional)">
+                    </div>
+                    <div class="form-group">
+                        <i class="fas fa-envelope form-icon"></i>
+                        <input type="email" id="register-email" placeholder="Email" required>
+                    </div>
+                    <div class="form-group">
+                        <i class="fas fa-lock form-icon"></i>
+                        <input type="password" id="register-password" placeholder="Password (min 8 characters)" required minlength="8">
+                    </div>
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-user-plus"></i> Create Account
+                    </button>
+                    <div class="error-message" id="register-error"></div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Main App Screen -->
+        <div id="main-screen" class="screen hidden">
+            <div class="app-container">
+                <!-- Sidebar -->
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <ul class="menu">
+                <li class="menu-item active" data-module="dashboard-module">
+                    <i class="fas fa-home"></i>Dashboard
+                </li>
+                <li class="menu-item" data-module="template-builder-module">
+                    <i class="fas fa-copy"></i>Template Builder
+                </li>
+                <li class="menu-item" data-module="prompt-importer-module">
+                    <i class="fas fa-download"></i>Prompt Importer
+                </li>
+                <li class="menu-item" data-module="ai-chat-assistant-module">
+                    <i class="fas fa-comments"></i>AI Chat Assistant
+                </li>
+                <li class="menu-item" data-module="prompt-generation-module">
+                    <i class="fas fa-tasks"></i>Prompt Generation
+                </li>
+                <li class="menu-item" data-module="style-library-module">
+                    <i class="fas fa-palette"></i>Style Library
+                </li>
+                <li class="menu-item" data-module="settings-module">
+                    <i class="fas fa-cog"></i>Settings
+                </li>
+            </ul>
+            <div class="sidebar-footer">
+                <div class="user-profile">
+                    <i class="fas fa-user-circle"></i>
+                    <div>
+                        <div id="user-name">User</div>
+                        <div id="user-email" style="font-size: 11px; color: var(--text-muted);"></div>
+                    </div>
+                </div>
+                <button class="btn-logout" id="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </div>                <!-- Main Content -->
+                <main class="main-content">
+                    <!-- Dashboard Module -->
+        <!-- Main content area (90%) -->
+        <div class="module-panel">
+            <!-- Dashboard Module -->
+            <div id="dashboard-module" class="module-content active">
+                <div class="module-header">
+                    <h2>Dashboard</h2>
+                </div>
+                <div class="content-card">
+                    <h3>AI Model Selector</h3>
+                    <select id="ai-model-selector">
+                        <option value="openai/gpt-5-nano">GPT-5 Nano (OpenAI) - $0.225/M</option>
+                        <option value="openai/gpt-4.1-nano">GPT-4.1 Nano (OpenAI) - $0.25/M</option>
+                        <option value="meta-llama/llama-3.3-70b-instruct">Llama 3.3 70B (Meta) - $0.079/M</option>
+                        <option value="google/gemini-2.0-flash-001">Gemini 2.0 Flash (Google) - $0.25/M</option>
+                        <option value="openai/gpt-4o-mini">GPT-4o Mini (OpenAI) - $0.375/M</option>
+                        <option value="openai/gpt-4.1-mini">GPT-4.1 Mini (OpenAI) - $1.00/M</option>
+                        <option value="openai/chatgpt-4o-latest">ChatGPT 4o (OpenAI) - Premium</option>
+                        <option value="anthropic/claude-3.7-sonnet">Claude 3.7 Sonnet - Premium</option>
+                        <option value="google/gemma-3-27b-it">Gemma-3-27b-it (Google) - Variable</option>
+                        <option value="deepseek/deepseek-r1">Deepseek R1 - Variable</option>
+                    </select>
+                    <h3 style="margin-top: 20px;">Quick Navigation</h3>
+                    <div class="quick-navigation">
+                        <button class="action-button large-button" data-module="template-builder-module"><i class="fas fa-code"></i>Template Builder</button>
+                        <button class="action-button large-button" data-module="prompt-importer-module"><i class="fas fa-download"></i>Prompt Importer</button>
+                        <button class="action-button large-button" data-module="ai-chat-assistant-module"><i class="fas fa-comments"></i>AI Chat Assistant</button>
+                        <button class="action-button large-button" data-module="prompt-generation-module"><i class="fas fa-tasks"></i>Prompt Generation</button>
+                        <button class="action-button large-button" data-module="style-library-module"><i class="fas fa-palette"></i>Style Library</button>
+                        <button class="action-button large-button" data-module="settings-module"><i class="fas fa-cog"></i>Settings</button>
+                    </div>
+                </div>
+                <div class="content-card">
+                    <h3>Recent Prompts</h3>
+                    <div id="recent-prompts-list" class="recent-prompts-grid">
+                        <div class="placeholder">Your recent prompts will appear here</div>
+                    </div>
+                </div>
+            </div>                    <!-- Generator Module -->
+                    <div id="generator-module" class="module">
+                        <div class="module-header">
+                            <h2><i class="fas fa-magic"></i> Prompt Generator</h2>
+                        </div>
+
+                        <div class="content-card">
+                            <h3><i class="fas fa-pen"></i> Enter Your Prompt</h3>
+                            <div class="input-group">
+                                <textarea 
+                                    id="prompt-input" 
+                                    placeholder="Describe what you want to create... (e.g., 'Create 5 prompts for a cyberpunk city at night')"
+                                    rows="6"
+                                ></textarea>
+                            </div>
+                            
+                            <div class="controls">
+                                <div class="control-group">
+                                    <label><i class="fas fa-robot"></i> AI Model</label>
+                                    <select id="model-select">
+                                        <option value="openai/gpt-4.1-mini">GPT-4.1 Mini (Fast & Smart)</option>
+                                        <option value="openai/gpt-4.1-nano">GPT-4.1 Nano (Quick & Efficient)</option>
+                                        <option value="anthropic/claude-3.5-sonnet">Claude 3.5 Sonnet (Premium)</option>
+                                        <option value="openai/chatgpt-4o-latest">ChatGPT-4o (Latest)</option>
+                                    </select>
+                                </div>
+                                <button id="generate-btn" class="btn-primary btn-large">
+                                    <i class="fas fa-magic"></i> Generate Prompts
+                                </button>
+                            </div>
+                            
+                            <div id="loading" class="loading hidden">
+                                <div class="spinner"></div>
+                                <p>Generating prompts with AI...</p>
+                            </div>
+                        </div>
+
+                        <div id="prompts-container" class="content-card hidden">
+                            <div class="card-header">
+                                <h3><i class="fas fa-check-circle"></i> Generated Prompts</h3>
+                                <div class="header-actions">
+                                    <button id="copy-all-btn" class="btn-success">
+                                        <i class="fas fa-copy"></i> Copy All
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="prompts-list"></div>
+                            <div class="session-info">
+                                <div class="session-detail">
+                                    <i class="fas fa-link"></i>
+                                    <span>Session ID:</span>
+                                    <code id="session-id"></code>
+                                </div>
+                                <button id="copy-session-link" class="btn-secondary">
+                                    <i class="fas fa-share-alt"></i> Share for Claude
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- History Module -->
+                    <div id="history-module" class="module">
+                        <div class="module-header">
+                            <h2><i class="fas fa-history"></i> Prompt History</h2>
+                            <div class="header-actions">
+                                <input type="search" id="history-search" placeholder="Search sessions...">
+                                <button id="refresh-history" class="btn-secondary">
+                                    <i class="fas fa-sync"></i> Refresh
+                                </button>
+                            </div>
+                        </div>
+                        <div class="content-card">
+                            <div id="history-list"></div>
+                        </div>
+                    </div>
+
+                    <!-- Settings Module -->
+                    <div id="settings-module" class="module">
+                        <div class="module-header">
+                            <h2><i class="fas fa-cog"></i> Settings</h2>
+                        </div>
+                        <div class="content-card">
+                            <h3><i class="fas fa-user"></i> Profile</h3>
+                            <div id="profile-info">
+                                <p>Loading profile...</p>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container"></div>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/app.js"></script>
+</body>
+</html>
