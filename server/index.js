@@ -60,6 +60,31 @@ app.get('/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date() });
 });
 
+// Manual migration endpoint (remove after first run)
+app.get('/api/setup-database', async (req, res) => {
+    const pool = new Pool({
+        connectionString: process.env.DATABASE_URL,
+        ssl: { rejectUnauthorized: false }
+    });
+
+    let client;
+    try {
+        client = await pool.connect();
+        const schema = fs.readFileSync(path.join(__dirname, '../schema.sql'), 'utf8');
+        await client.query(schema);
+        res.json({ success: true, message: 'Database schema created successfully!' });
+    } catch (err) {
+        if (err.message && err.message.includes('already exists')) {
+            res.json({ success: true, message: 'Database tables already exist' });
+        } else {
+            res.status(500).json({ success: false, error: err.message });
+        }
+    } finally {
+        if (client) client.release();
+        await pool.end();
+    }
+});
+
 // Serve frontend
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/index.html'));
