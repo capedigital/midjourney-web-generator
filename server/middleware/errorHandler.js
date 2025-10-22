@@ -56,13 +56,16 @@ function errorHandler(err, req, res, next) {
     if (statusCode === 500) {
         console.error('❌ Server Error:', {
             message: err.message,
-            stack: err.stack,
             url: req.url,
             method: req.method,
-            body: req.body,
             user: req.user?.id
         });
-    } else {
+        
+        // Only log stack trace in development
+        if (process.env.NODE_ENV === 'development') {
+            console.error('Stack:', err.stack);
+        }
+    } else if (process.env.NODE_ENV === 'development') {
         console.warn(`⚠️  ${err.name || 'Error'}:`, message);
     }
 

@@ -43,8 +43,8 @@ function validateEnv() {
         process.exit(1);
     }
 
-    // Report optional missing variables
-    if (warnings.length > 0) {
+    // Report optional missing variables (only in development)
+    if (warnings.length > 0 && process.env.NODE_ENV === 'development') {
         console.warn('⚠️  Optional environment variables not set:');
         warnings.forEach(varName => {
             console.warn(`   - ${varName}`);

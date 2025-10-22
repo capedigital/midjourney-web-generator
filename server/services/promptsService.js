@@ -36,8 +36,21 @@ class PromptsService {
         }
 
         const session = result.rows[0];
-        // Parse prompts from JSON
-        session.prompts = JSON.parse(session.prompts);
+        
+        // Parse prompts from JSON with error handling
+        try {
+            session.prompts = typeof session.prompts === 'string' 
+                ? JSON.parse(session.prompts)
+                : session.prompts;
+            
+            // Ensure it's an array
+            if (!Array.isArray(session.prompts)) {
+                session.prompts = [];
+            }
+        } catch (err) {
+            console.warn(`⚠️  Failed to parse prompts for session ${sessionId}, returning empty array`);
+            session.prompts = [];
+        }
         
         return session;
     }
@@ -70,11 +83,26 @@ class PromptsService {
             [userId, limit, offset]
         );
 
-        // Parse prompts for each session
-        return result.rows.map(session => ({
-            ...session,
-            prompts: JSON.parse(session.prompts)
-        }));
+        // Parse prompts for each session with error handling
+        return result.rows.map(session => {
+            try {
+                // Handle both JSON string and already parsed arrays
+                const prompts = typeof session.prompts === 'string' 
+                    ? JSON.parse(session.prompts)
+                    : session.prompts;
+                
+                return {
+                    ...session,
+                    prompts: Array.isArray(prompts) ? prompts : []
+                };
+            } catch (err) {
+                console.warn(`⚠️  Failed to parse prompts for session ${session.id}, returning empty array`);
+                return {
+                    ...session,
+                    prompts: []
+                };
+            }
+        });
     }
 
     /**
@@ -108,10 +136,24 @@ class PromptsService {
             [userId, `%${searchText}%`, limit, offset]
         );
 
-        return result.rows.map(session => ({
-            ...session,
-            prompts: JSON.parse(session.prompts)
-        }));
+        return result.rows.map(session => {
+            try {
+                const prompts = typeof session.prompts === 'string' 
+                    ? JSON.parse(session.prompts)
+                    : session.prompts;
+                
+                return {
+                    ...session,
+                    prompts: Array.isArray(prompts) ? prompts : []
+                };
+            } catch (err) {
+                console.warn(`⚠️  Failed to parse prompts for session ${session.id}`);
+                return {
+                    ...session,
+                    prompts: []
+                };
+            }
+        });
     }
 
     /**

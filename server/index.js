@@ -123,7 +123,9 @@ app.use(errorHandler);
 // Start server
 async function startServer() {
     try {
-        console.log('\n🚀 Starting Midjourney Generator Web App...\n');
+        if (config.isDevelopment) {
+            console.log('\n🚀 Starting Midjourney Generator Web App...\n');
+        }
         
         // Test database connection
         if (config.databaseUrl) {
@@ -137,11 +139,15 @@ async function startServer() {
         
         // Start Express server
         app.listen(config.port, () => {
-            console.log('\n✅ Server started successfully!');
-            console.log(`� Server running on port ${config.port}`);
-            console.log(`📊 Environment: ${config.nodeEnv}`);
-            console.log(`🌐 API: http://localhost:${config.port}/api`);
-            console.log(`💚 Health: http://localhost:${config.port}/health\n`);
+            if (config.isProduction) {
+                console.log(`✅ Server running on port ${config.port} (${config.nodeEnv})`);
+            } else {
+                console.log('\n✅ Server started successfully!');
+                console.log(`📡 Server running on port ${config.port}`);
+                console.log(`📊 Environment: ${config.nodeEnv}`);
+                console.log(`🌐 API: http://localhost:${config.port}/api`);
+                console.log(`💚 Health: http://localhost:${config.port}/health\n`);
+            }
         });
     } catch (err) {
         console.error('❌ Failed to start server:', err);

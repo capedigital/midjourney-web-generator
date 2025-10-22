@@ -17,7 +17,9 @@ const pool = new Pool(config);
 
 // Connection event handlers
 pool.on('connect', (client) => {
-    console.log('✅ New database client connected');
+    if (process.env.NODE_ENV === 'development') {
+        console.log('✅ New database client connected');
+    }
 });
 
 pool.on('acquire', (client) => {
@@ -25,7 +27,9 @@ pool.on('acquire', (client) => {
 });
 
 pool.on('remove', (client) => {
-    console.log('🔌 Database client removed from pool');
+    if (process.env.NODE_ENV === 'development') {
+        console.log('🔌 Database client removed from pool');
+    }
 });
 
 pool.on('error', (err, client) => {
