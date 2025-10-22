@@ -74,10 +74,9 @@ app.use((err, req, res, next) => {
     });
 });
 
-// Start server after running migrations
-runMigrations().then(() => {
-    app.listen(PORT, () => {
-        console.log(`🚀 Server running on port ${PORT}`);
-        console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-    });
+// Start server (migrations temporarily disabled - run manually with: railway run node migrate.js)
+app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`⚠️  Run 'railway run node migrate.js' to set up database tables`);
 });
