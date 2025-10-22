@@ -1,30 +1,44 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const { Pool } = require('pg');
 const fs = require('fs');
 require('dotenv').config();
 
+// Import configuration and middleware
+const { validateEnv, getConfig } = require('./config/env');
+const { testConnection, pool } = require('./config/database');
+const { errorHandler, notFoundHandler, asyncHandler } = require('./middleware/errorHandler');
+const { requestLogger, performanceMonitor, rateLimit } = require('./middleware/logger');
+
+// Import routes
+const authRoutes = require('./routes/auth');
+const promptsRoutes = require('./routes/prompts');
+const templatesRoutes = require('./routes/templates');
+
+// Validate environment variables
+validateEnv();
+const config = getConfig();
+
+// Initialize Express app
 const app = express();
-const PORT = process.env.PORT || 3000;
 
 // Auto-run database migration on startup
 async function runMigrations() {
-    if (!process.env.DATABASE_URL) {
+    if (!config.databaseUrl) {
         console.log('⚠️  No DATABASE_URL found, skipping migrations');
         return;
     }
 
-    // Railway TCP proxy handles SSL, so we don't need SSL config for migrations
-    const pool = new Pool({
-        connectionString: process.env.DATABASE_URL,
+    const { Pool } = require('pg');
+    const migrationPool = new Pool({
+        connectionString: config.databaseUrl,
         ssl: false
     });
 
     let client;
     try {
         console.log('🔄 Running database migrations...');
-        client = await pool.connect();
+        client = await migrationPool.connect();
         
         const schema = fs.readFileSync(path.join(__dirname, '../schema.sql'), 'utf8');
         await client.query(schema);
@@ -38,45 +52,113 @@ async function runMigrations() {
         }
     } finally {
         if (client) client.release();
-        await pool.end();
+        await migrationPool.end();
     }
 }
 
-// Middleware
+// Trust proxy for rate limiting and IP detection
+app.set('trust proxy', 1);
+
+// Core middleware
 app.use(cors({
-    origin: process.env.FRONTEND_URL || '*',
+    origin: config.frontendUrl,
     credentials: true
 }));
-app.use(express.json({ limit: '10mb' })); // For image uploads
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
+
+// Request logging and performance monitoring
+if (config.isDevelopment) {
+    app.use(requestLogger);
+    app.use(performanceMonitor);
+}
+
+// Rate limiting for API routes
+app.use('/api/', rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    maxRequests: 100,
+    message: 'Too many requests from this IP, please try again later'
+}));
+
+// Serve static files
 app.use(express.static(path.join(__dirname, '../public')));
 
-// Routes
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/prompts', require('./routes/prompts'));
-app.use('/api/templates', require('./routes/templates'));
-
-// Health check for Railway
-app.get('/health', (req, res) => {
-    res.json({ status: 'ok', timestamp: new Date() });
-});
-
-// Serve frontend
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/index.html'));
-});
-
-// Error handling
-app.use((err, req, res, next) => {
-    console.error('Error:', err);
-    res.status(500).json({ 
-        error: 'Internal server error',
-        message: process.env.NODE_ENV === 'development' ? err.message : undefined
+// Health check endpoint
+app.get('/health', asyncHandler(async (req, res) => {
+    const dbHealthy = await testConnection();
+    
+    res.json({
+        status: dbHealthy ? 'ok' : 'degraded',
+        timestamp: new Date(),
+        uptime: process.uptime(),
+        database: dbHealthy ? 'connected' : 'disconnected',
+        environment: config.nodeEnv
     });
+}));
+
+// API routes
+app.use('/api/auth', authRoutes);
+app.use('/api/prompts', promptsRoutes);
+app.use('/api/templates', templatesRoutes);
+
+// Serve frontend for all other routes (SPA support)
+app.get('*', (req, res) => {
+    const indexPath = path.join(__dirname, '../public/index.html');
+    if (fs.existsSync(indexPath)) {
+        res.sendFile(indexPath);
+    } else {
+        res.status(404).json({
+            success: false,
+            error: 'Frontend not found. Please build the frontend first.'
+        });
+    }
 });
 
-// Start server (migrations temporarily disabled - run manually with: railway run node migrate.js)
-app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
-    console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`⚠️  Run 'railway run node migrate.js' to set up database tables`);
+// 404 handler for undefined routes
+app.use(notFoundHandler);
+
+// Global error handler (must be last)
+app.use(errorHandler);
+
+// Start server
+async function startServer() {
+    try {
+        console.log('\n🚀 Starting Midjourney Generator Web App...\n');
+        
+        // Test database connection
+        if (config.databaseUrl) {
+            await testConnection();
+            
+            // Run migrations
+            await runMigrations();
+        } else {
+            console.warn('⚠️  Running without database connection');
+        }
+        
+        // Start Express server
+        app.listen(config.port, () => {
+            console.log('\n✅ Server started successfully!');
+            console.log(`� Server running on port ${config.port}`);
+            console.log(`📊 Environment: ${config.nodeEnv}`);
+            console.log(`🌐 API: http://localhost:${config.port}/api`);
+            console.log(`💚 Health: http://localhost:${config.port}/health\n`);
+        });
+    } catch (err) {
+        console.error('❌ Failed to start server:', err);
+        process.exit(1);
+    }
+}
+
+// Handle uncaught errors
+process.on('uncaughtException', (err) => {
+    console.error('❌ Uncaught Exception:', err);
+    process.exit(1);
 });
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+    process.exit(1);
+});
+
+// Start the server
+startServer();
