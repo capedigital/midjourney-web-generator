@@ -1,6 +1,5 @@
 const discordService = require('../services/discordService');
 const db = require('../config/database');
-const logger = require('../middleware/logger');
 
 /**
  * Send a single prompt to Discord/Midjourney
@@ -48,7 +47,7 @@ exports.sendPrompt = async (req, res) => {
       prompt
     );
 
-    logger.debug('Discord message sent successfully', { userId, channelId: targetChannelId });
+    console.log('Discord message sent successfully', { userId, channelId: targetChannelId });
 
     res.json({
       success: true,
@@ -56,7 +55,7 @@ exports.sendPrompt = async (req, res) => {
       messageId: response.id
     });
   } catch (error) {
-    logger.error('Error sending prompt to Discord:', error);
+    console.error('Error sending prompt to Discord:', error);
     
     // Provide user-friendly error messages
     if (error.message.includes('Unauthorized')) {
@@ -126,7 +125,7 @@ exports.sendBatch = async (req, res) => {
       delayMs
     );
 
-    logger.debug('Batch send completed', { userId, total: prompts.length, successful: results.successful.length });
+    console.log('Batch send completed', { userId, total: prompts.length, successful: results.successful.length });
 
     res.json({
       success: true,
@@ -136,7 +135,7 @@ exports.sendBatch = async (req, res) => {
       results: results
     });
   } catch (error) {
-    logger.error('Error sending batch to Discord:', error);
+    console.error('Error sending batch to Discord:', error);
     res.status(500).json({ error: 'Failed to send batch to Discord', details: error.message });
   }
 };
@@ -157,13 +156,13 @@ exports.testConnection = async (req, res) => {
     const isValid = await discordService.testConnection(botToken, channelId);
 
     if (isValid) {
-      logger.debug('Discord connection test successful', { userId });
+      console.log('Discord connection test successful', { userId });
       res.json({ success: true, message: 'Discord connection successful!' });
     } else {
       res.status(400).json({ error: 'Failed to connect to Discord. Please check your credentials.' });
     }
   } catch (error) {
-    logger.error('Discord connection test failed:', error);
+    console.error('Discord connection test failed:', error);
     
     if (error.message.includes('Unauthorized')) {
       return res.status(401).json({ error: 'Invalid bot token' });

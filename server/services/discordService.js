@@ -1,4 +1,3 @@
-const logger = require('../middleware/logger');
 
 /**
  * Discord Service
@@ -34,7 +33,7 @@ async function sendMessage(botToken, channelId, content) {
     const message = await response.json();
     return message;
   } catch (error) {
-    logger.error('Error sending Discord message:', error);
+    console.error('Error sending Discord message:', error);
     throw error;
   }
 }
@@ -76,7 +75,7 @@ async function sendBatch(botToken, channelId, prompts, delayMs = 1000) {
 
       // If we hit rate limit, increase delay
       if (error.message.includes('rate limit')) {
-        logger.debug('Rate limit hit, increasing delay');
+        console.log('Rate limit hit, increasing delay');
         await sleep(delayMs * 2);
       }
     }
@@ -106,10 +105,10 @@ async function testConnection(botToken, channelId) {
     }
 
     const channel = await response.json();
-    logger.debug('Discord connection test successful', { channelName: channel.name });
+    console.log('Discord connection test successful', { channelName: channel.name });
     return true;
   } catch (error) {
-    logger.error('Discord connection test failed:', error);
+    console.error('Discord connection test failed:', error);
     throw error;
   }
 }
