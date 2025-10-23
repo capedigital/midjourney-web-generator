@@ -2,7 +2,7 @@
 // Function to download web images to local thumbs directory
 async function downloadImageToLocal(imageUrl, profileId) {
     try {
-        console.log('Attempting to download:', imageUrl);
+        logger.debug('Attempting to download:', imageUrl);
         
         // Handle Cloudflare CDN URLs and other complex URLs
         let fetchUrl = imageUrl;
@@ -20,7 +20,7 @@ async function downloadImageToLocal(imageUrl, profileId) {
             const match = imageUrl.match(/\/https:\/\/(.+)$/);
             if (match) {
                 const originalUrl = 'https://' + match[1];
-                console.log('Extracted original URL:', originalUrl);
+                logger.debug('Extracted original URL:', originalUrl);
                 // Try original URL first
                 fetchUrl = originalUrl;
             }
@@ -43,7 +43,7 @@ async function downloadImageToLocal(imageUrl, profileId) {
         
         for (let i = 0; i < attempts.length; i++) {
             const attempt = attempts[i];
-            console.log(`Attempt ${i + 1}:`, attempt.url);
+            logger.debug(`Attempt ${i + 1}:`, attempt.url);
             
             try {
                 response = await fetch(attempt.url, {
@@ -57,12 +57,12 @@ async function downloadImageToLocal(imageUrl, profileId) {
                 if (response.ok || (attempt.mode === 'no-cors' && response.type === 'opaque')) {
                     blob = await response.blob();
                     if (blob && blob.size > 0) {
-                        console.log(`Success with attempt ${i + 1}, blob size:`, blob.size);
+                        logger.debug(`Success with attempt ${i + 1}, blob size:`, blob.size);
                         break;
                     }
                 }
             } catch (error) {
-                console.log(`Attempt ${i + 1} failed:`, error.message);
+                logger.debug(`Attempt ${i + 1} failed:`, error.message);
                 continue;
             }
         }
@@ -90,7 +90,7 @@ async function downloadImageToLocal(imageUrl, profileId) {
                 if (dataUrl && dataUrl.length > 100) {
                     try {
                         localStorage.setItem(`thumb_${filename}`, dataUrl);
-                        console.log('Successfully stored image as:', filename);
+                        logger.debug('Successfully stored image as:', filename);
                         resolve(filename);
                     } catch (storageError) {
                         console.error('Storage error:', storageError);

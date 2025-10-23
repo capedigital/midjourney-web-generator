@@ -25,7 +25,7 @@ function initializeGlobalModelSync() {
     });
 
     if (Object.keys(selectors).length === 0) {
-        console.log('No model selectors found for sync');
+        if (window.logger) logger.debug('No model selectors found for sync');
         return;
     }
 
@@ -44,7 +44,7 @@ function initializeGlobalModelSync() {
             // Fall back to first available option
             currentModel = Object.values(selectors)[0].value;
         }
-        console.log('Using default AI model:', currentModel);
+        if (window.logger) logger.debug('Using default AI model:', currentModel);
     }
 
     // Set all dropdowns to the current model
@@ -52,25 +52,19 @@ function initializeGlobalModelSync() {
 
     // Add event listeners to all dropdowns
     Object.entries(selectors).forEach(([name, selector]) => {
-        selector.addEventListener('change', function(e) {
+        selector.addEventListener('change', (e) => {
             const newModel = e.target.value;
-            console.log(`${name} dropdown changed to:`, newModel);
+            if (window.logger) logger.debug(`${name} dropdown changed to:`, newModel);
             
-            // Save preference
+            // Save globally
             localStorage.setItem('global-ai-model', newModel);
             
-            // Sync all other dropdowns
+            // Sync other dropdowns
             syncAllDropdowns(selectors, newModel, name);
-            
-            // Update global manager if it exists (for AI Chat)
-            if (window.globalModelManager) {
-                window.globalModelManager.currentModel = newModel;
-                // Don't call setModel here to avoid circular updates
-            }
         });
     });
 
-    console.log('Global model sync initialized with model:', currentModel);
+    if (window.logger) logger.debug('Global model sync initialized with model:', currentModel);
 }
 
 function validateModelExists(model, selectors) {
@@ -87,9 +81,9 @@ function syncAllDropdowns(selectors, model, excludeSelector = null) {
         
         // Check if this dropdown has the model option
         const option = selector.querySelector(`option[value="${model}"]`);
-        if (option && selector.value !== model) {
+        if (selector && selector.value !== model) {
             selector.value = model;
-            console.log(`Synced ${name} dropdown to:`, model);
+            if (window.logger) logger.debug(`Synced ${name} dropdown to:`, model);
         }
     });
 }
@@ -103,5 +97,5 @@ if (typeof module !== 'undefined' && module.exports) {
 window.resetToDefaultModel = function() {
     localStorage.setItem('global-ai-model', DEFAULT_AI_MODEL);
     location.reload(); // Reload to apply changes
-    console.log('Reset to default model:', DEFAULT_AI_MODEL);
+    if (window.logger) logger.debug('Reset to default model:', DEFAULT_AI_MODEL);
 };

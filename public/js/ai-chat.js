@@ -27,7 +27,7 @@ class AIChatAssistant {
     loadLatestSessionOnStartup() {
         // Optionally load the most recent session on startup (disabled by default)
         // User can manually load sessions via history modal
-        console.log('Chat history auto-save enabled. Use History button to access saved chats.');
+        logger.debug('Chat history auto-save enabled. Use History button to access saved chats.');
     }
 
     initializeDOMElements() {
@@ -50,7 +50,7 @@ class AIChatAssistant {
         if (!this.chatMessages) {
             console.warn('⚠️ AI Chat: chat-messages element not found - will retry when tab is opened');
         } else {
-            console.log('✅ AI Chat DOM elements initialized successfully');
+            logger.debug('✅ AI Chat DOM elements initialized successfully');
         }
     }
 
@@ -59,7 +59,7 @@ class AIChatAssistant {
         const templateModeSelect = document.getElementById('chat-template-mode');
         
         if (!templateSelect || !templateModeSelect) {
-            console.log('AI Chat template elements not found');
+            logger.debug('AI Chat template elements not found');
             return;
         }
         
@@ -84,9 +84,9 @@ class AIChatAssistant {
                 templateSelect.appendChild(option);
             });
             
-            console.log('AI Chat template dropdown populated with', Object.keys(window.Config.templateFormulas).length, 'templates');
+            logger.debug('AI Chat template dropdown populated with', Object.keys(window.Config.templateFormulas).length, 'templates');
         } else {
-            console.log('Config.templateFormulas not available for AI Chat');
+            logger.debug('Config.templateFormulas not available for AI Chat');
         }
         
         // Handle template mode changes to show/hide template dropdown
@@ -123,15 +123,15 @@ class AIChatAssistant {
             if (option) {
                 this.currentModel = savedModel;
                 this.modelSelector.value = savedModel;
-                console.log('AI Chat restored saved model:', this.currentModel);
+                logger.debug('AI Chat restored saved model:', this.currentModel);
             } else {
                 // Fallback to dropdown default if saved model not available
                 this.currentModel = this.modelSelector.value;
-                console.log('AI Chat using dropdown default (saved model not available):', this.currentModel);
+                logger.debug('AI Chat using dropdown default (saved model not available):', this.currentModel);
             }
         } else if (this.modelSelector) {
             this.currentModel = this.modelSelector.value;
-            console.log('AI Chat initialized with dropdown default:', this.currentModel);
+            logger.debug('AI Chat initialized with dropdown default:', this.currentModel);
         } else {
             // Fallback if selector not found
             this.currentModel = 'openai/gpt-4.1-nano';
@@ -152,7 +152,7 @@ class AIChatAssistant {
                 setModel(newModel) {
                     this.currentModel = newModel;
                     localStorage.setItem('global-ai-model', newModel);
-                    console.log('Global model changed to:', newModel);
+                    logger.debug('Global model changed to:', newModel);
                     
                     // Update all subscribers
                     this.subscribers.forEach(callback => {
@@ -184,7 +184,7 @@ class AIChatAssistant {
                 if (this.modelSelector) {
                     this.modelSelector.value = newModel;
                 }
-                console.log('AI Chat synced to global model:', newModel);
+                logger.debug('AI Chat synced to global model:', newModel);
             }
         };
         
@@ -201,7 +201,7 @@ class AIChatAssistant {
             const option = dashboardSelector.querySelector(`option[value="${model}"]`);
             if (option) {
                 dashboardSelector.value = model;
-                console.log('Synced Dashboard dropdown to:', model);
+                logger.debug('Synced Dashboard dropdown to:', model);
             }
         }
 
@@ -211,7 +211,7 @@ class AIChatAssistant {
             const option = templateSelector.querySelector(`option[value="${model}"]`);
             if (option) {
                 templateSelector.value = model;
-                console.log('Synced Template Builder dropdown to:', model);
+                logger.debug('Synced Template Builder dropdown to:', model);
             }
         }
     }
@@ -275,7 +275,7 @@ class AIChatAssistant {
         this.modelSelector?.addEventListener('change', (e) => {
             const newModel = e.target.value;
             this.currentModel = newModel;
-            console.log('AI Chat model changed to:', newModel);
+            logger.debug('AI Chat model changed to:', newModel);
             
             // Update global model (this will sync all other dropdowns)
             if (window.globalModelManager) {
@@ -378,8 +378,8 @@ class AIChatAssistant {
         }
 
         const sessions = this.getSavedSessions();
-        console.log('🔍 Loading chat sessions for History modal:', sessions.length);
-        console.log('🔍 Raw saved sessions:', sessions);
+        logger.debug('🔍 Loading chat sessions for History modal:', sessions.length);
+        logger.debug('🔍 Raw saved sessions:', sessions);
         
         if (sessions.length === 0) {
             sessionsList.innerHTML = `
@@ -476,7 +476,7 @@ class AIChatAssistant {
 
         if (!previewContent || !previewTitle || !previewActions) return;
 
-        console.log('Previewing chat session with CSS classes (not inline styles)');
+        logger.debug('Previewing chat session with CSS classes (not inline styles)');
 
         previewTitle.textContent = session.title;
         previewActions.style.display = 'flex';
@@ -704,24 +704,24 @@ class AIChatAssistant {
     }
 
     importPromptsFromHistory(prompts) {
-        console.log('🔄 importPromptsFromHistory called with', prompts.length, 'prompts');
+        logger.debug('🔄 importPromptsFromHistory called with', prompts.length, 'prompts');
         
         // Close the history modal first
-        console.log('🔄 Closing history modal...');
+        logger.debug('🔄 Closing history modal...');
         this.closeChatHistoryModal();
         
         // Switch to prompt generation module
-        console.log('🔄 Switching to prompt generation module...');
+        logger.debug('🔄 Switching to prompt generation module...');
         if (window.switchToModule) {
             const result = window.switchToModule('prompt-generation-module');
-            console.log('🔄 Module switch result:', result);
+            logger.debug('🔄 Module switch result:', result);
         } else {
             console.error('❌ switchToModule function not available');
         }
         
         // Small delay to ensure module switch completes
         setTimeout(() => {
-            console.log('🔄 Importing prompts...');
+            logger.debug('🔄 Importing prompts...');
             this.importPrompts(prompts);
         }, 100);
     }
@@ -802,7 +802,7 @@ class AIChatAssistant {
             if (window.promptImporter && window.promptImporter.importPrompts) {
                 window.promptImporter.importPrompts(jsonData);
             } else {
-                console.log('Imported JSON:', jsonData);
+                logger.debug('Imported JSON:', jsonData);
                 alert(`${jsonData.length} prompts imported successfully!`);
             }
         }
@@ -847,7 +847,7 @@ class AIChatAssistant {
 
     startNewSession() {
         this.currentSessionId = this.generateSessionId();
-        console.log('Started new chat session:', this.currentSessionId);
+        logger.debug('Started new chat session:', this.currentSessionId);
     }
 
     saveCurrentSession() {
@@ -878,7 +878,7 @@ class AIChatAssistant {
         // Save to localStorage
         try {
             localStorage.setItem('ai-chat-history', JSON.stringify(trimmedSessions));
-            console.log('Chat session auto-saved:', this.currentSessionId);
+            logger.debug('Chat session auto-saved:', this.currentSessionId);
         } catch (error) {
             console.error('Failed to save chat session:', error);
         }
@@ -888,8 +888,8 @@ class AIChatAssistant {
         try {
             const saved = localStorage.getItem('ai-chat-history');
             const sessions = saved ? JSON.parse(saved) : [];
-            console.log('🔍 getSavedSessions: Found', sessions.length, 'sessions in localStorage');
-            console.log('🔍 Raw localStorage data:', saved);
+            logger.debug('🔍 getSavedSessions: Found', sessions.length, 'sessions in localStorage');
+            logger.debug('🔍 Raw localStorage data:', saved);
             return sessions;
         } catch (error) {
             console.error('❌ Failed to load chat sessions:', error);
@@ -934,7 +934,7 @@ class AIChatAssistant {
                 }
             }
             
-            console.log('Loaded chat session:', sessionId);
+            logger.debug('Loaded chat session:', sessionId);
         }
     }
 
@@ -985,7 +985,7 @@ class AIChatAssistant {
         
         try {
             localStorage.setItem('ai-chat-history', JSON.stringify(filteredSessions));
-            console.log('Deleted chat session:', sessionId);
+            logger.debug('Deleted chat session:', sessionId);
             return true;
         } catch (error) {
             console.error('Failed to delete chat session:', error);
@@ -1031,7 +1031,7 @@ class AIChatAssistant {
         
         // Handle file if present
         if (this.currentFile) {
-            console.log('🖼️ Processing file for sending:', {
+            logger.debug('🖼️ Processing file for sending:', {
                 name: this.currentFile.name,
                 type: this.currentFile.type,
                 size: this.currentFile.size,
@@ -1042,9 +1042,9 @@ class AIChatAssistant {
                 messageWithFile += `\n\n[Image: ${this.currentFile.name}]`;
                 // For image files, format for OpenAI Vision API
                 const base64 = await this.fileToBase64(this.currentFile);
-                console.log('🖼️ Image base64 length:', base64.length);
-                console.log('🖼️ Current model:', this.currentModel);
-                console.log('🖼️ Base64 starts with:', base64.substring(0, 50));
+                logger.debug('🖼️ Image base64 length:', base64.length);
+                logger.debug('🖼️ Current model:', this.currentModel);
+                logger.debug('🖼️ Base64 starts with:', base64.substring(0, 50));
                 
                 // Try the original format first (data URL)
                 userMessage = {
@@ -1063,8 +1063,8 @@ class AIChatAssistant {
                         }
                     ]
                 };
-                console.log('🖼️ Using low-detail image processing to reduce API load');
-                console.log('User message with image:', JSON.stringify(userMessage, null, 2));
+                logger.debug('🖼️ Using low-detail image processing to reduce API load');
+                logger.debug('User message with image:', JSON.stringify(userMessage, null, 2));
             } else {
                 // For text files, include content directly
                 const fileContent = await this.fileToText(this.currentFile);
@@ -1088,7 +1088,7 @@ class AIChatAssistant {
         if (this.currentFile && this.currentFile.type.startsWith('image/')) {
             // Replace the last message in history with the proper API format
             this.messages[this.messages.length - 1] = userMessage;
-            console.log('🖼️ Stored API-formatted message with image in history');
+            logger.debug('🖼️ Stored API-formatted message with image in history');
         }
         
         this.chatInput.value = '';
@@ -1120,20 +1120,20 @@ class AIChatAssistant {
 
             // Debug logging for image messages
             if (this.currentFile && this.currentFile.type.startsWith('image/')) {
-                console.log('🖼️ Sending image message to API');
-                console.log('🖼️ Model supports vision:', this.currentModel);
-                console.log('🖼️ User message structure:', JSON.stringify(userMessage, null, 2));
-                console.log('🖼️ API Messages count:', apiMessages.length);
-                console.log('🖼️ Last message type:', typeof apiMessages[apiMessages.length - 1].content);
+                logger.debug('🖼️ Sending image message to API');
+                logger.debug('🖼️ Model supports vision:', this.currentModel);
+                logger.debug('🖼️ User message structure:', JSON.stringify(userMessage, null, 2));
+                logger.debug('🖼️ API Messages count:', apiMessages.length);
+                logger.debug('🖼️ Last message type:', typeof apiMessages[apiMessages.length - 1].content);
             }
 
             // Call OpenRouter API
             const response = await this.callAI(apiMessages);
             
-            console.log('🔍 API Response received:');
-            console.log('🔍 Response type:', typeof response);
-            console.log('🔍 Response length:', response ? response.length : 'null/undefined');
-            console.log('🔍 Response preview:', response ? response.substring(0, 200) : 'No response content');
+            logger.debug('🔍 API Response received:');
+            logger.debug('🔍 Response type:', typeof response);
+            logger.debug('🔍 Response length:', response ? response.length : 'null/undefined');
+            logger.debug('🔍 Response preview:', response ? response.substring(0, 200) : 'No response content');
             
             // Clear thinking message now that we have the final response
             this.clearCurrentThinkingMessage();
@@ -1401,7 +1401,7 @@ IMPORTANT: Only include the JSON prompt block when explicitly requested by the u
     }
 
     async callAI(messages) {
-        console.log('Making API call with model:', this.currentModel);
+        logger.debug('Making API call with model:', this.currentModel);
         
         // Check if this is a vision request
         const hasImageContent = messages.some(msg => 
@@ -1409,10 +1409,10 @@ IMPORTANT: Only include the JSON prompt block when explicitly requested by the u
             msg.content.some(content => content.type === 'image_url')
         );
         
-        console.log('🖼️ Vision request detected:', hasImageContent);
+        logger.debug('🖼️ Vision request detected:', hasImageContent);
         if (hasImageContent) {
-            console.log('🖼️ Full message structure being sent to API:');
-            console.log(JSON.stringify(messages, null, 2));
+            logger.debug('🖼️ Full message structure being sent to API:');
+            logger.debug(JSON.stringify(messages, null, 2));
         }
         
         // For vision requests, disable streaming as it might cause issues
@@ -1428,7 +1428,7 @@ IMPORTANT: Only include the JSON prompt block when explicitly requested by the u
             requestBody.stream = true;
         }
         
-        console.log('🖼️ Request body:', JSON.stringify(requestBody, null, 2));
+        logger.debug('🖼️ Request body:', JSON.stringify(requestBody, null, 2));
         
         // Use backend proxy API (supports streaming!)
         const response = await fetch('/api/ai/generate', {
@@ -1519,34 +1519,34 @@ IMPORTANT: Only include the JSON prompt block when explicitly requested by the u
         let responseContent = finalContent;
         
         if (!responseContent && reasoning) {
-            console.log('🔍 Searching for JSON in reasoning field...');
+            logger.debug('🔍 Searching for JSON in reasoning field...');
             
             // Method 1: Look for our specific JSON markers
             const jsonMatch = reasoning.match(/PROMPTS_JSON_START\s*(\{[\s\S]*?\})\s*PROMPTS_JSON_END/);
             if (jsonMatch) {
                 responseContent = jsonMatch[1];
-                console.log('✅ Extracted JSON from reasoning markers:', responseContent.substring(0, 100) + '...');
+                logger.debug('✅ Extracted JSON from reasoning markers:', responseContent.substring(0, 100) + '...');
             } else {
                 // Method 2: Look for JSON block with "prompts" array
                 const jsonBlockMatch = reasoning.match(/```json\s*(\{[\s\S]*?"prompts"[\s\S]*?\})\s*```/);
                 if (jsonBlockMatch) {
                     responseContent = jsonBlockMatch[1];
-                    console.log('✅ Extracted JSON from code block:', responseContent.substring(0, 100) + '...');
+                    logger.debug('✅ Extracted JSON from code block:', responseContent.substring(0, 100) + '...');
                 } else {
                     // Method 3: Look for any JSON object with "prompts" key (more flexible)
                     const flexibleMatch = reasoning.match(/\{[\s\S]*?"prompts"\s*:\s*\[[\s\S]*?\]\s*\}/);
                     if (flexibleMatch) {
                         responseContent = flexibleMatch[0];
-                        console.log('✅ Extracted flexible JSON from reasoning:', responseContent.substring(0, 100) + '...');
+                        logger.debug('✅ Extracted flexible JSON from reasoning:', responseContent.substring(0, 100) + '...');
                     } else {
                         // Method 4: Look for the last JSON object in the reasoning
                         const lastJsonMatch = reasoning.match(/\{[^{}]*"prompts"[^{}]*\[[^\]]*\][^{}]*\}(?![\s\S]*\{[^{}]*"prompts")/);
                         if (lastJsonMatch) {
                             responseContent = lastJsonMatch[0];
-                            console.log('✅ Extracted last JSON from reasoning:', responseContent.substring(0, 100) + '...');
+                            logger.debug('✅ Extracted last JSON from reasoning:', responseContent.substring(0, 100) + '...');
                         } else {
                             // Last resort: return reasoning but log that no JSON was found
-                            console.log('⚠️ No JSON found in reasoning, returning raw content');
+                            logger.debug('⚠️ No JSON found in reasoning, returning raw content');
                             responseContent = reasoning;
                         }
                     }
@@ -1554,9 +1554,9 @@ IMPORTANT: Only include the JSON prompt block when explicitly requested by the u
             }
         }
 
-        console.log('🔍 API Response Summary:');
-        console.log('🔍 Full content length:', fullContent.length);
-        console.log('🔍 Final content length:', finalContent.length);
+        logger.debug('🔍 API Response Summary:');
+        logger.debug('🔍 Full content length:', fullContent.length);
+        logger.debug('🔍 Final content length:', finalContent.length);
         if (fullContent.length === 0 && finalContent.length === 0) {
             console.error('❌ EMPTY API RESPONSE - No content returned from OpenRouter API');
             console.error('❌ This suggests an API issue, not a vision problem');
@@ -1719,8 +1719,8 @@ IMPORTANT: Only include the JSON prompt block when explicitly requested by the u
     }
 
     detectAndOfferPrompts(response) {
-        console.log('🔍 DETECTING PROMPTS IN RESPONSE...'); // Enhanced debug log
-        console.log('🔍 Response content:', response.substring(0, 200) + '...'); // Show first 200 chars
+        logger.debug('🔍 DETECTING PROMPTS IN RESPONSE...'); // Enhanced debug log
+        logger.debug('🔍 Response content:', response.substring(0, 200) + '...'); // Show first 200 chars
         
         let detectedPrompts = [];
         
@@ -1729,18 +1729,18 @@ IMPORTANT: Only include the JSON prompt block when explicitly requested by the u
         const markedJsonPattern = /PROMPTS_JSON_START\s*(\{[\s\S]*?\})\s*PROMPTS_JSON_END/;
         let match = response.match(markedJsonPattern);
         
-        console.log('🔍 Marked JSON pattern match:', match ? 'FOUND' : 'NOT FOUND');
+        logger.debug('🔍 Marked JSON pattern match:', match ? 'FOUND' : 'NOT FOUND');
         
         if (match) {
-            console.log('✅ Found marked JSON block:', match[1]);
+            logger.debug('✅ Found marked JSON block:', match[1]);
             try {
                 const jsonData = JSON.parse(match[1]);
-                console.log('✅ Parsed JSON successfully:', jsonData);
+                logger.debug('✅ Parsed JSON successfully:', jsonData);
                 if (jsonData.prompts && Array.isArray(jsonData.prompts)) {
                     detectedPrompts = jsonData.prompts
                         .map(prompt => prompt.trim())
                         .filter(prompt => prompt && prompt.length > 10); // Only basic length check
-                    console.log('✅ Parsed marked JSON prompts:', detectedPrompts);
+                    logger.debug('✅ Parsed marked JSON prompts:', detectedPrompts);
                 }
             } catch (error) {
                 console.error('Error parsing marked JSON:', error);
@@ -1749,12 +1749,12 @@ IMPORTANT: Only include the JSON prompt block when explicitly requested by the u
         
         // Method 2: Look for plain JSON blocks with "prompts" array
         if (detectedPrompts.length === 0) {
-            console.log('Trying plain JSON detection...');
+            logger.debug('Trying plain JSON detection...');
             const plainJsonPattern = /\{\s*"prompts"\s*:\s*\[([\s\S]*?)\]\s*\}/;
             match = response.match(plainJsonPattern);
             
             if (match) {
-                console.log('Found plain JSON block:', match[0]);
+                logger.debug('Found plain JSON block:', match[0]);
                 try {
                     // Clean the JSON string by removing ellipsis and truncation artifacts
                     let cleanJson = match[0]
@@ -1765,32 +1765,32 @@ IMPORTANT: Only include the JSON prompt block when explicitly requested by the u
                         .replace(/\s+/g, ' ') // Normalize whitespace
                         .trim();
                     
-                    console.log('Cleaned JSON:', cleanJson);
+                    logger.debug('Cleaned JSON:', cleanJson);
                     
                     const jsonData = JSON.parse(cleanJson);
                     if (jsonData.prompts && Array.isArray(jsonData.prompts)) {
                         detectedPrompts = jsonData.prompts
                             .map(prompt => prompt.trim())
                             .filter(prompt => prompt && prompt.length > 10); // Only basic length check
-                        console.log('Parsed cleaned JSON prompts:', detectedPrompts);
+                        logger.debug('Parsed cleaned JSON prompts:', detectedPrompts);
                     }
                 } catch (error) {
                     console.error('Error parsing cleaned JSON:', error);
-                    console.log('Raw JSON string:', match[0]);
+                    logger.debug('Raw JSON string:', match[0]);
                 }
             }
         }
         
         // Method 3: Try to extract any JSON-like structure containing prompts
         if (detectedPrompts.length === 0) {
-            console.log('Trying flexible JSON detection...');
+            logger.debug('Trying flexible JSON detection...');
             const flexibleJsonPattern = /\{[^}]*"prompts"[^}]*\[[^\]]*\][^}]*\}/g;
             const matches = response.match(flexibleJsonPattern);
             
             if (matches) {
                 for (const jsonStr of matches) {
                     try {
-                        console.log('Trying to parse:', jsonStr);
+                        logger.debug('Trying to parse:', jsonStr);
                         // Clean the JSON string by removing ellipsis and truncation artifacts
                         let cleanJson = jsonStr
                             .replace(/\s*\.\.\.\s*/g, '') // Remove ellipsis
@@ -1805,7 +1805,7 @@ IMPORTANT: Only include the JSON prompt block when explicitly requested by the u
                             detectedPrompts = jsonData.prompts
                                 .map(prompt => prompt.trim())
                                 .filter(prompt => prompt && prompt.length > 10); // Only basic length check
-                            console.log('Parsed flexible JSON prompts:', detectedPrompts);
+                            logger.debug('Parsed flexible JSON prompts:', detectedPrompts);
                             break;
                         }
                     } catch (error) {
@@ -1818,12 +1818,12 @@ IMPORTANT: Only include the JSON prompt block when explicitly requested by the u
         // Only show prompts if we found valid image prompts through JSON
         if (detectedPrompts.length > 0) {
             detectedPrompts = [...new Set(detectedPrompts)];
-            console.log('🎯 FINAL DETECTED PROMPTS:', detectedPrompts);
-            console.log('🎯 CALLING showPromptImportOption with', detectedPrompts.length, 'prompts');
+            logger.debug('🎯 FINAL DETECTED PROMPTS:', detectedPrompts);
+            logger.debug('🎯 CALLING showPromptImportOption with', detectedPrompts.length, 'prompts');
             this.showPromptImportOption(detectedPrompts);
         } else {
-            console.log('❌ NO VALID IMAGE PROMPTS DETECTED IN RESPONSE');
-            console.log('❌ Response was:', response.substring(0, 300) + '...');
+            logger.debug('❌ NO VALID IMAGE PROMPTS DETECTED IN RESPONSE');
+            logger.debug('❌ Response was:', response.substring(0, 300) + '...');
         }
     }
 
@@ -2027,8 +2027,8 @@ IMPORTANT: Only include the JSON prompt block when explicitly requested by the u
     }
 
     handleFileUpload(file) {
-        console.log('📁 File uploaded via:', file.webkitRelativePath ? 'file picker' : 'clipboard paste');
-        console.log('📁 File details:', {
+        logger.debug('📁 File uploaded via:', file.webkitRelativePath ? 'file picker' : 'clipboard paste');
+        logger.debug('📁 File details:', {
             name: file.name,
             type: file.type,
             size: file.size,
@@ -2132,18 +2132,18 @@ IMPORTANT: Only include the JSON prompt block when explicitly requested by the u
     }
 
     async fileToBase64(file) {
-        console.log('🔄 Converting file to base64:', file.name, file.type, file.size, 'bytes');
+        logger.debug('🔄 Converting file to base64:', file.name, file.type, file.size, 'bytes');
         
         return new Promise((resolve, reject) => {
             if (file.type.startsWith('image/')) {
-                console.log('🖼️ Processing image file - will resize to 1024x1024');
+                logger.debug('🖼️ Processing image file - will resize to 1024x1024');
                 // For images, resize to 1024x1024 before converting to base64
                 this.resizeImageTo1024(file)
                     .then(resizedBlob => {
-                        console.log('✅ Image resize completed, converting to base64');
+                        logger.debug('✅ Image resize completed, converting to base64');
                         const reader = new FileReader();
                         reader.onload = () => {
-                            console.log('✅ Base64 conversion completed');
+                            logger.debug('✅ Base64 conversion completed');
                             resolve(reader.result);
                         };
                         reader.onerror = (error) => {
@@ -2157,18 +2157,18 @@ IMPORTANT: Only include the JSON prompt block when explicitly requested by the u
                         // Fallback to original file if resize fails
                         const reader = new FileReader();
                         reader.onload = () => {
-                            console.log('✅ Fallback base64 conversion completed');
+                            logger.debug('✅ Fallback base64 conversion completed');
                             resolve(reader.result);
                         };
                         reader.onerror = reject;
                         reader.readAsDataURL(file);
                     });
             } else {
-                console.log('📄 Processing non-image file - direct base64 conversion');
+                logger.debug('📄 Processing non-image file - direct base64 conversion');
                 // For non-images, convert directly
                 const reader = new FileReader();
                 reader.onload = () => {
-                    console.log('✅ Non-image base64 conversion completed');
+                    logger.debug('✅ Non-image base64 conversion completed');
                     resolve(reader.result);
                 };
                 reader.onerror = (error) => {
@@ -2182,7 +2182,7 @@ IMPORTANT: Only include the JSON prompt block when explicitly requested by the u
 
     async resizeImageTo1024(file) {
         return new Promise((resolve, reject) => {
-            console.log('🖼️ Starting image resize process for:', file.name);
+            logger.debug('🖼️ Starting image resize process for:', file.name);
             
             const img = new Image();
             const canvas = document.createElement('canvas');
@@ -2215,8 +2215,8 @@ IMPORTANT: Only include the JSON prompt block when explicitly requested by the u
                     // Convert to blob
                     canvas.toBlob((blob) => {
                         if (blob) {
-                            console.log(`🖼️ Image resized from ${originalWidth}x${originalHeight} to ${width}x${height}`);
-                            console.log(`🖼️ File size reduced from ${file.size} to ${blob.size} bytes`);
+                            logger.debug(`🖼️ Image resized from ${originalWidth}x${originalHeight} to ${width}x${height}`);
+                            logger.debug(`🖼️ File size reduced from ${file.size} to ${blob.size} bytes`);
                             resolve(blob);
                         } else {
                             console.error('❌ Failed to create blob from canvas');
@@ -2241,7 +2241,7 @@ IMPORTANT: Only include the JSON prompt block when explicitly requested by the u
             // Clean up object URL after loading (both success and error)
             const cleanup = () => {
                 URL.revokeObjectURL(objectUrl);
-                console.log('🧹 Cleaned up object URL');
+                logger.debug('🧹 Cleaned up object URL');
             };
             
             const originalOnLoad = img.onload;

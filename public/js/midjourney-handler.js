@@ -52,7 +52,7 @@ window.MidjourneyHandler = {
             if (element) {
                 const eventType = element.tagName === 'INPUT' ? 'input' : 'change';
                 element.addEventListener(eventType, function() {
-                    console.log('🔧 Parameter changed:', param, 'new value:', this.value);
+                    logger.debug('🔧 Parameter changed:', param, 'new value:', this.value);
                     self.updateParameterPreview();
                     
                     // Debounce the parameter application to prevent multiple rapid calls
@@ -77,7 +77,7 @@ window.MidjourneyHandler = {
     },
 
     getCurrentMJParameters: function() {
-        console.log('🔍 getCurrentMJParameters called');
+        logger.debug('🔍 getCurrentMJParameters called');
         const paramIds = [
             'aspect-ratio', 'stylize-value', 'chaos-value', 'style-version',
             'speed-value', 'mode-value', 'version-value', 'style-weight-value',
@@ -86,14 +86,14 @@ window.MidjourneyHandler = {
         const paramArr = [];
         paramIds.forEach(id => {
             const el = document.getElementById(id);
-            console.log(`Checking element ${id}:`, el, 'value:', el?.value);
+            logger.debug(`Checking element ${id}:`, el, 'value:', el?.value);
             if (el && el.value) {
                 if (id === 'no-value') {
                     paramArr.push(`--no ${el.value}`);
                 } else {
                     paramArr.push(el.value);
                 }
-                console.log(`Added: ${el.value}`);
+                logger.debug(`Added: ${el.value}`);
             }
         });
 
@@ -108,42 +108,42 @@ window.MidjourneyHandler = {
         }
 
         const result = paramArr.filter(Boolean).join(' ');
-        console.log('🔍 getCurrentMJParameters result:', result);
+        logger.debug('🔍 getCurrentMJParameters result:', result);
         // Always return with a leading space if there are parameters
         return result ? ` ${result}` : '';
     },
 
     applyParametersToAll: function() {
-        console.log('=== Applying parameters to all prompts ===');
-        console.log('🚨 STACK TRACE for applyParametersToAll call:');
+        logger.debug('=== Applying parameters to all prompts ===');
+        logger.debug('🚨 STACK TRACE for applyParametersToAll call:');
         console.trace();
-        console.log('Context check - this refers to:', this);
-        console.log('Does this.getCurrentMJParameters exist?', typeof this.getCurrentMJParameters);
+        logger.debug('Context check - this refers to:', this);
+        logger.debug('Does this.getCurrentMJParameters exist?', typeof this.getCurrentMJParameters);
         
         const prompts = document.querySelectorAll('textarea.prompt-text');
-        console.log('Found textareas:', prompts.length);
-        console.log('All textareas on page:', document.querySelectorAll('textarea'));
-        console.log('Textareas with prompt-text class:', prompts);
+        logger.debug('Found textareas:', prompts.length);
+        logger.debug('All textareas on page:', document.querySelectorAll('textarea'));
+        logger.debug('Textareas with prompt-text class:', prompts);
         
         // Get FRESH current parameters (not cached ones)
         const paramString = this.getCurrentMJParameters();
-        console.log('🔍 FRESH current param string:', paramString);
+        logger.debug('🔍 FRESH current param string:', paramString);
 
         prompts.forEach((promptTextarea, index) => {
-            console.log(`\n--- Processing prompt ${index + 1} ---`);
-            console.log('Textarea element:', promptTextarea);
-            console.log('Textarea className:', promptTextarea.className);
-            console.log('Textarea id:', promptTextarea.id);
-            console.log('Full dataset:', promptTextarea.dataset);
+            logger.debug(`\n--- Processing prompt ${index + 1} ---`);
+            logger.debug('Textarea element:', promptTextarea);
+            logger.debug('Textarea className:', promptTextarea.className);
+            logger.debug('Textarea id:', promptTextarea.id);
+            logger.debug('Full dataset:', promptTextarea.dataset);
             
             let basePrompt = promptTextarea.dataset.basePrompt;
-            console.log('Dataset basePrompt:', basePrompt);
-            console.log('🔍 [DEBUG] BasePrompt length:', basePrompt ? basePrompt.length : 'null');
-            console.log('🔍 [DEBUG] BasePrompt contains parameters?', basePrompt ? basePrompt.includes('--') : false);
+            logger.debug('Dataset basePrompt:', basePrompt);
+            logger.debug('🔍 [DEBUG] BasePrompt length:', basePrompt ? basePrompt.length : 'null');
+            logger.debug('🔍 [DEBUG] BasePrompt contains parameters?', basePrompt ? basePrompt.includes('--') : false);
             
             // If no basePrompt in dataset, try to extract it from current value
             if (!basePrompt) {
-                console.log('⚠️ No basePrompt found, attempting to extract from current value');
+                logger.debug('⚠️ No basePrompt found, attempting to extract from current value');
                 const currentValue = promptTextarea.value;
                 if (currentValue) {
                     // Remove /imagine prompt: prefix and any existing parameters
@@ -153,7 +153,7 @@ window.MidjourneyHandler = {
                         .replace(/\s+--[\w-]+$/g, '') // Remove parameter flags at end
                         .trim();
                     
-                    console.log('🔍 Extracted basePrompt:', basePrompt);
+                    logger.debug('🔍 Extracted basePrompt:', basePrompt);
                     // Store it for future use
                     promptTextarea.dataset.basePrompt = basePrompt;
                 }
@@ -167,11 +167,11 @@ window.MidjourneyHandler = {
                 const newValue = cleanParamString 
                     ? `/imagine prompt: ${cleanBasePrompt} ${cleanParamString}`
                     : `/imagine prompt: ${cleanBasePrompt}`;
-                console.log('Setting to:', newValue);
+                logger.debug('Setting to:', newValue);
                 promptTextarea.value = newValue;
-                console.log('After setting, value is now:', promptTextarea.value);
+                logger.debug('After setting, value is now:', promptTextarea.value);
             } else {
-                console.log('❌ No basePrompt found for this textarea - skipping');
+                logger.debug('❌ No basePrompt found for this textarea - skipping');
             }
         });
 
@@ -240,7 +240,7 @@ window.MidjourneyHandler = {
                 throw new Error('Empty prompt');
             }
             
-            console.log('🎨 Sending clean prompt to Ideogram:', cleanPrompt);
+            logger.debug('🎨 Sending clean prompt to Ideogram:', cleanPrompt);
             
             // Send via IPC and wait for response
             await window.ipcRenderer.invoke('send-to-ideogram', {

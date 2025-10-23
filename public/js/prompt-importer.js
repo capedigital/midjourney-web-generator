@@ -189,7 +189,7 @@ class PromptImporter {
         }
 
         // Actually clear the existing content
-        console.log('Clearing existing prompts before importing new ones');
+        logger.debug('Clearing existing prompts before importing new ones');
         generatedPromptsDiv.innerHTML = '';
 
         // Temporarily disable auto-apply to prevent timing conflicts
@@ -198,16 +198,16 @@ class PromptImporter {
 
         // Use the existing system to process prompts with parameters
         // Force manual processing to avoid prompt concatenation issues
-        console.log('PromptImporter: Processing', this.parsedPrompts.length, 'individual prompts');
+        logger.debug('PromptImporter: Processing', this.parsedPrompts.length, 'individual prompts');
         this.parsedPrompts.forEach((prompt, index) => {
-            console.log(`PromptImporter: Adding prompt ${index + 1}:`, prompt.substring(0, 50) + '...');
+            logger.debug(`PromptImporter: Adding prompt ${index + 1}:`, prompt.substring(0, 50) + '...');
             this.addPromptWithParameters(prompt, generatedPromptsDiv);
         });
         
         // After importing, apply current parameters to all prompts (like Template Builder does)
         setTimeout(() => {
             if (window.MidjourneyHandler && window.MidjourneyHandler.applyParametersToAll) {
-                console.log('PromptImporter: Applying current parameters to imported prompts');
+                logger.debug('PromptImporter: Applying current parameters to imported prompts');
                 window.MidjourneyHandler.applyParametersToAll();
             }
             
@@ -223,7 +223,7 @@ class PromptImporter {
     addPromptWithParameters(prompt, container) {
         // Store clean base prompt and let the display system handle parameters like Template Builder
         const cleanPrompt = prompt.replace(/^\/imagine\s+prompt:\s*/i, '').trim();
-        console.log('🔍 addPromptWithParameters called with clean prompt:', cleanPrompt.substring(0, 100) + '...');
+        logger.debug('🔍 addPromptWithParameters called with clean prompt:', cleanPrompt.substring(0, 100) + '...');
         
         // Create prompt element using existing system structure
         const promptDiv = document.createElement('div');
@@ -232,11 +232,11 @@ class PromptImporter {
         // Get the prompt index for title
         const existingPrompts = container.querySelectorAll('.prompt-item');
         const index = existingPrompts.length + 1;
-        console.log('🔍 Creating prompt element', index, 'existing prompts:', existingPrompts.length);
+        logger.debug('🔍 Creating prompt element', index, 'existing prompts:', existingPrompts.length);
         
         // Create initial display with /imagine prefix but NO parameters yet
         const initialPrompt = `/imagine prompt: ${cleanPrompt}`;
-        console.log('🔍 Initial prompt value:', initialPrompt.substring(0, 100) + '...');
+        logger.debug('🔍 Initial prompt value:', initialPrompt.substring(0, 100) + '...');
         
         promptDiv.innerHTML = `
             <div class="prompt-header">
@@ -276,9 +276,9 @@ class PromptImporter {
         // CRITICAL: Store the clean base prompt in the dataset like Template Builder does
         const textarea = promptDiv.querySelector('.prompt-text');
         if (textarea) {
-            console.log('🔍 Storing basePrompt for prompt', index, ':', cleanPrompt.substring(0, 50) + '...');
+            logger.debug('🔍 Storing basePrompt for prompt', index, ':', cleanPrompt.substring(0, 50) + '...');
             textarea.dataset.basePrompt = cleanPrompt;
-            console.log('🔍 Stored dataset.basePrompt length:', textarea.dataset.basePrompt.length);
+            logger.debug('🔍 Stored dataset.basePrompt length:', textarea.dataset.basePrompt.length);
         }
     }
 
@@ -496,5 +496,5 @@ class PromptImporter {
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     window.promptImporter = new PromptImporter();
-    console.log('Prompt Importer initialized');
+    logger.debug('Prompt Importer initialized');
 });

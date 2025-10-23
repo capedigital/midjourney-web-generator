@@ -23,7 +23,7 @@ class WebBrowserController {
   }
 
   init() {
-    console.log("Initializing Web Browser UI controls");
+    logger.debug("Initializing Web Browser UI controls");
     
     // Get DOM elements
     this.toggleButton = document.getElementById('browser-toggle');
@@ -43,28 +43,28 @@ class WebBrowserController {
     this.statusDiv = document.getElementById('browser-status');
     this.webview = document.getElementById('browser-webview');
     
-    console.log('Webview element found:', !!this.webview);
-    console.log('Toggle button found:', !!this.toggleButton);
-    console.log('Controls toggle found:', !!this.controlsToggleButton);
+    logger.debug('Webview element found:', !!this.webview);
+    logger.debug('Toggle button found:', !!this.toggleButton);
+    logger.debug('Controls toggle found:', !!this.controlsToggleButton);
     
     // Set up event listeners
     if (this.toggleButton) {
       this.toggleButton.addEventListener('click', () => {
-        console.log('Toggle button clicked');
+        logger.debug('Toggle button clicked');
         this.toggleBrowser();
       });
     }
     
     if (this.controlsToggleButton) {
       this.controlsToggleButton.addEventListener('click', () => {
-        console.log('Controls toggle clicked');
+        logger.debug('Controls toggle clicked');
         this.toggleControls();
       });
     }
     
     if (this.notchToggle) {
       this.notchToggle.addEventListener('click', () => {
-        console.log('Notch toggle clicked');
+        logger.debug('Notch toggle clicked');
         this.toggleDropdownControls();
       });
     }
@@ -124,14 +124,14 @@ class WebBrowserController {
     if (!this.webview) return;
     
     this.webview.addEventListener('dom-ready', () => {
-      console.log('Webview DOM ready');
+      logger.debug('Webview DOM ready');
       this.updateStatus('Website loaded successfully');
       this.updateNavButtons();
       
       // Inject compatibility fixes for modern web apps like Ideogram
       this.webview.executeJavaScript(`
         (function() {
-          console.log('🔧 Injecting browser compatibility fixes...');
+          logger.debug('🔧 Injecting browser compatibility fixes...');
           
           // Fix 1: Override navigator properties to appear more like regular Chrome
           Object.defineProperty(navigator, 'webdriver', {
@@ -165,7 +165,7 @@ class WebBrowserController {
               // Allow default wheel behavior
             }, { passive: true });
             
-            console.log('✅ Browser compatibility fixes applied');
+            logger.debug('✅ Browser compatibility fixes applied');
           });
           
           // Fix 4: Image loading and display enhancements
@@ -197,13 +197,13 @@ class WebBrowserController {
             observer.observe(document.body, { childList: true, subtree: true });
           });
           
-          console.log('🌐 Webview enhanced for better web app compatibility');
+          logger.debug('🌐 Webview enhanced for better web app compatibility');
         })();
-      `).catch(err => console.log('Failed to inject compatibility fixes:', err));
+      `).catch(err => logger.debug('Failed to inject compatibility fixes:', err));
     });
     
     this.webview.addEventListener('did-navigate', (event) => {
-      console.log('Webview navigated to:', event.url);
+      logger.debug('Webview navigated to:', event.url);
       this.updateStatus(`Browsing: ${event.url}`);
       this.updateNavButtons();
     });
@@ -218,7 +218,7 @@ class WebBrowserController {
     });
     
     this.webview.addEventListener('new-window', (event) => {
-      console.log('New window requested:', event.url);
+      logger.debug('New window requested:', event.url);
       // For OAuth/login URLs, navigate in the same webview
       if (this.isOAuthOrLoginURL(event.url)) {
         event.preventDefault();
@@ -269,7 +269,7 @@ class WebBrowserController {
           
           // If browser is open but we're not on the web browser module, hide it
           if (this.isOpen && !isWebBrowserModuleActive) {
-            console.log('Hiding browser panel - switched away from Web Browser module');
+            logger.debug('Hiding browser panel - switched away from Web Browser module');
             this.closeBrowser();
           }
         }, 100);
@@ -309,7 +309,7 @@ class WebBrowserController {
   }
 
   enterFullscreenMode() {
-    console.log('Entering fullscreen browser mode');
+    logger.debug('Entering fullscreen browser mode');
     this.isFullscreen = true;
     
     // Hide header and controls card
@@ -374,7 +374,7 @@ class WebBrowserController {
       // Force a repaint
       this.webview.style.transform = 'translateZ(0)';
       
-      console.log('Webview positioned:', {
+      logger.debug('Webview positioned:', {
         position: this.webview.style.position,
         width: this.webview.style.width,
         height: this.webview.style.height,
@@ -385,7 +385,7 @@ class WebBrowserController {
   }
 
   exitFullscreenMode() {
-    console.log('Exiting fullscreen browser mode');
+    logger.debug('Exiting fullscreen browser mode');
     this.isFullscreen = false;
     
     // Show header and controls card
@@ -431,7 +431,7 @@ class WebBrowserController {
   }
 
   toggleControls() {
-    console.log('toggleControls called, controlsVisible:', this.controlsVisible);
+    logger.debug('toggleControls called, controlsVisible:', this.controlsVisible);
     
     if (!this.controlsSection || !this.controlsToggleButton) {
       console.error('Controls section or toggle button not found');
@@ -452,7 +452,7 @@ class WebBrowserController {
   }
 
   toggleBrowser() {
-    console.log('toggleBrowser called, isOpen:', this.isOpen);
+    logger.debug('toggleBrowser called, isOpen:', this.isOpen);
     
     // Check if we're currently on the web browser module
     const webBrowserModule = document.getElementById('web-browser-module');
@@ -471,7 +471,7 @@ class WebBrowserController {
   }
 
   openBrowser(url = null) {
-    console.log('openBrowser called with URL:', url);
+    logger.debug('openBrowser called with URL:', url);
     if (!this.webview) {
       console.error('Webview not found');
       return;
@@ -479,7 +479,7 @@ class WebBrowserController {
     
     // Use provided URL or fall back to site selector
     const targetUrl = url || (this.siteSelector ? this.siteSelector.value : 'https://www.midjourney.com');
-    console.log('Loading site:', targetUrl);
+    logger.debug('Loading site:', targetUrl);
     
     // Show webview
     this.webview.style.display = 'flex';
@@ -487,7 +487,7 @@ class WebBrowserController {
     
     // Load the site BEFORE entering fullscreen mode
     this.webview.src = targetUrl;
-    console.log('Webview src set to:', this.webview.src);
+    logger.debug('Webview src set to:', this.webview.src);
     
     // Enter fullscreen mode after a brief delay to let webview initialize
     setTimeout(() => {
@@ -496,7 +496,7 @@ class WebBrowserController {
     
     // Add CSS injection when the page loads to maximize content area
     this.webview.addEventListener('dom-ready', () => {
-      console.log('Webview dom-ready event fired');
+      logger.debug('Webview dom-ready event fired');
       const css = `
         html, body { 
           margin: 0 !important; 
@@ -541,12 +541,12 @@ class WebBrowserController {
     
     // Add loading event listeners for debugging
     this.webview.addEventListener('did-start-loading', () => {
-      console.log('Webview started loading');
+      logger.debug('Webview started loading');
       this.updateStatus('Loading website...');
     });
     
     this.webview.addEventListener('did-finish-load', () => {
-      console.log('Webview finished loading');
+      logger.debug('Webview finished loading');
       this.updateStatus('Website loaded successfully');
     });
     
@@ -562,11 +562,11 @@ class WebBrowserController {
     this.updateStatus('Loading website...');
     this.enableNavButtons();
     
-    console.log('Browser opened with URL:', targetUrl);
+    logger.debug('Browser opened with URL:', targetUrl);
   }
 
   closeBrowser() {
-    console.log('closeBrowser called');
+    logger.debug('closeBrowser called');
     if (!this.webview) return;
     
     // Exit fullscreen mode
@@ -641,7 +641,7 @@ class WebBrowserController {
     if (this.statusDiv) {
       this.statusDiv.textContent = message;
     }
-    console.log('Status:', message);
+    logger.debug('Status:', message);
   }
 
   enableNavButtons() {
@@ -657,10 +657,10 @@ class WebBrowserController {
   }
 
   importIdeogramCookies(cookieJson) {
-    console.log('🍪 Starting Ideogram cookie import...');
+    logger.debug('🍪 Starting Ideogram cookie import...');
     
     if (!cookieJson) {
-      console.log(`
+      logger.debug(`
 🍪 Usage: window.webBrowserController.importIdeogramCookies(cookieJson)
 
 Example:
@@ -676,35 +676,35 @@ Paste your cookie array as the parameter.
     
     try {
       const cookies = Array.isArray(cookieJson) ? cookieJson : JSON.parse(cookieJson);
-      console.log(`🍪 Importing ${cookies.length} cookies...`);
+      logger.debug(`🍪 Importing ${cookies.length} cookies...`);
       this.applyCookiesToWebview(cookies);
     } catch (err) {
-      console.log('❌ Invalid cookie format:', err);
-      console.log('Expected format: Array of cookie objects or JSON string');
+      logger.debug('❌ Invalid cookie format:', err);
+      logger.debug('Expected format: Array of cookie objects or JSON string');
     }
   }
 
   applyCookiesToWebview(cookies) {
-    console.log('🔄 Applying cookies to webview...');
+    logger.debug('🔄 Applying cookies to webview...');
     
     // Use IPC to send cookies to main process for application
     if (window.ipcRenderer) {
-      console.log('📤 Sending cookies to main process for application...');
+      logger.debug('📤 Sending cookies to main process for application...');
       window.ipcRenderer.send('apply-ideogram-cookies', cookies);
       
       // Listen for success response
       window.ipcRenderer.once('ideogram-cookies-applied', (event, success) => {
         if (success) {
-          console.log('✅ Cookies applied successfully!');
-          console.log('🎯 Cookies are now active. You can manually navigate to test authentication.');
-          console.log('💡 Try: window.webBrowserController.webview.src = "https://ideogram.ai/t/create"');
+          logger.debug('✅ Cookies applied successfully!');
+          logger.debug('🎯 Cookies are now active. You can manually navigate to test authentication.');
+          logger.debug('💡 Try: window.webBrowserController.webview.src = "https://ideogram.ai/t/create"');
           this.updateStatus('🎉 Authentication cookies applied! Navigate manually to test.');
         } else {
-          console.log('❌ Failed to apply cookies via main process');
+          logger.debug('❌ Failed to apply cookies via main process');
         }
       });
     } else {
-      console.log('❌ IPC not available for cookie application');
+      logger.debug('❌ IPC not available for cookie application');
     }
   }
 }

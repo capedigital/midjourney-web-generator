@@ -8,7 +8,7 @@ class AuthenticationManager {
     }
 
     init() {
-        console.log('🔐 Initializing Authentication Manager...');
+        logger.debug('🔐 Initializing Authentication Manager...');
         
         // Bind event listeners
         this.bindEvents();
@@ -53,7 +53,7 @@ class AuthenticationManager {
         return `// Complete Authentication Data Extraction Script for Ideogram
 // Run this script in your browser's console while logged into ideogram.ai
 
-console.log('🔐 Extracting complete authentication data from ideogram.ai...');
+logger.debug('🔐 Extracting complete authentication data from ideogram.ai...');
 
 function extractCompleteAuthData() {
     const authData = {
@@ -111,37 +111,37 @@ function extractCompleteAuthData() {
 // Extract and display results
 const completeAuthData = extractCompleteAuthData();
 
-console.log('✅ Complete authentication data extracted:');
-console.log('📊 Stats:');
-console.log(\`   🍪 Cookies: \${completeAuthData.cookies.length}\`);
-console.log(\`   💾 LocalStorage keys: \${Object.keys(completeAuthData.localStorage).length}\`);
-console.log(\`   📝 SessionStorage keys: \${Object.keys(completeAuthData.sessionStorage).length}\`);
+logger.debug('✅ Complete authentication data extracted:');
+logger.debug('📊 Stats:');
+logger.debug(\`   🍪 Cookies: \${completeAuthData.cookies.length}\`);
+logger.debug(\`   💾 LocalStorage keys: \${Object.keys(completeAuthData.localStorage).length}\`);
+logger.debug(\`   📝 SessionStorage keys: \${Object.keys(completeAuthData.sessionStorage).length}\`);
 
 // Check for Firebase auth specifically
 const firebaseAuth = completeAuthData.localStorage['firebase:authUser:da0464495c:[DEFAULT]'];
 if (firebaseAuth) {
-    console.log('🔥 Firebase authentication found!');
+    logger.debug('🔥 Firebase authentication found!');
     try {
         const authUser = JSON.parse(firebaseAuth);
-        console.log(\`   👤 User: \${authUser.email || authUser.uid || 'Unknown'}\`);
+        logger.debug(\`   👤 User: \${authUser.email || authUser.uid || 'Unknown'}\`);
     } catch (e) {
-        console.log('   🔥 Firebase auth data present but could not parse');
+        logger.debug('   🔥 Firebase auth data present but could not parse');
     }
 }
 
-console.log('\\n📋 Copy this complete authentication data to your Electron app:');
-console.log(JSON.stringify(completeAuthData, null, 2));
+logger.debug('\\n📋 Copy this complete authentication data to your Electron app:');
+logger.debug(JSON.stringify(completeAuthData, null, 2));
 
 // Copy to clipboard if possible
 if (navigator.clipboard) {
     navigator.clipboard.writeText(JSON.stringify(completeAuthData, null, 2)).then(() => {
-        console.log('🎉 Complete authentication data copied to clipboard!');
+        logger.debug('🎉 Complete authentication data copied to clipboard!');
     }).catch(err => {
-        console.log('❌ Failed to copy to clipboard:', err);
+        logger.debug('❌ Failed to copy to clipboard:', err);
     });
 }
 
-console.log(\`
+logger.debug(\`
 📝 Instructions:
 1. Copy the JSON output above
 2. Go to your Electron app Settings → Authentication Manager
@@ -159,7 +159,7 @@ completeAuthData;`;
     copyExtractionScript() {
         navigator.clipboard.writeText(this.extractionScript).then(() => {
             this.showStatus('📋 Extraction script copied to clipboard!', 'success');
-            console.log('✅ Authentication extraction script copied to clipboard');
+            logger.debug('✅ Authentication extraction script copied to clipboard');
         }).catch(err => {
             this.showStatus('❌ Failed to copy script', 'error');
             console.error('❌ Failed to copy extraction script:', err);
@@ -185,7 +185,7 @@ completeAuthData;`;
                 throw new Error('Invalid format: cookies array missing');
             }
 
-            console.log('📥 Importing complete authentication data:', {
+            logger.debug('📥 Importing complete authentication data:', {
                 cookies: authData.cookies.length,
                 localStorage: Object.keys(authData.localStorage || {}).length,
                 sessionStorage: Object.keys(authData.sessionStorage || {}).length
@@ -295,7 +295,7 @@ completeAuthData;`;
             }, 5000);
         }
         
-        console.log(`🔐 Auth Manager: ${message}`);
+        logger.debug(`🔐 Auth Manager: ${message}`);
     }
 }
 

@@ -1,6 +1,6 @@
 window.Generator = {
     generatePrompts: function(inputText, elements) {
-        console.log('Generating prompts from:', inputText);
+        logger.debug('Generating prompts from:', inputText);
         // Parse the prompts into a clean array (same as generateWithChatGPT)
         const prompts = this.parseGeneratedPrompts(inputText);
         // Display the prompts properly (same as generateWithChatGPT)
@@ -20,7 +20,7 @@ window.Generator = {
 
         // Get the current parameter string ONCE after ensuring it's fresh.
         const parameterSuffix = window.MidjourneyHandler.getCurrentMJParameters();
-        console.log('Using parameter suffix:', parameterSuffix);
+        logger.debug('Using parameter suffix:', parameterSuffix);
 
         // Create prompts
         cleanPrompts.forEach((basePrompt, index) => {
@@ -73,9 +73,9 @@ window.Generator = {
             // CRITICAL: Store the CLEAN base prompt without /imagine prefix or parameters
             const textarea = promptDiv.querySelector('.prompt-text');
             if (textarea) {
-                console.log('Storing clean basePrompt:', cleanBasePrompt);
+                logger.debug('Storing clean basePrompt:', cleanBasePrompt);
                 textarea.dataset.basePrompt = cleanBasePrompt;
-                console.log('Stored dataset.basePrompt:', textarea.dataset.basePrompt);
+                logger.debug('Stored dataset.basePrompt:', textarea.dataset.basePrompt);
             }
         });
 
@@ -145,7 +145,7 @@ window.Generator = {
                     
                     // Get the clean basePrompt instead of the full textarea value
                     const cleanPrompt = textarea.dataset.basePrompt || textarea.value;
-                    console.log('🎨 Using clean basePrompt for Ideogram:', cleanPrompt);
+                    logger.debug('🎨 Using clean basePrompt for Ideogram:', cleanPrompt);
                     // Always use global browser setting for Ideogram
                     window.sendPromptWithGlobalSetting(cleanPrompt, 'ideogram');
                     // Re-enable button after delay
@@ -291,7 +291,7 @@ window.Generator = {
     },
 
     parseGeneratedPrompts: function(text) {
-        console.log('Raw response from AI:', text);
+        logger.debug('Raw response from AI:', text);
         // This function now ONLY cleans the AI response into an array of prompts.
         // It should not add any prefixes or parameters.
         return text.split('\n')
