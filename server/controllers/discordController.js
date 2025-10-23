@@ -36,14 +36,20 @@ exports.sendPrompt = async (req, res) => {
     // Use provided channelId or fall back to user's saved channel (ignored if using webhook)
     const targetChannelId = channelId || user.discord_channel_id;
 
-    // Detect if using webhook URL or bot token
+    // Detect auth type: webhook URL, user token, or bot token
     const isWebhook = user.discord_bot_token.startsWith('https://discord.com/api/webhooks/') || 
                       user.discord_bot_token.startsWith('https://discordapp.com/api/webhooks/');
+    const isUserToken = !isWebhook && !user.discord_bot_token.startsWith('Bot ') && user.discord_bot_token.length > 50;
 
-    // Send the message via Discord (webhook or bot API)
+    // Send the message via Discord (webhook, user token, or bot API)
     let response;
     if (isWebhook) {
       response = await discordService.sendWebhookMessage(user.discord_bot_token, prompt);
+    } else if (isUserToken) {
+      if (!targetChannelId) {
+        return res.status(400).json({ error: 'Discord channel ID is required when using user token.' });
+      }
+      response = await discordService.sendUserMessage(user.discord_bot_token, targetChannelId, prompt);
     } else {
       if (!targetChannelId) {
         return res.status(400).json({ error: 'Discord channel ID is required when using bot token.' });
@@ -51,7 +57,10 @@ exports.sendPrompt = async (req, res) => {
       response = await discordService.sendMessage(user.discord_bot_token, targetChannelId, prompt);
     }
 
-    console.log('Discord message sent successfully', { userId, method: isWebhook ? 'webhook' : 'bot' });
+    console.log('Discord message sent successfully', { 
+      userId, 
+      method: isWebhook ? 'webhook' : (isUserToken ? 'user-token' : 'bot')
+    });
 
     res.json({
       success: true,

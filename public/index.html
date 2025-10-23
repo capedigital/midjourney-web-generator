@@ -620,19 +620,26 @@ Example ChatGPT output:
                             </div>
 
                             <div class="setting-group">
-                                <label class="setting-label">Discord Bot Token or Webhook URL</label>
+                                <label class="setting-label">Discord User Token (Required for Midjourney)</label>
                                 <div class="setting-description">
-                                    <strong>Recommended:</strong> Use a Discord Webhook URL for Midjourney commands<br>
-                                    Webhooks bypass bot limitations and trigger slash commands properly<br>
-                                    Format: https://discord.com/api/webhooks/123456.../abc123...
+                                    <strong>⚠️ User Token Required:</strong> Midjourney only responds to real user messages<br>
+                                    <strong>How to get your Discord user token:</strong><br>
+                                    1. Open Discord in your browser (not desktop app)<br>
+                                    2. Press F12 to open Developer Tools<br>
+                                    3. Go to "Network" tab<br>
+                                    4. Type a message in any channel<br>
+                                    5. Find "messages" request → Headers → Authorization<br>
+                                    6. Copy the long token (starts with letters/numbers, NOT "Bot")<br>
+                                    <br>
+                                    <strong>Note:</strong> Using user tokens violates Discord ToS (common for Midjourney automation)
                                 </div>
-                                <input type="password" id="discord-bot-token" class="setting-input" placeholder="Webhook URL or Bot Token">
+                                <input type="password" id="discord-bot-token" class="setting-input" placeholder="Your Discord user token">
                             </div>
 
                             <div class="setting-group">
                                 <label class="setting-label">Discord Channel ID</label>
-                                <div class="setting-description">Only required if using Bot Token (webhooks include channel info)</div>
-                                <input type="text" id="discord-channel-id" class="setting-input" placeholder="Channel ID (optional for webhooks)">
+                                <div class="setting-description">The channel where Midjourney bot listens (enable Developer Mode to copy ID)</div>
+                                <input type="text" id="discord-channel-id" class="setting-input" placeholder="Channel ID (e.g., 1019650803725774930)">
                             </div>
 
                             <div style="display: flex; gap: 12px; margin-top: 16px;">

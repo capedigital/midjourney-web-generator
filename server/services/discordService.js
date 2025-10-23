@@ -8,6 +8,39 @@
 const DISCORD_API_BASE = 'https://discord.com/api/v10';
 
 /**
+ * Send a message to a Discord channel using user token (self-bot)
+ * This bypasses bot limitations and sends as a real user
+ * Note: Using user tokens for automation is against Discord ToS but widely used for Midjourney
+ * @param {string} userToken - Discord user account token
+ * @param {string} channelId - Discord channel ID
+ * @param {string} content - Message content (e.g., /imagine prompt: ...)
+ * @returns {Promise<object>} Discord message object
+ */
+async function sendUserMessage(userToken, channelId, content) {
+  try {
+    const response = await fetch(`${DISCORD_API_BASE}/channels/${channelId}/messages`, {
+      method: 'POST',
+      headers: {
+        'Authorization': userToken, // User token doesn't use "Bot" prefix
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ content })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(`Discord API error (${response.status}): ${error.message || response.statusText}`);
+    }
+
+    const message = await response.json();
+    return message;
+  } catch (error) {
+    console.error('Error sending user message:', error);
+    throw error;
+  }
+}
+
+/**
  * Send a message via Discord webhook
  * Webhooks bypass the bot interaction requirement and send as a "user"
  * @param {string} webhookUrl - Discord webhook URL
@@ -77,8 +110,8 @@ async function sendMessage(botToken, channelId, content) {
 
 /**
  * Send multiple messages with delay to avoid rate limits
- * Supports both webhook and bot token methods
- * @param {string} authToken - Discord bot token OR webhook URL
+ * Supports webhook, bot token, and user token methods
+ * @param {string} authToken - Discord bot token, user token, OR webhook URL
  * @param {string} channelId - Discord channel ID (ignored if using webhook)
  * @param {string[]} prompts - Array of prompt strings
  * @param {number} delayMs - Delay between messages in milliseconds
@@ -90,15 +123,19 @@ async function sendBatch(authToken, channelId, prompts, delayMs = 1000) {
     failed: []
   };
 
-  // Detect if authToken is a webhook URL
+  // Detect auth type
   const isWebhook = authToken.startsWith('https://discord.com/api/webhooks/') || 
                     authToken.startsWith('https://discordapp.com/api/webhooks/');
+  const isUserToken = !isWebhook && !authToken.startsWith('Bot ') && authToken.length > 50;
+  const isBotToken = !isWebhook && !isUserToken;
 
   for (let i = 0; i < prompts.length; i++) {
     try {
       let message;
       if (isWebhook) {
         message = await sendWebhookMessage(authToken, prompts[i]);
+      } else if (isUserToken) {
+        message = await sendUserMessage(authToken, channelId, prompts[i]);
       } else {
         message = await sendMessage(authToken, channelId, prompts[i]);
       }
@@ -106,7 +143,7 @@ async function sendBatch(authToken, channelId, prompts, delayMs = 1000) {
       results.successful.push({
         index: i,
         prompt: prompts[i],
-        messageId: message.id || 'webhook-sent'
+        messageId: message.id || 'sent'
       });
 
       // Add delay between messages (except for the last one)
@@ -193,6 +230,7 @@ function sleep(ms) {
 
 module.exports = {
   sendMessage,
+  sendUserMessage,
   sendWebhookMessage,
   sendBatch,
   testConnection
