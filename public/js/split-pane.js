@@ -30,9 +30,12 @@ const SplitPaneView = {
                 </div>
             </div>
             <div class="top-nav-right">
-                <div class="top-nav-user">
+                <div class="top-nav-user" id="top-nav-user-profile" style="cursor: pointer;" title="View Profile & Settings">
                     <i class="fas fa-user-circle"></i>
-                    <span id="top-nav-username">User</span>
+                    <div style="display: flex; flex-direction: column; align-items: flex-start;">
+                        <span id="top-nav-username" style="font-weight: 500;">User</span>
+                        <span id="top-nav-email" style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">email@example.com</span>
+                    </div>
                 </div>
                 <button class="top-nav-logout" id="top-nav-logout-btn">
                     <i class="fas fa-sign-out-alt"></i> Logout
@@ -93,6 +96,12 @@ const SplitPaneView = {
             });
         });
 
+        // Top nav user profile click
+        document.getElementById('top-nav-user-profile').addEventListener('click', () => {
+            window.app.switchModule('settings-module');
+            this.updateActiveMenuItem('settings-module');
+        });
+
         // Top nav logout
         document.getElementById('top-nav-logout-btn').addEventListener('click', () => {
             window.app.handleLogout();
@@ -138,6 +147,16 @@ const SplitPaneView = {
         const usernameEl = document.getElementById('top-nav-username');
         if (usernameEl) {
             usernameEl.textContent = username || 'User';
+        }
+    },
+
+    /**
+     * Update user email in top nav
+     */
+    updateUserEmail(email) {
+        const emailEl = document.getElementById('top-nav-email');
+        if (emailEl) {
+            emailEl.textContent = email || 'email@example.com';
         }
     }
 };

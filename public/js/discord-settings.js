@@ -80,6 +80,7 @@ const DiscordSettings = {
             // Update UI with loaded settings
             const enableCheckbox = document.getElementById('discord-enabled-checkbox');
             const channelIdInput = document.getElementById('discord-channel-id');
+            const botTokenInput = document.getElementById('discord-bot-token');
 
             if (enableCheckbox) {
                 enableCheckbox.checked = user.discord_enabled || false;
@@ -88,6 +89,11 @@ const DiscordSettings = {
 
             if (channelIdInput && user.discord_channel_id) {
                 channelIdInput.value = user.discord_channel_id;
+            }
+
+            // Show placeholder if bot token is configured (backend doesn't return actual token for security)
+            if (botTokenInput && user.discord_enabled && user.discord_channel_id) {
+                botTokenInput.placeholder = '••••••••••••••••••••••••••••••••••••• (Token saved securely)';
             }
 
             logger.debug('Discord settings loaded', { enabled: user.discord_enabled });

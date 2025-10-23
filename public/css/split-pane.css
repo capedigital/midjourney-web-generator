@@ -79,10 +79,18 @@
     gap: 10px;
     color: #d4d4c8;
     font-size: 14px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.top-nav-user:hover {
+    background: rgba(74, 144, 226, 0.1);
+    transform: translateY(-1px);
 }
 
 .top-nav-user i {
-    font-size: 20px;
+    font-size: 24px;
     color: #4a90e2;
 }
 

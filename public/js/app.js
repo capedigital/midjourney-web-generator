@@ -99,6 +99,11 @@ class App {
             });
         });
 
+        // Sidebar user profile click
+        document.getElementById('sidebar-user-profile')?.addEventListener('click', () => {
+            this.switchModule('settings-module');
+        });
+
         // Quick actions (old IDs for compatibility)
         document.getElementById('quick-action-generate')?.addEventListener('click', () => {
             this.switchModule('generator-module');
@@ -424,8 +429,15 @@ class App {
         document.getElementById('main-screen').classList.remove('hidden');
         
         if (this.currentUser) {
+            // Update sidebar user profile
             document.getElementById('user-name').textContent = this.currentUser.name || this.currentUser.email;
             document.getElementById('user-email').textContent = this.currentUser.email;
+            
+            // Update top nav user profile
+            if (window.SplitPaneView) {
+                window.SplitPaneView.updateUsername(this.currentUser.name || this.currentUser.email);
+                window.SplitPaneView.updateUserEmail(this.currentUser.email);
+            }
         }
 
         // Check if there's a module in the URL, otherwise show dashboard

@@ -389,6 +389,12 @@ body {
     border-radius: var(--radius-md);
     margin-bottom: 12px;
     color: var(--text-primary);
+    transition: all 0.2s ease;
+}
+
+.user-profile:hover {
+    background: rgba(74, 144, 226, 0.15);
+    transform: translateX(2px);
 }
 
 .user-profile > div {
