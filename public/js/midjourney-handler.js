@@ -77,7 +77,6 @@ window.MidjourneyHandler = {
     },
 
     getCurrentMJParameters: function() {
-        logger.debug('🔍 getCurrentMJParameters called');
         const paramIds = [
             'aspect-ratio', 'stylize-value', 'chaos-value', 'style-version',
             'speed-value', 'mode-value', 'version-value', 'style-weight-value',
@@ -86,14 +85,12 @@ window.MidjourneyHandler = {
         const paramArr = [];
         paramIds.forEach(id => {
             const el = document.getElementById(id);
-            logger.debug(`Checking element ${id}:`, el, 'value:', el?.value);
             if (el && el.value) {
                 if (id === 'no-value') {
                     paramArr.push(`--no ${el.value}`);
                 } else {
                     paramArr.push(el.value);
                 }
-                logger.debug(`Added: ${el.value}`);
             }
         });
 
@@ -108,42 +105,21 @@ window.MidjourneyHandler = {
         }
 
         const result = paramArr.filter(Boolean).join(' ');
-        logger.debug('🔍 getCurrentMJParameters result:', result);
         // Always return with a leading space if there are parameters
         return result ? ` ${result}` : '';
     },
 
     applyParametersToAll: function() {
-        logger.debug('=== Applying parameters to all prompts ===');
-        logger.debug('🚨 STACK TRACE for applyParametersToAll call:');
-        console.trace();
-        logger.debug('Context check - this refers to:', this);
-        logger.debug('Does this.getCurrentMJParameters exist?', typeof this.getCurrentMJParameters);
-        
         const prompts = document.querySelectorAll('textarea.prompt-text');
-        logger.debug('Found textareas:', prompts.length);
-        logger.debug('All textareas on page:', document.querySelectorAll('textarea'));
-        logger.debug('Textareas with prompt-text class:', prompts);
         
         // Get FRESH current parameters (not cached ones)
         const paramString = this.getCurrentMJParameters();
-        logger.debug('🔍 FRESH current param string:', paramString);
 
         prompts.forEach((promptTextarea, index) => {
-            logger.debug(`\n--- Processing prompt ${index + 1} ---`);
-            logger.debug('Textarea element:', promptTextarea);
-            logger.debug('Textarea className:', promptTextarea.className);
-            logger.debug('Textarea id:', promptTextarea.id);
-            logger.debug('Full dataset:', promptTextarea.dataset);
-            
             let basePrompt = promptTextarea.dataset.basePrompt;
-            logger.debug('Dataset basePrompt:', basePrompt);
-            logger.debug('🔍 [DEBUG] BasePrompt length:', basePrompt ? basePrompt.length : 'null');
-            logger.debug('🔍 [DEBUG] BasePrompt contains parameters?', basePrompt ? basePrompt.includes('--') : false);
             
             // If no basePrompt in dataset, try to extract it from current value
             if (!basePrompt) {
-                logger.debug('⚠️ No basePrompt found, attempting to extract from current value');
                 const currentValue = promptTextarea.value;
                 if (currentValue) {
                     // Remove /imagine prompt: prefix and any existing parameters
@@ -153,7 +129,6 @@ window.MidjourneyHandler = {
                         .replace(/\s+--[\w-]+$/g, '') // Remove parameter flags at end
                         .trim();
                     
-                    logger.debug('🔍 Extracted basePrompt:', basePrompt);
                     // Store it for future use
                     promptTextarea.dataset.basePrompt = basePrompt;
                 }
@@ -167,11 +142,7 @@ window.MidjourneyHandler = {
                 const newValue = cleanParamString 
                     ? `/imagine prompt: ${cleanBasePrompt} ${cleanParamString}`
                     : `/imagine prompt: ${cleanBasePrompt}`;
-                logger.debug('Setting to:', newValue);
                 promptTextarea.value = newValue;
-                logger.debug('After setting, value is now:', promptTextarea.value);
-            } else {
-                logger.debug('❌ No basePrompt found for this textarea - skipping');
             }
         });
 
