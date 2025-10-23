@@ -620,15 +620,19 @@ Example ChatGPT output:
                             </div>
 
                             <div class="setting-group">
-                                <label class="setting-label">Discord Bot Token</label>
-                                <div class="setting-description">Your Discord bot token (keep this secure!)</div>
-                                <input type="password" id="discord-bot-token" class="setting-input" placeholder="Your Discord bot token">
+                                <label class="setting-label">Discord Bot Token or Webhook URL</label>
+                                <div class="setting-description">
+                                    <strong>Recommended:</strong> Use a Discord Webhook URL for Midjourney commands<br>
+                                    Webhooks bypass bot limitations and trigger slash commands properly<br>
+                                    Format: https://discord.com/api/webhooks/123456.../abc123...
+                                </div>
+                                <input type="password" id="discord-bot-token" class="setting-input" placeholder="Webhook URL or Bot Token">
                             </div>
 
                             <div class="setting-group">
                                 <label class="setting-label">Discord Channel ID</label>
-                                <div class="setting-description">The channel where Midjourney bot listens</div>
-                                <input type="text" id="discord-channel-id" class="setting-input" placeholder="Channel ID (e.g., 1234567890)">
+                                <div class="setting-description">Only required if using Bot Token (webhooks include channel info)</div>
+                                <input type="text" id="discord-channel-id" class="setting-input" placeholder="Channel ID (optional for webhooks)">
                             </div>
 
                             <div style="display: flex; gap: 12px; margin-top: 16px;">

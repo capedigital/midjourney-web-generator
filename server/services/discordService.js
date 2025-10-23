@@ -2,16 +2,53 @@
 /**
  * Discord Service
  * Handles sending messages to Discord channels via REST API
- * Uses fetch instead of discord.js for lightweight integration
+ * Uses webhooks for Midjourney command execution
  */
 
 const DISCORD_API_BASE = 'https://discord.com/api/v10';
 
 /**
- * Send a message to a Discord channel
+ * Send a message via Discord webhook
+ * Webhooks bypass the bot interaction requirement and send as a "user"
+ * @param {string} webhookUrl - Discord webhook URL
+ * @param {string} content - Message content (e.g., /imagine prompt: ...)
+ * @returns {Promise<object>} Discord message object
+ */
+async function sendWebhookMessage(webhookUrl, content) {
+  try {
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ 
+        content,
+        username: 'PromptLab' // Optional: customize webhook username
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Discord webhook error (${response.status}): ${error}`);
+    }
+
+    // Webhooks with ?wait=true return the message object
+    if (webhookUrl.includes('wait=true')) {
+      return await response.json();
+    }
+    
+    return { success: true };
+  } catch (error) {
+    console.error('Error sending webhook message:', error);
+    throw error;
+  }
+}
+
+/**
+ * Send a message to a Discord channel (legacy bot token method)
  * @param {string} botToken - Discord bot token
  * @param {string} channelId - Discord channel ID
- * @param {string} content - Message content (should already include /imagine command if for Midjourney)
+ * @param {string} content - Message content
  * @returns {Promise<object>} Discord message object
  */
 async function sendMessage(botToken, channelId, content) {
@@ -40,26 +77,36 @@ async function sendMessage(botToken, channelId, content) {
 
 /**
  * Send multiple messages with delay to avoid rate limits
- * Discord rate limit: 5 messages per 5 seconds per channel (with burst allowance)
- * @param {string} botToken - Discord bot token
- * @param {string} channelId - Discord channel ID
+ * Supports both webhook and bot token methods
+ * @param {string} authToken - Discord bot token OR webhook URL
+ * @param {string} channelId - Discord channel ID (ignored if using webhook)
  * @param {string[]} prompts - Array of prompt strings
  * @param {number} delayMs - Delay between messages in milliseconds
  * @returns {Promise<object>} Results object with successful and failed arrays
  */
-async function sendBatch(botToken, channelId, prompts, delayMs = 1000) {
+async function sendBatch(authToken, channelId, prompts, delayMs = 1000) {
   const results = {
     successful: [],
     failed: []
   };
 
+  // Detect if authToken is a webhook URL
+  const isWebhook = authToken.startsWith('https://discord.com/api/webhooks/') || 
+                    authToken.startsWith('https://discordapp.com/api/webhooks/');
+
   for (let i = 0; i < prompts.length; i++) {
     try {
-      const message = await sendMessage(botToken, channelId, prompts[i]);
+      let message;
+      if (isWebhook) {
+        message = await sendWebhookMessage(authToken, prompts[i]);
+      } else {
+        message = await sendMessage(authToken, channelId, prompts[i]);
+      }
+      
       results.successful.push({
         index: i,
         prompt: prompts[i],
-        messageId: message.id
+        messageId: message.id || 'webhook-sent'
       });
 
       // Add delay between messages (except for the last one)
@@ -85,28 +132,50 @@ async function sendBatch(botToken, channelId, prompts, delayMs = 1000) {
 }
 
 /**
- * Test Discord connection by fetching channel info
- * @param {string} botToken - Discord bot token
- * @param {string} channelId - Discord channel ID
+ * Test Discord connection
+ * Supports both webhook and bot token
+ * @param {string} authToken - Discord bot token OR webhook URL
+ * @param {string} channelId - Discord channel ID (ignored if using webhook)
  * @returns {Promise<boolean>} True if connection successful
  */
-async function testConnection(botToken, channelId) {
+async function testConnection(authToken, channelId) {
   try {
-    const response = await fetch(`${DISCORD_API_BASE}/channels/${channelId}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bot ${botToken}`
+    // Detect if authToken is a webhook URL
+    const isWebhook = authToken.startsWith('https://discord.com/api/webhooks/') || 
+                      authToken.startsWith('https://discordapp.com/api/webhooks/');
+
+    if (isWebhook) {
+      // Test webhook by fetching webhook info
+      const response = await fetch(authToken, {
+        method: 'GET'
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`Webhook error (${response.status}): ${error}`);
       }
-    });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(`Discord API error (${response.status}): ${error.message || response.statusText}`);
+      const webhook = await response.json();
+      console.log('Discord webhook test successful', { webhookName: webhook.name, channelId: webhook.channel_id });
+      return true;
+    } else {
+      // Test bot token by fetching channel info
+      const response = await fetch(`${DISCORD_API_BASE}/channels/${channelId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bot ${authToken}`
+        }
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(`Discord API error (${response.status}): ${error.message || response.statusText}`);
+      }
+
+      const channel = await response.json();
+      console.log('Discord connection test successful', { channelName: channel.name });
+      return true;
     }
-
-    const channel = await response.json();
-    console.log('Discord connection test successful', { channelName: channel.name });
-    return true;
   } catch (error) {
     console.error('Discord connection test failed:', error);
     throw error;
@@ -124,6 +193,7 @@ function sleep(ms) {
 
 module.exports = {
   sendMessage,
+  sendWebhookMessage,
   sendBatch,
   testConnection
 };
