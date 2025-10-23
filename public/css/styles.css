@@ -1,17 +1,17 @@
 /* Modern Dark Theme matching Electron App */
 :root {
-    --primary: #6366f1;
-    --primary-hover: #7c3aed;
+    --primary: #94a800;
+    --primary-hover: #586b00;
     --success: #10b981;
     --success-hover: #059669;
     --danger: #ef4444;
     --warning: #f59e0b;
     --info: #3b82f6;
     
-    --bg-main: #0f172a;
+    --bg-main: #1f1f1f;
     --bg-sidebar: #1e293b;
     --bg-card: #1e293b;
-    --bg-input: #0f172a;
+    --bg-input: #212121;
     --bg-hover: #334155;
     
     --text-primary: #d4d4c8;
@@ -231,7 +231,7 @@ body {
 
 /* HAL 9000 Streaming Messages */
 .hal-message {
-    color: var(--success) !important;
+    color: #c9ff00 !important;
     font-family: code-saver, 'Courier New', monospace;
     font-style: italic;
     font-size: 14px !important;
@@ -1377,7 +1377,7 @@ button, .button {
 }
 
 button:hover, .button:hover {
-  background-color: #3955d0;
+  background-color: #006786;
 }
 
 .action-button {
@@ -3883,7 +3883,7 @@ input[type="password"],
 input[type="number"],
 input[type="search"],
 textarea {
-    padding: 10px 12px !important;
+    padding: 20px 40px !important;
     border-radius: 4px !important;
     line-height: 1.5 !important;
 }

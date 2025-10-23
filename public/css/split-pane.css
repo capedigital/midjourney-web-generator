@@ -9,14 +9,26 @@
     left: 0;
     right: 0;
     height: 60px;
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-    border-bottom: 2px solid #4a90e2;
+    background: linear-gradient(to top, #272727 0.42%, #333333);
+    border-bottom: 1px solid #4a90e2;
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 0 24px;
     z-index: 50;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+/* Offset the main app content when the fixed top-nav is present.
+   This prevents the navbar from covering the sidebar and main content. */
+#main-screen .app-container {
+    margin-top: 60px; /* match .top-nav height */
+    height: calc(100vh - 60px);
+}
+
+/* Ensure the sidebar inside main-screen accounts for the top nav as well */
+#main-screen .sidebar {
+    height: calc(100vh - 60px);
 }
 
 .top-nav-left {
@@ -58,6 +70,7 @@
     display: flex;
     align-items: center;
     gap: 16px;
+    padding-bottom: 8px;
 }
 
 .top-nav-user {
@@ -367,28 +380,96 @@ body.split-view-active .module-panel {
     display: none;
 }
 
-/* Make template builder more compact in split view */
-.split-pane-left #template-builder-module .template-fields {
-    gap: 12px;
-}
+/* ============================================
+   Template Builder - Split View Optimizations
+   ============================================ */
 
-.split-pane-left #template-builder-module .template-field {
+/* Compact layout for split view */
+.split-pane-left #template-builder-module .content-card {
     padding: 12px;
+    margin-bottom: 12px;
 }
 
-.split-pane-left #template-builder-module .field-label {
+.split-pane-left #template-builder-module .content-card h3 {
+    font-size: 14px;
+    margin-bottom: 10px;
+}
+
+.split-pane-left #template-builder-module .module-header {
+    padding: 12px;
+    margin-bottom: 12px;
+}
+
+.split-pane-left #template-builder-module .module-header h2 {
+    font-size: 18px;
+}
+
+/* Enhancer grid - responsive columns */
+.split-pane-left .enhancer-grid {
+    grid-template-columns: 1fr !important; /* Single column in split view */
+    gap: 8px;
+}
+
+.split-pane-left .enhancer-field {
+    margin-bottom: 0;
+}
+
+.split-pane-left .enhancer-field label {
+    font-size: 11px;
+    margin-bottom: 4px;
+}
+
+.split-pane-left .enhancer-input {
     font-size: 12px;
+    padding: 6px 8px;
+    min-height: 35px;
 }
 
-.split-pane-left #template-builder-module .field-input {
-    font-size: 13px;
+/* Template select and textareas */
+.split-pane-left #templateSelect {
+    font-size: 12px;
     padding: 6px 8px;
 }
 
-.split-pane-left #template-builder-module .remove-field {
-    width: 24px;
-    height: 24px;
+.split-pane-left #promptTemplate,
+.split-pane-left #copywriterBrief {
+    font-size: 11px;
+    min-height: 60px;
+    padding: 8px;
+}
+
+.split-pane-left #outputPreview {
+    font-size: 11px;
+    min-height: 80px;
+}
+
+/* Compact buttons */
+.split-pane-left .generate-prompts-button,
+.split-pane-left .action-button {
+    padding: 8px 12px;
     font-size: 12px;
+}
+
+/* Output header controls */
+.split-pane-left .output-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.split-pane-left .output-header h3 {
+    font-size: 13px;
+}
+
+.split-pane-left .output-header select {
+    width: 100%;
+    font-size: 12px;
+}
+
+/* AI Model selector */
+.split-pane-left #template-ai-model {
+    font-size: 12px;
+    padding: 6px 8px;
 }
 
 /* Toggle split view button */
