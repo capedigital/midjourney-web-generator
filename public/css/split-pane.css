@@ -169,6 +169,7 @@
     bottom: 0;
     display: flex;
     overflow: hidden;
+    transition: padding-left 0.3s ease;
 }
 
 .split-pane-left {
@@ -286,13 +287,36 @@
     to { transform: rotate(360deg); }
 }
 
-/* Hide old sidebar when using split view */
-body.split-view-active .sidebar {
-    display: none;
+/* Show sidebar on desktop, hide hamburger menu */
+@media (min-width: 1024px) {
+    .hamburger-menu {
+        display: none;
+    }
+    
+    body.split-view-active .sidebar {
+        display: flex;
+        position: fixed;
+        left: 0;
+        top: 60px;
+        height: calc(100vh - 60px);
+        width: 250px;
+        z-index: 100;
+    }
+    
+    body.split-view-active .split-pane-container {
+        padding-left: 250px;
+    }
 }
 
-body.split-view-active .app-container {
-    padding-left: 0;
+/* On smaller screens, hide sidebar and use hamburger menu */
+@media (max-width: 1023px) {
+    body.split-view-active .sidebar {
+        display: none;
+    }
+    
+    body.split-view-active .app-container {
+        padding-left: 0;
+    }
 }
 
 /* Module content in split view */
