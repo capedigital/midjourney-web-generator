@@ -62,7 +62,7 @@ body {
 #auth-screen {
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--bg-main);
     position: relative;
     overflow: hidden;
 }
@@ -74,7 +74,7 @@ body {
     left: -50%;
     width: 200%;
     height: 200%;
-    background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.05) 1px, transparent 1px);
     background-size: 50px 50px;
     animation: backgroundScroll 20s linear infinite;
 }
