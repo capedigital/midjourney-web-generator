@@ -19,7 +19,7 @@ class App {
     }
 
     init() {
-        this.initializeEventListeners();
+        this.setupEventListeners();
         this.loadUserSettings();
         logger.debug('App initialized');
     }
