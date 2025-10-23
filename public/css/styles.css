@@ -168,17 +168,19 @@ body {
 
 .form-icon {
     position: absolute;
-    left: 12px;
+    left: 14px;
     top: 50%;
     transform: translateY(-50%);
     color: var(--text-muted);
-    font-size: 14px;
+    font-size: 16px;
     pointer-events: none;
+    width: 16px;
+    text-align: center;
 }
 
 .auth-form input {
     width: 100%;
-    padding: 10px 12px 10px 40px;
+    padding: 12px 14px 12px 44px;
     background: var(--bg-input);
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
