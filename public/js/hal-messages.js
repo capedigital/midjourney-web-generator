@@ -15,12 +15,11 @@ class HALMessenger {
         // Options
         this.typingSpeed = options.typingSpeed || 50; // ms per character
         this.pauseBetweenMessages = options.pauseBetweenMessages || 3000; // ms
-        this.deleteSpeed = options.deleteSpeed || 30; // ms per character when deleting
         this.pauseBeforeDelete = options.pauseBeforeDelete || 2000; // ms
         
         // Bind methods
         this.type = this.type.bind(this);
-        this.delete = this.delete.bind(this);
+        this.fadeOut = this.fadeOut.bind(this);
         this.nextMessage = this.nextMessage.bind(this);
     }
     
