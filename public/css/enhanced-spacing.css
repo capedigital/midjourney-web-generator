@@ -1,321 +1,148 @@
 /**
- * Enhanced Spacing & Comfort Stylesheet
- * Makes the UI more friendly and less cramped
- * Blends the modern auth screen aesthetic with better breathing room
+ * Refined Modern Spacing
+ * Subtle improvements without breaking layout
+ * Matches the dashboard's modern aesthetic
  */
 
-/* Increase overall comfort spacing */
+/* Slightly larger base font for better readability */
 body {
-    font-size: 15px; /* Up from 14px */
-    line-height: 1.7; /* Up from 1.6 */
+    font-size: 14.5px;
+    line-height: 1.65;
 }
 
-/* More spacious sidebar */
-.sidebar {
-    padding: 24px 0; /* Add vertical padding */
-}
-
-.menu-item {
-    padding: 16px 24px; /* More generous padding (was 12px 15px) */
-    margin: 4px 12px; /* Add margin between items */
-    border-radius: var(--radius-md);
-}
-
-.menu-item i {
-    margin-right: 14px; /* More space after icon */
-    font-size: 18px; /* Slightly larger icons */
-}
-
-/* Main content breathing room */
+/* Main content with better padding */
 .main-content {
-    padding: 32px; /* Up from potentially tighter spacing */
+    padding: 0; /* Remove if accidentally added */
 }
 
 .module {
-    padding: 28px; /* More padding inside modules */
+    padding: 36px 40px; /* Slightly more generous */
 }
 
-/* Cards with more space */
-.stats-grid {
-    gap: 24px; /* Larger gaps between cards */
+/* Module headers - match dashboard style */
+.module-header {
+    margin-bottom: 36px;
 }
 
-.stat-card {
-    padding: 28px; /* More padding (was ~20px) */
-    min-height: 140px; /* Taller cards */
+.module-header h2 {
+    font-size: 30px;
+    font-weight: 700;
 }
 
-.stat-card h3 {
-    font-size: 15px; /* Slightly larger */
-    margin-bottom: 14px; /* More space */
+/* Cards - more spacious like dashboard */
+.content-card {
+    padding: 28px;
+    margin-bottom: 28px;
 }
 
-.stat-card .value {
-    font-size: 42px; /* Bigger numbers (was 36px) */
-    margin-bottom: 10px;
+.content-card h3 {
+    font-size: 19px;
+    margin-bottom: 22px;
 }
 
-/* Form elements with better spacing */
-.input-group {
-    margin-bottom: 24px; /* More space between inputs */
-}
-
-.control-group {
-    margin-bottom: 20px; /* Up from potentially 16px */
-}
-
-label {
-    display: block;
-    margin-bottom: 10px; /* More label spacing */
-    font-size: 14px;
-    font-weight: 500;
-}
-
+/* Form inputs - better touch targets */
 input[type="text"],
 input[type="email"],
 input[type="password"],
 input[type="number"],
 select,
 textarea {
-    padding: 14px 18px; /* More generous padding */
-    font-size: 15px; /* Match body font */
-    min-height: 48px; /* Comfortable touch target */
+    padding: 13px 16px;
+    font-size: 14.5px;
 }
 
 textarea {
-    padding: 18px; /* Extra padding for text areas */
-    min-height: 140px; /* Taller default */
+    padding: 16px;
+    line-height: 1.7;
 }
 
-/* Buttons with better presence */
+/* Buttons - match dashboard */
 button,
 .btn,
 .btn-primary,
 .btn-secondary {
-    padding: 14px 28px; /* More substantial */
-    font-size: 15px;
+    padding: 12px 24px;
+    font-size: 14.5px;
     font-weight: 500;
-    min-height: 48px;
-    gap: 10px; /* Space between icon and text */
 }
 
-.btn i {
-    font-size: 18px;
-}
-
-/* Action buttons more spacious */
-.action-btn {
-    padding: 24px; /* Up from 20px */
-    min-height: 160px; /* Taller cards */
-}
-
-.action-btn i {
-    font-size: 40px; /* Larger icons */
-    margin-bottom: 12px;
-}
-
-.action-btn span {
-    font-size: 16px;
-}
-
-/* Controls bar with better spacing */
+/* Controls spacing */
 .controls {
-    gap: 20px; /* Larger gaps */
-    margin-bottom: 28px;
-}
-
-/* Generated prompts with breathing room */
-#generatedPrompts {
-    gap: 20px; /* More space between prompt cards */
-}
-
-.prompt-card {
-    padding: 22px; /* More padding */
-    margin-bottom: 18px;
-}
-
-.prompt-card .prompt-text {
-    font-size: 15px;
-    line-height: 1.8; /* More readable */
-    margin-bottom: 18px;
-}
-
-/* Dashboard improvements */
-.dashboard-grid {
-    gap: 28px; /* Larger grid gaps */
-}
-
-.dashboard-section {
-    padding: 28px;
-    margin-bottom: 28px;
-}
-
-.dashboard-section h2 {
-    font-size: 22px; /* Larger headings */
-    margin-bottom: 20px;
-}
-
-/* Template builder spacing */
-.template-section {
-    padding: 24px;
+    gap: 18px;
     margin-bottom: 24px;
 }
 
-.template-grid {
-    gap: 20px;
+.control-group {
+    margin-bottom: 18px;
 }
 
-/* AI Chat improvements */
-#chat-messages {
-    padding: 24px; /* More padding around messages */
-    gap: 20px; /* Space between messages */
+label {
+    margin-bottom: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
 }
 
-.message {
-    padding: 18px 22px; /* More comfortable message bubbles */
-    margin-bottom: 16px;
-    max-width: 85%; /* Slightly narrower for better readability */
+/* Stats cards - keep dashboard style */
+.stats-grid {
+    gap: 24px;
 }
 
-.message-content {
-    font-size: 15px;
-    line-height: 1.7;
-}
-
-#chat-input-container {
-    padding: 24px; /* More padding around input */
-}
-
-#chat-input {
-    padding: 16px 20px;
-    font-size: 15px;
-    min-height: 56px; /* Taller input */
-}
-
-/* Settings with better layout */
-.settings-section {
+.stat-card {
     padding: 28px;
-    margin-bottom: 28px;
 }
 
-.settings-group {
-    margin-bottom: 28px;
+/* Generated prompts */
+#generatedPrompts {
+    gap: 18px;
 }
 
-/* Tabs more spacious */
-.tabs {
-    gap: 8px;
-    margin-bottom: 28px;
-}
-
-.tab-btn {
-    padding: 14px 28px;
-    font-size: 15px;
-}
-
-/* Modals with better spacing */
-.modal-content {
-    padding: 36px; /* More generous modal padding */
-    max-width: 700px; /* Slightly wider */
-}
-
-.modal-header {
-    margin-bottom: 28px;
-}
-
-.modal-header h2 {
-    font-size: 26px;
-}
-
-.modal-body {
-    padding: 24px 0;
-}
-
-.modal-footer {
-    margin-top: 32px;
-    padding-top: 24px;
-    gap: 16px;
-}
-
-/* Lists with better spacing */
-.history-list,
-.template-list,
-.prompt-list {
-    gap: 16px;
-}
-
-.list-item {
-    padding: 18px 22px;
-    margin-bottom: 12px;
-}
-
-/* Parameters panel */
-.parameters-panel {
-    padding: 24px;
-    gap: 20px;
-}
-
-.parameter-group {
-    margin-bottom: 20px;
-}
-
-/* Style library cards */
-.style-card {
+.prompt-card {
     padding: 20px;
     margin-bottom: 16px;
 }
 
-.style-card h3 {
-    font-size: 16px;
-    margin-bottom: 12px;
-}
-
-/* Scrollbars - make them more visible and comfortable */
-::-webkit-scrollbar {
-    width: 12px; /* Wider scrollbar */
-    height: 12px;
-}
-
-::-webkit-scrollbar-track {
-    background: var(--bg-main);
-    border-radius: 6px;
-}
-
-::-webkit-scrollbar-thumb {
-    background: var(--border);
-    border-radius: 6px;
-    border: 2px solid var(--bg-main);
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: var(--border-light);
-}
-
-/* Headers with better hierarchy */
-h1 {
-    font-size: 32px;
-    margin-bottom: 24px;
-    font-weight: 600;
-}
-
-h2 {
-    font-size: 24px;
-    margin-bottom: 20px;
-    font-weight: 600;
-}
-
-h3 {
-    font-size: 18px;
+.prompt-text {
+    font-size: 14.5px;
+    line-height: 1.75;
     margin-bottom: 16px;
-    font-weight: 500;
 }
 
-/* Sections with clear separation */
+/* Action buttons */
+.action-btn {
+    padding: 22px;
+}
+
+.action-btn i {
+    font-size: 36px;
+}
+
+/* Better section spacing */
 section {
-    margin-bottom: 36px;
+    margin-bottom: 32px;
 }
 
-/* Grid layouts with better gaps */
+/* Improved readability */
+p {
+    line-height: 1.75;
+    margin-bottom: 14px;
+}
+
+/* Lists */
+ul, ol {
+    margin-bottom: 18px;
+}
+
+li {
+    margin-bottom: 8px;
+}
+
+/* Input groups */
+.input-group {
+    margin-bottom: 22px;
+}
+
+/* Grid improvements */
 .grid-2 {
     gap: 24px;
 }
@@ -324,72 +151,66 @@ section {
     gap: 20px;
 }
 
-.grid-4 {
-    gap: 18px;
+/* Dashboard sections */
+.dashboard-section {
+    margin-bottom: 28px;
 }
 
-/* Tooltips */
-[data-tooltip] {
-    position: relative;
-}
-
-[data-tooltip]:hover::after {
-    padding: 10px 14px;
-    font-size: 13px;
-}
-
-/* Focus states more visible */
-*:focus-visible {
-    outline: 2px solid var(--primary);
-    outline-offset: 3px;
-}
-
-/* Comfortable touch targets on mobile */
-@media (max-width: 768px) {
-    button,
-    .btn,
-    input,
-    select {
-        min-height: 52px; /* Even larger on mobile */
-    }
-    
-    .menu-item {
-        padding: 18px 20px;
-    }
-}
-
-/* Add subtle animations for friendliness */
-.menu-item,
-.btn,
-.card,
-.prompt-card,
-.stat-card {
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.menu-item:hover,
-.btn:hover,
-.card:hover {
-    transform: translateY(-1px);
-}
-
-/* Better visual feedback */
-.btn:active {
-    transform: translateY(0);
-}
-
-/* Improve readability */
-p {
-    margin-bottom: 16px;
-    line-height: 1.8;
-}
-
-/* Lists */
-ul, ol {
+.dashboard-section h2 {
+    font-size: 22px;
     margin-bottom: 20px;
-    padding-left: 28px;
 }
 
-li {
-    margin-bottom: 10px;
+/* Template sections */
+.template-section {
+    padding: 24px;
+    margin-bottom: 24px;
 }
+
+/* Settings improvements */
+.settings-section {
+    padding: 28px;
+    margin-bottom: 28px;
+}
+
+.settings-group {
+    margin-bottom: 24px;
+}
+
+/* Tabs */
+.tabs {
+    margin-bottom: 28px;
+}
+
+.tab-btn {
+    padding: 12px 24px;
+    font-size: 14.5px;
+}
+
+/* Modals */
+.modal-content {
+    padding: 32px;
+}
+
+.modal-header {
+    margin-bottom: 24px;
+}
+
+.modal-header h2 {
+    font-size: 24px;
+}
+
+.modal-footer {
+    margin-top: 28px;
+    padding-top: 20px;
+}
+
+/* Scrollbar - subtle improvement */
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    border-radius: 5px;
+}
+
