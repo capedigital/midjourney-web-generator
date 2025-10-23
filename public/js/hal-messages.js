@@ -33,9 +33,6 @@ class HALMessenger {
             return;
         }
         
-        console.log('HAL: Starting with element:', this.element);
-        console.log('HAL: Messages:', this.messages);
-        
         // Ensure element is visible and has proper styling
         this.element.style.opacity = '1';
         this.element.style.display = 'flex';
@@ -60,7 +57,6 @@ class HALMessenger {
         if (this.currentCharIndex < currentMessage.length) {
             const text = currentMessage.substring(0, this.currentCharIndex + 1);
             this.element.textContent = text;
-            console.log('HAL typing:', text);
             
             // Scroll to keep the cursor visible
             this.element.scrollLeft = this.element.scrollWidth;
@@ -69,7 +65,6 @@ class HALMessenger {
             setTimeout(this.type, this.typingSpeed);
         } else {
             // Message fully typed, wait then fade out
-            console.log('HAL: Message complete, fading out');
             setTimeout(() => this.fadeOut(), this.pauseBeforeDelete);
         }
     }
