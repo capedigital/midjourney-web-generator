@@ -45,6 +45,18 @@ class App {
         try {
             const data = await window.api.getProfile();
             this.currentUser = data.user;
+            
+            // Update username in sidebar
+            const userNameEl = document.getElementById('user-name');
+            const userEmailEl = document.getElementById('user-email');
+            if (userNameEl) userNameEl.textContent = data.user.username || 'User';
+            if (userEmailEl) userEmailEl.textContent = data.user.email || '';
+            
+            // Update username in top nav (split view)
+            if (window.SplitPaneView) {
+                window.SplitPaneView.updateUsername(data.user.username);
+            }
+            
             this.showMainScreen();
         } catch (error) {
             logger.debug('Failed to load user data, redirecting to login');
@@ -171,6 +183,13 @@ class App {
         const targetModule = document.getElementById(moduleName);
         if (targetModule) {
             targetModule.classList.add('active');
+        }
+
+        // Sync with split view if active
+        if (window.SplitPaneView && window.SplitPaneView.isActive) {
+            setTimeout(() => {
+                window.SplitPaneView.syncModuleContent();
+            }, 50);
         }
 
         // Update browser history
