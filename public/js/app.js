@@ -46,16 +46,11 @@ class App {
             const data = await window.api.getProfile();
             this.currentUser = data.user;
             
-            // Update username in sidebar
+            // Update username (same IDs used in both sidebar and top nav)
             const userNameEl = document.getElementById('user-name');
             const userEmailEl = document.getElementById('user-email');
-            if (userNameEl) userNameEl.textContent = data.user.username || 'User';
+            if (userNameEl) userNameEl.textContent = data.user.name || data.user.email || 'User';
             if (userEmailEl) userEmailEl.textContent = data.user.email || '';
-            
-            // Update username in top nav (split view)
-            if (window.SplitPaneView) {
-                window.SplitPaneView.updateUsername(data.user.username);
-            }
             
             this.showMainScreen();
         } catch (error) {
@@ -429,21 +424,9 @@ class App {
         document.getElementById('main-screen').classList.remove('hidden');
         
         if (this.currentUser) {
-            // Update sidebar user profile
+            // Update user profile (same IDs used in both sidebar and top nav)
             document.getElementById('user-name').textContent = this.currentUser.name || this.currentUser.email;
             document.getElementById('user-email').textContent = this.currentUser.email;
-            
-            // Update top nav user profile (wait for SplitPaneView to initialize)
-            const updateTopNav = () => {
-                if (window.SplitPaneView) {
-                    window.SplitPaneView.updateUsername(this.currentUser.name || this.currentUser.email);
-                    window.SplitPaneView.updateUserEmail(this.currentUser.email);
-                } else {
-                    // Retry after a short delay if not ready yet
-                    setTimeout(updateTopNav, 100);
-                }
-            };
-            updateTopNav();
         }
 
         // Check if there's a module in the URL, otherwise show dashboard

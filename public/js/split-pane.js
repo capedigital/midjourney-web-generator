@@ -32,9 +32,9 @@ const SplitPaneView = {
             <div class="top-nav-right">
                 <div class="top-nav-user" id="top-nav-user-profile" style="cursor: pointer;" title="View Profile & Settings">
                     <i class="fas fa-user-circle"></i>
-                    <div style="display: flex; flex-direction: column; align-items: flex-start;">
-                        <span id="top-nav-username" style="font-weight: 500;">User</span>
-                        <span id="top-nav-email" style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">email@example.com</span>
+                    <div>
+                        <div id="user-name">User</div>
+                        <div id="user-email" style="font-size: 11px; color: var(--text-muted);"></div>
                     </div>
                 </div>
                 <button class="top-nav-logout" id="top-nav-logout-btn">
@@ -138,26 +138,6 @@ const SplitPaneView = {
                 item.classList.add('active');
             }
         });
-    },
-
-    /**
-     * Update username in top nav (matches sidebar user-name element)
-     */
-    updateUsername(name) {
-        const usernameEl = document.getElementById('top-nav-username');
-        if (usernameEl) {
-            usernameEl.textContent = name || 'User';
-        }
-    },
-
-    /**
-     * Update user email in top nav (matches sidebar user-email element)
-     */
-    updateUserEmail(email) {
-        const emailEl = document.getElementById('top-nav-email');
-        if (emailEl) {
-            emailEl.textContent = email || '';
-        }
     }
 };
 
