@@ -50,11 +50,25 @@ const DiscordSettings = {
      */
     async loadSettings() {
         try {
+            const token = localStorage.getItem('token');
+            
+            // Silently skip if not authenticated
+            if (!token) {
+                logger.debug('No auth token found, skipping Discord settings load');
+                return;
+            }
+
             const response = await fetch('/api/auth/profile', {
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    'Authorization': `Bearer ${token}`
                 }
             });
+
+            // Silently handle 401 (not authenticated)
+            if (response.status === 401) {
+                logger.debug('User not authenticated, skipping Discord settings load');
+                return;
+            }
 
             if (!response.ok) {
                 throw new Error('Failed to load profile');
@@ -79,7 +93,7 @@ const DiscordSettings = {
             logger.debug('Discord settings loaded', { enabled: user.discord_enabled });
         } catch (error) {
             logger.error('Failed to load Discord settings:', error);
-            this.showToast('Failed to load Discord settings', 'error');
+            // Don't show toast on initial load failure - only log it
         }
     },
 
