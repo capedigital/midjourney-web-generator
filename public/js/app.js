@@ -8,8 +8,8 @@ class App {
         
         const token = localStorage.getItem('token');
         if (token) {
-            logger.debug('User logged in, showing main screen');
-            this.showMainScreen();
+            logger.debug('User logged in, loading user data...');
+            this.loadCurrentUser();
         } else {
             logger.debug('Showing auth screen');
             this.showAuthScreen();
@@ -22,6 +22,19 @@ class App {
         this.setupEventListeners();
         this.loadUserSettings();
         logger.debug('App initialized');
+    }
+
+    async loadCurrentUser() {
+        try {
+            const data = await window.api.getProfile();
+            this.currentUser = data.user;
+            this.showMainScreen();
+        } catch (error) {
+            logger.debug('Failed to load user data, redirecting to login');
+            // Token is invalid, clear it and show auth screen
+            window.api.clearToken();
+            this.showAuthScreen();
+        }
     }
 
     setupEventListeners() {

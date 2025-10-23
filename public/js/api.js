@@ -71,6 +71,10 @@ class API {
     async getHistory() {
         return this.request('/api/prompts/history');
     }
+
+    async getProfile() {
+        return this.request('/api/auth/profile');
+    }
 }
 
 window.api = new API();

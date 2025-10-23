@@ -455,6 +455,29 @@ body {
     color: var(--primary);
 }
 
+.back-button {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 20px;
+    cursor: pointer;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: color 0.2s ease;
+    border-radius: var(--radius-sm);
+}
+
+.back-button:hover {
+    color: var(--text-primary);
+    background: var(--bg-hover);
+}
+
+.back-button i {
+    font-size: 18px;
+}
+
 .header-actions {
     display: flex;
     gap: 12px;

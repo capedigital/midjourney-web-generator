@@ -47,7 +47,7 @@ input[type="password"],
 input[type="number"],
 select,
 textarea {
-    padding: 13px 16px;
+    /* padding: 13px 16px; */
     font-size: 14.5px;
 }
 
@@ -185,6 +185,7 @@ li {
 .tab-btn {
     padding: 12px 24px;
     font-size: 14.5px;
+    margin-top: 5px;
 }
 
 /* Modals */
