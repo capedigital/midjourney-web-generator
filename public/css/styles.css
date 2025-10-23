@@ -309,6 +309,8 @@ body {
     display: flex;
     flex-direction: column;
     height: 100vh;
+    flex-shrink: 0;
+    overflow-y: auto;
 }
 
 .sidebar-header {
@@ -1055,7 +1057,6 @@ body {
   background-color: var(--content-bg);
   color: var(--text-color);
   height: 100vh;
-  overflow: hidden;
   margin: 0;
   padding: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
@@ -1127,19 +1128,14 @@ body:after {
 /* Module panel styling */
 .module-panel {
   flex: 1;
-  min-height: 100vh;
-  height: 100%;
+  height: 100vh;
   overflow-y: auto;
   padding: 20px;
   box-sizing: border-box;
-  flex: 1;
-
 }
 
 .module-content {
   display: none !important;
-  height: 100%;
-  overflow-y: auto;
   width: 100%;
   position: relative;
 }
