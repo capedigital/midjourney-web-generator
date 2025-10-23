@@ -2307,13 +2307,17 @@ IMPORTANT: Only include the JSON prompt block when explicitly requested by the u
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize AI Chat - it will handle missing elements gracefully
-    console.log('🤖 Initializing AI Chat Assistant...');
+    if (window.logger) {
+        logger.debug('🤖 Initializing AI Chat Assistant...');
+    }
     window.aiChatAssistant = new AIChatAssistant();
     
     // Also create a shorthand reference for easier access
     window.aiChat = window.aiChatAssistant;
     
-    console.log('✅ AI Chat Assistant initialized');
+    if (window.logger) {
+        logger.debug('✅ AI Chat Assistant initialized');
+    }
 });
 
 // Export for global access

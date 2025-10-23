@@ -675,7 +675,10 @@ Example ChatGPT output:
         </div>
     </div>
 
-    <!-- Load IPC Adapter first (converts Electron IPC to browser APIs) -->
+    <!-- Load Logger first (secure environment-aware logging) -->
+    <script src="/js/logger.js"></script>
+    
+    <!-- Load IPC Adapter (converts Electron IPC to browser APIs) -->
     <script src="/js/ipc-adapter.js"></script>
     
     <!-- Load core dependencies -->

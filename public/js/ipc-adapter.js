@@ -5,14 +5,22 @@
 
 // Create a mock ipcRenderer object if it doesn't exist (web environment)
 if (typeof window !== 'undefined' && !window.ipcRenderer) {
-    console.log('[IPC Adapter] Initializing web environment shim');
+    // Wait for logger to be available
+    const waitForLogger = setInterval(() => {
+        if (window.logger) {
+            clearInterval(waitForLogger);
+            logger.debug('[IPC Adapter] Initializing web environment shim');
+        }
+    }, 10);
     
     window.ipcRenderer = {
         /**
          * Send a message and wait for a response (invoke pattern)
          */
         invoke: async (channel, ...args) => {
-            console.log(`[IPC Adapter] invoke: ${channel}`, args);
+            if (window.logger) {
+                logger.debug(`[IPC Adapter] invoke: ${channel}`, args);
+            }
             
             // Handle different IPC channels
             switch (channel) {
@@ -72,7 +80,9 @@ if (typeof window !== 'undefined' && !window.ipcRenderer) {
          * Send a one-way message
          */
         send: (channel, ...args) => {
-            console.log(`[IPC Adapter] send: ${channel}`, args);
+            if (window.logger) {
+                logger.debug(`[IPC Adapter] send: ${channel}`, args);
+            }
             
             switch (channel) {
                 case 'save-recent-prompts':
@@ -81,11 +91,15 @@ if (typeof window !== 'undefined' && !window.ipcRenderer) {
                     break;
                     
                 case 'log':
-                    console.log('[IPC Adapter]', ...args);
+                    if (window.logger) {
+                        logger.debug('[IPC Adapter]', ...args);
+                    }
                     break;
                     
                 default:
-                    console.warn(`[IPC Adapter] Unhandled send channel: ${channel}`);
+                    if (window.logger) {
+                        logger.warn(`[IPC Adapter] Unhandled send channel: ${channel}`);
+                    }
             }
         },
         
@@ -93,7 +107,9 @@ if (typeof window !== 'undefined' && !window.ipcRenderer) {
          * Listen for messages from main process (not applicable in web)
          */
         on: (channel, callback) => {
-            console.log(`[IPC Adapter] Registered listener for: ${channel}`);
+            if (window.logger) {
+                logger.debug(`[IPC Adapter] Registered listener for: ${channel}`);
+            }
             // Store listeners if needed for web-specific events
         },
         
@@ -101,11 +117,18 @@ if (typeof window !== 'undefined' && !window.ipcRenderer) {
          * Remove listener
          */
         removeListener: (channel, callback) => {
-            console.log(`[IPC Adapter] Removed listener for: ${channel}`);
+            if (window.logger) {
+                logger.debug(`[IPC Adapter] Removed listener for: ${channel}`);
+            }
         }
     };
     
-    console.log('[IPC Adapter] Mock ipcRenderer created for web environment');
+    // Log completion after a short delay to ensure logger is ready
+    setTimeout(() => {
+        if (window.logger) {
+            logger.debug('[IPC Adapter] Mock ipcRenderer created for web environment');
+        }
+    }, 50);
 }
 
 // Export for module systems

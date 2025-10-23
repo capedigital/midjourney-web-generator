@@ -1,27 +1,27 @@
 // Main application logic
 class App {
     constructor() {
+        logger.debug('App initializing...');
+        
         this.currentUser = null;
         this.currentSession = null;
+        
+        const token = localStorage.getItem('token');
+        if (token) {
+            logger.debug('User logged in, showing main screen');
+            this.showMainScreen();
+        } else {
+            logger.debug('Showing auth screen');
+            this.showAuthScreen();
+        }
+        
         this.init();
     }
 
     init() {
-        console.log('App initializing...');
-        console.log('API token:', window.api?.token);
-        
-        // Check if user is already logged in
-        if (window.api && window.api.token) {
-            console.log('User logged in, showing main screen');
-            this.showMainScreen();
-            this.loadHistory();
-        } else {
-            console.log('No user logged in, showing auth screen');
-            this.showAuthScreen();
-        }
-
-        this.setupEventListeners();
-        console.log('App initialized');
+        this.initializeEventListeners();
+        this.loadUserSettings();
+        logger.debug('App initialized');
     }
 
     setupEventListeners() {
