@@ -1401,9 +1401,6 @@ IMPORTANT: Only include the JSON prompt block when explicitly requested by the u
     }
 
     async callAI(messages) {
-        // Get API key (you'll need to implement this based on your existing system)
-        const apiKey = await this.getAPIKey();
-        
         console.log('Making API call with model:', this.currentModel);
         
         // Check if this is a vision request
@@ -1433,13 +1430,11 @@ IMPORTANT: Only include the JSON prompt block when explicitly requested by the u
         
         console.log('🖼️ Request body:', JSON.stringify(requestBody, null, 2));
         
-        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        // Use backend proxy API instead of calling OpenRouter directly
+        const response = await fetch('/api/ai/generate', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${apiKey}`,
-                'Content-Type': 'application/json',
-                'HTTP-Referer': window.location.origin,
-                'X-Title': 'PromptLab AI Chat'
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify(requestBody)
         });
@@ -1448,51 +1443,32 @@ IMPORTANT: Only include the JSON prompt block when explicitly requested by the u
             throw new Error(`API request failed: ${response.status} ${response.statusText}`);
         }
 
-        // Handle streaming response
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
+        // Parse response from backend proxy
+        const result = await response.json();
+        
+        if (!result.success) {
+            throw new Error(result.error || 'API call failed');
+        }
+        
+        const data = result.data;
         let fullContent = '';
         let reasoning = '';
         let finalContent = '';
 
-        try {
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-
-                const chunk = decoder.decode(value, { stream: true });
-                const lines = chunk.split('\n');
-
-                for (const line of lines) {
-                    if (line.startsWith('data: ')) {
-                        const jsonStr = line.slice(6);
-                        if (jsonStr === '[DONE]') continue;
-
-                        try {
-                            const data = JSON.parse(jsonStr);
-                            if (data.choices && data.choices[0] && data.choices[0].delta) {
-                                const delta = data.choices[0].delta;
-                                
-                                // Handle reasoning (thinking process)
-                                if (delta.reasoning) {
-                                    reasoning += delta.reasoning;
-                                    this.showThinkingProcess(reasoning);
-                                }
-                                
-                                // Handle final content
-                                if (delta.content) {
-                                    finalContent += delta.content;
-                                }
-                            }
-                        } catch (e) {
-                            // Skip invalid JSON lines
-                            continue;
-                        }
-                    }
-                }
+        // Handle non-streaming response (backend proxy returns complete response)
+        if (data.choices && data.choices[0]) {
+            const choice = data.choices[0];
+            
+            // Handle reasoning if present
+            if (choice.message && choice.message.reasoning) {
+                reasoning = choice.message.reasoning;
+                this.showThinkingProcess(reasoning);
             }
-        } finally {
-            reader.releaseLock();
+            
+            // Handle content
+            if (choice.message && choice.message.content) {
+                finalContent = choice.message.content;
+            }
         }
 
         // Extract JSON from reasoning or return final content

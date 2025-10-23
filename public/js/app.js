@@ -347,12 +347,17 @@ class App {
                 }
             });
 
-            // Update stats
-            document.getElementById('stat-sessions').textContent = sessions.length;
-            document.getElementById('stat-prompts').textContent = totalPrompts;
+            // Update stats if elements exist
+            const statSessions = document.getElementById('stat-sessions');
+            const statPrompts = document.getElementById('stat-prompts');
+            if (statSessions) statSessions.textContent = sessions.length;
+            if (statPrompts) statPrompts.textContent = totalPrompts;
 
-            // Display recent sessions on dashboard
-            this.displayRecentSessions(sessions.slice(0, 5));
+            // Display recent sessions on dashboard if element exists
+            const recentSessions = document.getElementById('recent-sessions');
+            if (recentSessions) {
+                this.displayRecentSessions(sessions.slice(0, 5));
+            }
         } catch (error) {
             console.error('Error loading dashboard stats:', error);
         }
