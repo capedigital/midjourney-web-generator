@@ -14,6 +14,7 @@ const { requestLogger, performanceMonitor, rateLimit } = require('./middleware/l
 const authRoutes = require('./routes/auth');
 const promptsRoutes = require('./routes/prompts');
 const templatesRoutes = require('./routes/templates');
+const discordRoutes = require('./routes/discord');
 
 // Validate environment variables
 validateEnv();
@@ -104,6 +105,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/prompts', promptsRoutes);
 app.use('/api/templates', templatesRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/discord', discordRoutes);
 
 // Serve frontend for all other routes (SPA support)
 app.get('*', (req, res) => {

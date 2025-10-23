@@ -1,0 +1,70 @@
+/**
+ * Discord Settings Styles
+ */
+
+.setting-description {
+    font-size: 13px;
+    color: #888;
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
+
+.setting-description a {
+    color: #4a90e2;
+    text-decoration: none;
+}
+
+.setting-description a:hover {
+    text-decoration: underline;
+}
+
+.setting-input {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 14px;
+    font-family: 'code-saver', 'Courier New', monospace;
+    border: 1px solid #444;
+    border-radius: 4px;
+    background-color: #1a1a1a;
+    color: #d4d4c8;
+    transition: border-color 0.2s ease;
+}
+
+.setting-input:focus {
+    outline: none;
+    border-color: #4a90e2;
+}
+
+.setting-input::placeholder {
+    color: #666;
+}
+
+.setting-label input[type="checkbox"] {
+    cursor: pointer;
+    width: 16px;
+    height: 16px;
+    vertical-align: middle;
+}
+
+#discord-settings-form {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #333;
+}
+
+.action-button.primary {
+    background-color: #4a90e2;
+}
+
+.action-button.primary:hover {
+    background-color: #357abd;
+}
+
+.action-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.action-button:disabled:hover {
+    background-color: inherit;
+}

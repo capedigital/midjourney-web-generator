@@ -137,6 +137,14 @@ class App {
                 this.copySessionLink();
             });
         }
+
+        // Batch send to Discord
+        const sendAllDiscordBtn = document.getElementById('send-all-discord-btn');
+        if (sendAllDiscordBtn) {
+            sendAllDiscordBtn.addEventListener('click', () => {
+                this.sendAllToDiscord();
+            });
+        }
     }
 
     loadUserSettings() {
@@ -473,6 +481,73 @@ class App {
     async loadSessionAndSwitch(sessionId) {
         await this.loadSession(sessionId);
         this.switchModule('generator');
+    }
+
+    async sendAllToDiscord() {
+        // Get all selected prompts
+        const selectedPrompts = [];
+        document.querySelectorAll('.prompt-selector:checked').forEach(checkbox => {
+            const promptItem = checkbox.closest('.prompt-item');
+            const textarea = promptItem?.querySelector('.prompt-text');
+            if (textarea) {
+                selectedPrompts.push(textarea.value);
+            }
+        });
+
+        if (selectedPrompts.length === 0) {
+            window.Utils.showToast('No prompts selected', 'error');
+            return;
+        }
+
+        if (selectedPrompts.length > 20) {
+            window.Utils.showToast('Maximum 20 prompts per batch. Please deselect some prompts.', 'error');
+            return;
+        }
+
+        const btn = document.getElementById('send-all-discord-btn');
+        if (!btn) return;
+
+        btn.disabled = true;
+        btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Sending ${selectedPrompts.length} prompts...`;
+
+        try {
+            const response = await fetch('/api/discord/send-batch', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({ 
+                    prompts: selectedPrompts,
+                    delayMs: 1500 // 1.5 seconds between messages
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                const { successful, failed, total } = data;
+                if (failed === 0) {
+                    window.Utils.showToast(`✅ All ${successful} prompts sent to Discord!`, 'success');
+                } else {
+                    window.Utils.showToast(`⚠️ Sent ${successful}/${total} prompts. ${failed} failed.`, 'warning');
+                }
+                btn.innerHTML = '<i class="fas fa-check"></i> Sent!';
+                setTimeout(() => {
+                    btn.innerHTML = '<i class="fab fa-discord"></i> Send All to Discord';
+                    btn.disabled = false;
+                }, 3000);
+            } else {
+                window.Utils.showToast(`❌ ${data.error || 'Failed to send batch'}`, 'error');
+                btn.innerHTML = '<i class="fab fa-discord"></i> Send All to Discord';
+                btn.disabled = false;
+            }
+        } catch (error) {
+            logger.error('Batch Discord send failed:', error);
+            window.Utils.showToast('❌ Network error: ' + error.message, 'error');
+            btn.innerHTML = '<i class="fab fa-discord"></i> Send All to Discord';
+            btn.disabled = false;
+        }
     }
 
     showToast(message, type = 'info') {

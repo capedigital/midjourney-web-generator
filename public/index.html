@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/ai-chat.css">
     <link rel="stylesheet" href="/css/enhanced-spacing.css">
+    <link rel="stylesheet" href="/css/discord-settings.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
@@ -507,7 +508,11 @@ Example ChatGPT output:
                             <div id="generatedPrompts" class="prompt-list"></div>
                         </div>
                         <div class="batch-actions" style="margin-top: 20px;">
-                            <div class="batch-send-label">Batch Send Selected to External <i class="fas fa-external-link-alt"></i>:</div>
+                            <div class="batch-send-label">Batch Send Selected:</div>
+                            <button id="send-all-discord-btn" class="action-button" style="background-color: #5865F2;">
+                                <i class="fab fa-discord"></i> Send All to Discord
+                            </button>
+                            <div class="batch-send-label" style="margin-top: 12px;">External Browser <i class="fas fa-external-link-alt"></i>:</div>
                             <button id="send-ideogram-btn" class="action-button ideogram-btn">
                                 <i class="fas fa-external-link-alt"></i> Ideogram
                             </button>
@@ -571,8 +576,40 @@ Example ChatGPT output:
                         </div>
                     </div>
                     <div class="content-card">
-                        <h3>API Configuration</h3>
-                        <div class="placeholder">Configure API keys and endpoints (Coming Soon)</div>
+                        <h3>Discord Integration</h3>
+                        <div class="setting-description" style="margin-bottom: 16px; color: #aaa; font-size: 14px;">
+                            Configure Discord to send prompts directly to Midjourney bot. <a href="https://discord.com/developers/applications" target="_blank" style="color: #4a90e2;">Get your bot token here</a>
+                        </div>
+                        
+                        <div class="setting-group">
+                            <label class="setting-label">
+                                <input type="checkbox" id="discord-enabled-checkbox" style="margin-right: 8px;">
+                                Enable Discord Integration
+                            </label>
+                        </div>
+
+                        <div id="discord-settings-form" style="display: none;">
+                            <div class="setting-group">
+                                <label class="setting-label">Discord Bot Token</label>
+                                <div class="setting-description">Your Discord bot token (keep this secure!)</div>
+                                <input type="password" id="discord-bot-token" class="setting-input" placeholder="Your Discord bot token">
+                            </div>
+
+                            <div class="setting-group">
+                                <label class="setting-label">Discord Channel ID</label>
+                                <div class="setting-description">The channel where Midjourney bot listens</div>
+                                <input type="text" id="discord-channel-id" class="setting-input" placeholder="Channel ID (e.g., 1234567890)">
+                            </div>
+
+                            <div style="display: flex; gap: 12px; margin-top: 16px;">
+                                <button type="button" id="test-discord-btn" class="action-button">
+                                    <i class="fas fa-plug"></i> Test Connection
+                                </button>
+                                <button type="button" id="save-discord-btn" class="action-button primary">
+                                    <i class="fas fa-save"></i> Save Discord Settings
+                                </button>
+                            </div>
+                        </div>
                     </div>
                     <div class="content-card">
                         <h3>Preferences</h3>
@@ -707,5 +744,6 @@ Example ChatGPT output:
     <script src="/js/ai-chat.js"></script>
     <script src="/js/auth-manager.js"></script>
     <script src="/js/diagnostic.js"></script>
+    <script src="/js/discord-settings.js"></script>
 </body>
 </html>

@@ -60,6 +60,9 @@ window.Generator = {
                     <button class="delete-prompt">
                         <i class="fas fa-trash"></i> Delete
                     </button>
+                    <button class="send-discord-btn" title="Send to Discord/Midjourney">
+                        <i class="fab fa-discord"></i> Send to Discord
+                    </button>
                     <button class="ideogram-btn ${isInternal ? 'send-btn-internal' : 'send-btn-external'}" title="${modeTooltip}">
                         ${isInternal ? '<i class="fas fa-desktop"></i>' : '<i class="fas fa-external-link-alt"></i>'} Ideogram ${isInternal ? '(Internal)' : '(External)'}
                     </button>
@@ -124,6 +127,52 @@ window.Generator = {
                 const promptDiv = e.target.closest('.prompt-item');
                 if (promptDiv && confirm('Delete this prompt?')) {
                     promptDiv.remove();
+                }
+            });
+        });
+
+        // Discord send button handlers
+        document.querySelectorAll('.send-discord-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const promptDiv = e.target.closest('.prompt-item');
+                if (!promptDiv) return;
+                const textarea = promptDiv.querySelector('.prompt-text');
+                if (!textarea) return;
+
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+
+                try {
+                    const response = await fetch('/api/discord/send', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${localStorage.getItem('token')}`
+                        },
+                        body: JSON.stringify({ 
+                            prompt: textarea.value 
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        window.Utils.showToast('✅ Sent to Discord successfully!', 'success');
+                        btn.innerHTML = '<i class="fas fa-check"></i> Sent!';
+                        setTimeout(() => {
+                            btn.innerHTML = '<i class="fab fa-discord"></i> Send to Discord';
+                            btn.disabled = false;
+                        }, 3000);
+                    } else {
+                        window.Utils.showToast(`❌ ${data.error || 'Failed to send to Discord'}`, 'error');
+                        btn.innerHTML = '<i class="fab fa-discord"></i> Send to Discord';
+                        btn.disabled = false;
+                    }
+                } catch (error) {
+                    logger.error('Discord send failed:', error);
+                    window.Utils.showToast('❌ Network error: ' + error.message, 'error');
+                    btn.innerHTML = '<i class="fab fa-discord"></i> Send to Discord';
+                    btn.disabled = false;
                 }
             });
         });

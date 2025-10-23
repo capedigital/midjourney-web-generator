@@ -80,7 +80,9 @@ class AuthController {
                 username: user.username,
                 is_admin: user.is_admin,
                 created_at: user.created_at,
-                last_login: user.last_login
+                last_login: user.last_login,
+                discord_enabled: user.discord_enabled,
+                discord_channel_id: user.discord_channel_id
             },
             stats
         });
@@ -90,11 +92,14 @@ class AuthController {
      * Update user profile
      */
     updateProfile = asyncHandler(async (req, res) => {
-        const { username, email } = req.body;
+        const { username, email, discord_bot_token, discord_channel_id, discord_enabled } = req.body;
 
         const updatedUser = await userService.updateProfile(req.user.id, {
             username,
-            email
+            email,
+            discord_bot_token,
+            discord_channel_id,
+            discord_enabled
         });
 
         res.json({
@@ -103,7 +108,9 @@ class AuthController {
                 id: updatedUser.id,
                 email: updatedUser.email,
                 username: updatedUser.username,
-                is_admin: updatedUser.is_admin
+                is_admin: updatedUser.is_admin,
+                discord_enabled: updatedUser.discord_enabled,
+                discord_channel_id: updatedUser.discord_channel_id
             }
         });
     });

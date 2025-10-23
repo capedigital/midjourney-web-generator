@@ -47,7 +47,7 @@ class UserService {
      */
     async findById(id) {
         const result = await pool.query(
-            'SELECT id, email, username, is_admin, is_active, created_at, last_login FROM users WHERE id = $1',
+            'SELECT id, email, username, is_admin, is_active, created_at, last_login, discord_enabled, discord_channel_id FROM users WHERE id = $1',
             [id]
         );
 
@@ -93,7 +93,7 @@ class UserService {
     /**
      * Update user profile
      */
-    async updateProfile(userId, { username, email }) {
+    async updateProfile(userId, { username, email, discord_bot_token, discord_channel_id, discord_enabled }) {
         const updates = [];
         const values = [];
         let paramIndex = 1;
@@ -113,6 +113,22 @@ class UserService {
             values.push(email);
         }
 
+        // Handle Discord settings
+        if (discord_bot_token !== undefined) {
+            updates.push(`discord_bot_token = $${paramIndex++}`);
+            values.push(discord_bot_token);
+        }
+
+        if (discord_channel_id !== undefined) {
+            updates.push(`discord_channel_id = $${paramIndex++}`);
+            values.push(discord_channel_id);
+        }
+
+        if (discord_enabled !== undefined) {
+            updates.push(`discord_enabled = $${paramIndex++}`);
+            values.push(discord_enabled);
+        }
+
         if (updates.length === 0) {
             return await this.findById(userId);
         }
@@ -120,7 +136,7 @@ class UserService {
         values.push(userId);
         const result = await pool.query(
             `UPDATE users SET ${updates.join(', ')} WHERE id = $${paramIndex} 
-             RETURNING id, email, username, is_admin, is_active`,
+             RETURNING id, email, username, is_admin, is_active, discord_enabled, discord_channel_id`,
             values
         );
 
