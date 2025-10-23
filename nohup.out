@@ -1,0 +1,84 @@
+✅ Environment variables validated
+
+🚀 Starting Midjourney Generator Web App...
+
+(node:75826) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✅ New database client connected
+✅ Database connection verified at 2025-10-23T13:27:33.691Z
+🔄 Running database migrations...
+✅ Database migrations completed successfully!
+
+✅ Server started successfully!
+📡 Server running on port 3000
+📊 Environment: development
+🌐 API: http://localhost:3000/api
+💚 Health: http://localhost:3000/health
+
+🔌 Database client removed from pool
+➡️  GET / { ip: '::1', user: undefined, query: undefined }
+✅ GET / - 200 (4ms)
+➡️  GET /css/styles.css { ip: '::1', user: undefined, query: undefined }
+➡️  GET /css/ai-chat.css { ip: '::1', user: undefined, query: undefined }
+➡️  GET /css/enhanced-spacing.css { ip: '::1', user: undefined, query: undefined }
+➡️  GET /css/discord-settings.css { ip: '::1', user: undefined, query: undefined }
+✅ GET /css/styles.css - 200 (6ms)
+✅ GET /css/ai-chat.css - 200 (3ms)
+➡️  GET /css/split-pane.css { ip: '::1', user: undefined, query: undefined }
+✅ GET /css/enhanced-spacing.css - 200 (3ms)
+➡️  GET /js/logger.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /css/discord-settings.css - 200 (2ms)
+✅ GET /css/split-pane.css - 200 (2ms)
+✅ GET /js/logger.js - 200 (1ms)
+➡️  GET /js/ipc-adapter.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/ipc-adapter.js - 200 (1ms)
+➡️  GET /js/config.js { ip: '::1', user: undefined, query: undefined }
+➡️  GET /js/hal-messages.js { ip: '::1', user: undefined, query: undefined }
+➡️  GET /js/utils.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/config.js - 200 (3ms)
+➡️  GET /js/api.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/hal-messages.js - 200 (3ms)
+✅ GET /js/utils.js - 200 (2ms)
+➡️  GET /js/global-model-sync.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/api.js - 200 (1ms)
+✅ GET /js/global-model-sync.js - 200 (1ms)
+➡️  GET /js/hooks.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/hooks.js - 200 (1ms)
+➡️  GET /js/midjourney-handler.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/midjourney-handler.js - 200 (1ms)
+➡️  GET /js/generator.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/generator.js - 200 (0ms)
+➡️  GET /js/app.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/app.js - 200 (1ms)
+➡️  GET /js/style-library.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/style-library.js - 200 (1ms)
+➡️  GET /js/template-suggestions.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/template-suggestions.js - 200 (1ms)
+➡️  GET /js/prompt-importer.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/prompt-importer.js - 200 (1ms)
+➡️  GET /js/ai-chat.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/ai-chat.js - 200 (0ms)
+➡️  GET /js/auth-manager.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/auth-manager.js - 200 (1ms)
+➡️  GET /js/diagnostic.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/diagnostic.js - 200 (1ms)
+➡️  GET /js/discord-settings.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/discord-settings.js - 200 (0ms)
+➡️  GET /js/split-pane.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/split-pane.js - 200 (0ms)
+➡️  GET /api/auth/profile { ip: '::1', user: undefined, query: undefined }
+➡️  GET /api/auth/profile { ip: '::1', user: undefined, query: undefined }
+✅ New database client connected
+✅ New database client connected
+✅ GET /profile - 200 (20ms)
+✅ GET /profile - 200 (28ms)
+➡️  GET /api/prompts/history { ip: '::1', user: undefined, query: undefined }
+✅ GET /history - 200 (15ms)
+🔌 Database client removed from pool
+🔌 Database client removed from pool
+➡️  GET /api/prompts/history { ip: '::1', user: undefined, query: undefined }
+✅ New database client connected
+✅ GET /history - 304 (12ms)
+➡️  GET /api/prompts/history { ip: '::1', user: undefined, query: undefined }
+✅ GET /history - 304 (6ms)
+🔌 Database client removed from pool

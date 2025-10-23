@@ -94,7 +94,7 @@ const SplitPaneView = {
                 <div class="iframe-header">
                     <div class="iframe-header-title">
                         <i class="fas fa-globe"></i>
-                        <span>Midjourney Create</span>
+                        <span>Midjourney Imagine</span>
                     </div>
                     <div class="iframe-controls">
                         <button class="iframe-control-btn" id="iframe-refresh-btn" title="Refresh">
@@ -112,9 +112,9 @@ const SplitPaneView = {
                     </div>
                     <iframe 
                         id="midjourney-iframe" 
-                        src="https://www.midjourney.com/create"
+                        src="https://www.midjourney.com/imagine"
                         style="display: none;"
-                        sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+                        sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-top-navigation"
                         allow="clipboard-write">
                     </iframe>
                 </div>
@@ -127,9 +127,19 @@ const SplitPaneView = {
         // Setup iframe load event
         const iframe = document.getElementById('midjourney-iframe');
         iframe.addEventListener('load', () => {
-            document.getElementById('iframe-loading').style.display = 'none';
-            iframe.style.display = 'block';
+            // Try to check if iframe loaded successfully
+            try {
+                // If we can access the iframe, it loaded
+                if (iframe.contentWindow) {
+                    document.getElementById('iframe-loading').style.display = 'none';
+                    iframe.style.display = 'block';
+                }
+            } catch (e) {
+                // X-Frame-Options blocked it, show message
+                logger.debug('Midjourney iframe blocked (expected)');
+            }
         });
+
     },
 
     /**
@@ -277,7 +287,8 @@ const SplitPaneView = {
         iframe.style.display = 'none';
         loading.style.display = 'flex';
         
-        iframe.src = iframe.src;
+        // Force reload
+        iframe.src = 'https://www.midjourney.com/imagine';
         
         logger.debug('Refreshing Midjourney iframe');
     },

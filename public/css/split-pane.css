@@ -301,6 +301,72 @@ body.split-view-active .module-panel {
     overflow-y: auto;
 }
 
+/* Compact form styling for split view */
+.split-pane-left .module-content {
+    padding: 16px;
+}
+
+.split-pane-left .content-card {
+    margin-bottom: 16px;
+    padding: 16px;
+}
+
+.split-pane-left .content-card h3 {
+    font-size: 16px;
+    margin-bottom: 12px;
+}
+
+.split-pane-left input[type="text"],
+.split-pane-left textarea,
+.split-pane-left select {
+    font-size: 13px;
+    padding: 8px 10px;
+}
+
+.split-pane-left .form-group {
+    margin-bottom: 12px;
+}
+
+.split-pane-left label {
+    font-size: 13px;
+    margin-bottom: 4px;
+}
+
+.split-pane-left .action-button {
+    padding: 8px 14px;
+    font-size: 13px;
+}
+
+/* Hide or minimize clear buttons in split view */
+.split-pane-left input[type="text"]::-webkit-search-cancel-button,
+.split-pane-left input[type="text"]::-webkit-clear-button {
+    display: none;
+}
+
+/* Make template builder more compact in split view */
+.split-pane-left #template-builder-module .template-fields {
+    gap: 12px;
+}
+
+.split-pane-left #template-builder-module .template-field {
+    padding: 12px;
+}
+
+.split-pane-left #template-builder-module .field-label {
+    font-size: 12px;
+}
+
+.split-pane-left #template-builder-module .field-input {
+    font-size: 13px;
+    padding: 6px 8px;
+}
+
+.split-pane-left #template-builder-module .remove-field {
+    width: 24px;
+    height: 24px;
+    font-size: 12px;
+}
+
 /* Toggle split view button */
 .toggle-split-view {
     background: rgba(74, 144, 226, 0.2);
