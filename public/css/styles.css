@@ -236,6 +236,7 @@ body {
     font-style: italic;
     font-size: 14px !important;
     min-height: 40px;
+    max-height: 40px;
     display: flex !important;
     align-items: center;
     animation: halPulse 2s ease-in-out infinite;
@@ -246,6 +247,10 @@ body {
     border-radius: 0 !important;
     opacity: 1 !important;
     visibility: visible !important;
+    /* Prevent wrapping - scroll horizontally */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: clip;
 }
 
 /* When HAL shows an error, restore red container */
