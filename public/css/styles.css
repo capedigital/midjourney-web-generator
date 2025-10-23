@@ -14,7 +14,7 @@
     --bg-input: #0f172a;
     --bg-hover: #334155;
     
-    --text-primary: #f1f5f9;
+    --text-primary: #d4d4c8;
     --text-secondary: #94a3b8;
     --text-muted: #64748b;
     
@@ -177,12 +177,13 @@ body {
 
 .auth-form input {
     width: 100%;
-    padding: 14px 16px 14px 48px;
+    padding: 10px 12px 10px 44px;
     background: var(--bg-input);
     border: 1px solid var(--border);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-sm);
     color: var(--text-primary);
-    font-size: 14px;
+    font-family: code-saver, 'Courier New', monospace;
+    font-size: 1rem;
     transition: var(--transition);
 }
 
@@ -193,13 +194,14 @@ body {
 }
 
 .btn-primary {
-    padding: 14px 24px;
+    padding: 10px 20px;
     background: linear-gradient(135deg, var(--primary), var(--primary-hover));
     color: white;
     border: none;
-    border-radius: var(--radius-md);
-    font-size: 15px;
-    font-weight: 600;
+    border-radius: var(--radius-sm);
+    font-family: code-saver, 'Courier New', monospace;
+    font-size: 1rem;
+    font-weight: 400;
     cursor: pointer;
     transition: var(--transition);
     box-shadow: var(--shadow-md);
@@ -222,6 +224,33 @@ body {
     background: rgba(239, 68, 68, 0.1);
     border-radius: var(--radius-sm);
     border-left: 3px solid var(--danger);
+}
+
+/* HAL 9000 Streaming Messages */
+.hal-message {
+    color: var(--danger) !important;
+    font-family: code-saver, 'Courier New', monospace;
+    font-style: italic;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    animation: halPulse 2s ease-in-out infinite;
+}
+
+.hal-message::after {
+    content: '▊';
+    animation: halBlink 1s step-end infinite;
+    margin-left: 2px;
+}
+
+@keyframes halBlink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+}
+
+@keyframes halPulse {
+    0%, 100% { opacity: 0.8; }
+    50% { opacity: 1; }
 }
 
 /* Main App */

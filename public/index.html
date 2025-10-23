@@ -33,7 +33,7 @@
                     <i class="fas fa-lock form-icon"></i>
                     <input type="password" id="login-password" placeholder="Password" required>
                 </div>
-                <div id="login-error" class="error-message"></div>
+                <div id="login-error" class="error-message hal-message"></div>
                 <button type="submit" class="btn-primary">Login</button>
             </form>
 
@@ -50,8 +50,8 @@
                     <i class="fas fa-lock form-icon"></i>
                     <input type="password" id="register-password" placeholder="Password" required>
                 </div>
-                <div id="register-error" class="error-message"></div>
-                <button type="submit" class="btn-primary">Create Account</button>
+                                <div id="register-error" class="error-message hal-message"></div>
+                <button type="submit" class="btn-primary">Register</button>
             </form>
         </div>
     </div>
@@ -679,6 +679,9 @@ Example ChatGPT output:
 
     <!-- Load Logger first (secure environment-aware logging) -->
     <script src="/js/logger.js"></script>
+    
+    <!-- Load HAL 9000 Messages for auth screen -->
+    <script src="/js/hal-messages.js"></script>
     
     <!-- Load IPC Adapter (converts Electron IPC to browser APIs) -->
     <script src="/js/ipc-adapter.js"></script>

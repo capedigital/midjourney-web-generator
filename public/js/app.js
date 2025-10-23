@@ -154,7 +154,12 @@ class App {
             this.showMainScreen();
             this.showToast('Welcome back!', 'success');
         } catch (error) {
-            errorEl.textContent = error.message;
+            // Stop HAL messages and show error
+            if (window.loginHAL) {
+                window.loginHAL.showError(error.message);
+            } else {
+                errorEl.textContent = error.message;
+            }
         }
     }
 
@@ -170,7 +175,12 @@ class App {
             this.showMainScreen();
             this.showToast('Account created successfully!', 'success');
         } catch (error) {
-            errorEl.textContent = error.message;
+            // Stop HAL messages and show error
+            if (window.registerHAL) {
+                window.registerHAL.showError(error.message);
+            } else {
+                errorEl.textContent = error.message;
+            }
         }
     }
 
