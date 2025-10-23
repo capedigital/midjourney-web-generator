@@ -25,7 +25,17 @@ class HALMessenger {
     }
     
     start() {
-        if (!this.element || this.messages.length === 0) return;
+        if (!this.element) {
+            console.error('HAL: Element not found');
+            return;
+        }
+        if (this.messages.length === 0) {
+            console.error('HAL: No messages');
+            return;
+        }
+        
+        console.log('HAL: Starting with element:', this.element);
+        console.log('HAL: Messages:', this.messages);
         
         // Ensure element is visible and has proper styling
         this.element.style.opacity = '1';
@@ -49,11 +59,14 @@ class HALMessenger {
         const currentMessage = this.messages[this.currentMessageIndex];
         
         if (this.currentCharIndex < currentMessage.length) {
-            this.element.textContent = currentMessage.substring(0, this.currentCharIndex + 1);
+            const text = currentMessage.substring(0, this.currentCharIndex + 1);
+            this.element.textContent = text;
+            console.log('HAL typing:', text);
             this.currentCharIndex++;
             setTimeout(this.type, this.typingSpeed);
         } else {
             // Message fully typed, wait then fade out
+            console.log('HAL: Message complete, fading out');
             setTimeout(() => this.fadeOut(), this.pauseBeforeDelete);
         }
     }

@@ -232,8 +232,9 @@ body {
     color: var(--success) !important;
     font-family: code-saver, 'Courier New', monospace;
     font-style: italic;
+    font-size: 14px !important;
     min-height: 40px;
-    display: flex;
+    display: flex !important;
     align-items: center;
     animation: halPulse 2s ease-in-out infinite;
     /* Remove container styling - blend into background */
@@ -241,6 +242,8 @@ body {
     background: transparent !important;
     border: none !important;
     border-radius: 0 !important;
+    opacity: 1 !important;
+    visibility: visible !important;
 }
 
 /* When HAL shows an error, restore red container */
@@ -279,8 +282,8 @@ body {
 }
 
 @keyframes halPulse {
-    0%, 100% { opacity: 0.7; }
-    50% { opacity: 0.9; }
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.85; }
 }
 
 /* Main App */
