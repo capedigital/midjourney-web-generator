@@ -170,16 +170,17 @@ async function sendBatch(authToken, channelId, prompts, delayMs = 1000) {
 
 /**
  * Test Discord connection
- * Supports both webhook and bot token
- * @param {string} authToken - Discord bot token OR webhook URL
+ * Supports webhook, bot token, and user token
+ * @param {string} authToken - Discord bot token, user token, OR webhook URL
  * @param {string} channelId - Discord channel ID (ignored if using webhook)
  * @returns {Promise<boolean>} True if connection successful
  */
 async function testConnection(authToken, channelId) {
   try {
-    // Detect if authToken is a webhook URL
+    // Detect auth type
     const isWebhook = authToken.startsWith('https://discord.com/api/webhooks/') || 
                       authToken.startsWith('https://discordapp.com/api/webhooks/');
+    const isUserToken = !isWebhook && !authToken.startsWith('Bot ') && authToken.length > 50;
 
     if (isWebhook) {
       // Test webhook by fetching webhook info
@@ -195,8 +196,25 @@ async function testConnection(authToken, channelId) {
       const webhook = await response.json();
       console.log('Discord webhook test successful', { webhookName: webhook.name, channelId: webhook.channel_id });
       return true;
+    } else if (isUserToken) {
+      // Test user token by fetching channel info (without Bot prefix)
+      const response = await fetch(`${DISCORD_API_BASE}/channels/${channelId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': authToken // User token doesn't use "Bot" prefix
+        }
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(`Discord API error (${response.status}): ${error.message || response.statusText}`);
+      }
+
+      const channel = await response.json();
+      console.log('Discord user token test successful', { channelName: channel.name });
+      return true;
     } else {
-      // Test bot token by fetching channel info
+      // Test bot token by fetching channel info (with Bot prefix)
       const response = await fetch(`${DISCORD_API_BASE}/channels/${channelId}`, {
         method: 'GET',
         headers: {
@@ -210,7 +228,7 @@ async function testConnection(authToken, channelId) {
       }
 
       const channel = await response.json();
-      console.log('Discord connection test successful', { channelName: channel.name });
+      console.log('Discord bot token test successful', { channelName: channel.name });
       return true;
     }
   } catch (error) {
