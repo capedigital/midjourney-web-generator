@@ -1,6 +1,6 @@
 const discordService = require('../services/discordService');
 const db = require('../config/database');
-const logger = require('../utils/logger');
+const logger = require('../middleware/logger');
 
 /**
  * Send a single prompt to Discord/Midjourney
