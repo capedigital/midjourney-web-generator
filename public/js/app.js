@@ -21,7 +21,24 @@ class App {
     init() {
         this.setupEventListeners();
         this.loadUserSettings();
+        this.setupRouting();
         logger.debug('App initialized');
+    }
+
+    setupRouting() {
+        // Handle browser back/forward buttons
+        window.addEventListener('popstate', (event) => {
+            if (event.state && event.state.module) {
+                this.switchModule(event.state.module, false); // false = don't push to history
+            }
+        });
+
+        // Set initial route
+        const urlParams = new URLSearchParams(window.location.search);
+        const module = urlParams.get('module');
+        if (module) {
+            this.switchModule(module, false);
+        }
     }
 
     async loadCurrentUser() {
@@ -131,7 +148,7 @@ class App {
         }
     }
 
-    switchModule(moduleName) {
+    switchModule(moduleName, pushState = true) {
         // Update nav items (menu-item for sidebar, nav-item for legacy)
         document.querySelectorAll('.menu-item, .nav-item').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.module === moduleName);
@@ -146,6 +163,13 @@ class App {
         const targetModule = document.getElementById(moduleName);
         if (targetModule) {
             targetModule.classList.add('active');
+        }
+
+        // Update browser history
+        if (pushState) {
+            const url = new URL(window.location);
+            url.searchParams.set('module', moduleName);
+            window.history.pushState({ module: moduleName }, '', url);
         }
 
         // Load data for specific modules
@@ -377,8 +401,10 @@ class App {
             document.getElementById('user-email').textContent = this.currentUser.email;
         }
 
-        // Show dashboard by default
-        this.switchModule('dashboard-module');
+        // Check if there's a module in the URL, otherwise show dashboard
+        const urlParams = new URLSearchParams(window.location.search);
+        const module = urlParams.get('module') || 'dashboard-module';
+        this.switchModule(module);
     }
 
     async loadDashboardStats() {
