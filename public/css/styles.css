@@ -228,13 +228,37 @@ body {
 
 /* HAL 9000 Streaming Messages */
 .hal-message {
-    color: var(--danger) !important;
+    color: var(--success) !important;
     font-family: code-saver, 'Courier New', monospace;
     font-style: italic;
     min-height: 40px;
     display: flex;
     align-items: center;
     animation: halPulse 2s ease-in-out infinite;
+    /* Remove container styling - blend into background */
+    padding: 8px 0 !important;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+}
+
+/* When HAL shows an error, restore red container */
+.hal-message.hal-error {
+    color: var(--danger) !important;
+    padding: 8px 12px !important;
+    background: rgba(239, 68, 68, 0.1) !important;
+    border-radius: var(--radius-sm) !important;
+    border-left: 3px solid var(--danger) !important;
+    animation: none !important;
+}
+
+/* When HAL shows success, keep green with subtle container */
+.hal-message.hal-success {
+    color: var(--success) !important;
+    padding: 8px 12px !important;
+    background: rgba(16, 185, 129, 0.1) !important;
+    border-radius: var(--radius-sm) !important;
+    border-left: 3px solid var(--success) !important;
 }
 
 .hal-message::after {
@@ -243,14 +267,19 @@ body {
     margin-left: 2px;
 }
 
+.hal-message.hal-error::after,
+.hal-message.hal-success::after {
+    animation: halBlink 0.8s step-end infinite;
+}
+
 @keyframes halBlink {
     0%, 50% { opacity: 1; }
     51%, 100% { opacity: 0; }
 }
 
 @keyframes halPulse {
-    0%, 100% { opacity: 0.8; }
-    50% { opacity: 1; }
+    0%, 100% { opacity: 0.7; }
+    50% { opacity: 0.9; }
 }
 
 /* Main App */

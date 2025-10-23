@@ -48,24 +48,24 @@ class HALMessenger {
             this.currentCharIndex++;
             setTimeout(this.type, this.typingSpeed);
         } else {
-            // Message fully typed, wait then delete
-            setTimeout(this.delete, this.pauseBeforeDelete);
+            // Message fully typed, wait then fade out
+            setTimeout(() => this.fadeOut(), this.pauseBeforeDelete);
         }
     }
     
-    delete() {
+    fadeOut() {
         if (this.isPaused) return;
         
-        const currentMessage = this.messages[this.currentMessageIndex];
+        // Fade out the text
+        this.element.style.transition = 'opacity 0.5s ease-out';
+        this.element.style.opacity = '0';
         
-        if (this.currentCharIndex > 0) {
-            this.currentCharIndex--;
-            this.element.textContent = currentMessage.substring(0, this.currentCharIndex);
-            setTimeout(this.delete, this.deleteSpeed);
-        } else {
-            // Message fully deleted, move to next
-            setTimeout(this.nextMessage, this.pauseBetweenMessages);
-        }
+        // After fade completes, clear and show next message
+        setTimeout(() => {
+            this.element.textContent = '';
+            this.element.style.opacity = '1';
+            this.nextMessage();
+        }, 500);
     }
     
     nextMessage() {
@@ -76,14 +76,36 @@ class HALMessenger {
         this.type();
     }
     
+    showSuccess(message, onComplete) {
+        this.stop();
+        this.element.classList.add('hal-success');
+        this.element.textContent = '';
+        this.currentCharIndex = 0;
+        
+        // Type out success message
+        const typeSuccess = () => {
+            if (this.currentCharIndex < message.length) {
+                this.element.textContent = message.substring(0, this.currentCharIndex + 1);
+                this.currentCharIndex++;
+                setTimeout(typeSuccess, this.typingSpeed);
+            } else if (onComplete) {
+                // Wait a moment then execute callback
+                setTimeout(onComplete, 800);
+            }
+        };
+        
+        typeSuccess();
+    }
+    
     showError(message) {
         this.stop();
+        this.element.classList.add('hal-error');
         this.element.textContent = message;
-        this.element.style.color = 'var(--danger)';
     }
     
     clearError() {
-        this.element.style.color = '';
+        this.element.classList.remove('hal-error', 'hal-success');
+        this.element.textContent = '';
         this.currentCharIndex = 0;
         this.resume();
     }

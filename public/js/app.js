@@ -151,8 +151,17 @@ class App {
         try {
             const data = await window.api.login(email, password);
             this.currentUser = data.user;
-            this.showMainScreen();
-            this.showToast('Welcome back!', 'success');
+            
+            // Show "access granted" message then proceed
+            if (window.loginHAL) {
+                window.loginHAL.showSuccess('... access granted', () => {
+                    this.showMainScreen();
+                    this.showToast('Welcome back!', 'success');
+                });
+            } else {
+                this.showMainScreen();
+                this.showToast('Welcome back!', 'success');
+            }
         } catch (error) {
             // Stop HAL messages and show error
             if (window.loginHAL) {
@@ -172,8 +181,17 @@ class App {
         try {
             const data = await window.api.register(email, password, name);
             this.currentUser = data.user;
-            this.showMainScreen();
-            this.showToast('Account created successfully!', 'success');
+            
+            // Show "access granted" message then proceed
+            if (window.registerHAL) {
+                window.registerHAL.showSuccess('... access granted', () => {
+                    this.showMainScreen();
+                    this.showToast('Account created successfully!', 'success');
+                });
+            } else {
+                this.showMainScreen();
+                this.showToast('Account created successfully!', 'success');
+            }
         } catch (error) {
             // Stop HAL messages and show error
             if (window.registerHAL) {
