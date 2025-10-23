@@ -61,6 +61,10 @@ class HALMessenger {
             const text = currentMessage.substring(0, this.currentCharIndex + 1);
             this.element.textContent = text;
             console.log('HAL typing:', text);
+            
+            // Scroll to keep the cursor visible
+            this.element.scrollLeft = this.element.scrollWidth;
+            
             this.currentCharIndex++;
             setTimeout(this.type, this.typingSpeed);
         } else {
