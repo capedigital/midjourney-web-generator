@@ -6,7 +6,7 @@ const fetch = require('node-fetch');
 // OpenRouter API proxy endpoint
 // This keeps the API key secure on the server side
 router.post('/generate', asyncHandler(async (req, res) => {
-    const { model, messages } = req.body;
+    const { model, messages, stream, temperature, max_tokens } = req.body;
     
     if (!model || !messages) {
         return res.status(400).json({
@@ -25,6 +25,16 @@ router.post('/generate', asyncHandler(async (req, res) => {
     }
     
     try {
+        const requestBody = {
+            model,
+            messages
+        };
+        
+        // Add optional parameters
+        if (stream !== undefined) requestBody.stream = stream;
+        if (temperature !== undefined) requestBody.temperature = temperature;
+        if (max_tokens !== undefined) requestBody.max_tokens = max_tokens;
+        
         const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
             method: 'POST',
             headers: {
@@ -33,10 +43,7 @@ router.post('/generate', asyncHandler(async (req, res) => {
                 'HTTP-Referer': req.get('origin') || req.get('referer') || 'http://localhost:3000',
                 'X-Title': 'Midjourney Generator'
             },
-            body: JSON.stringify({
-                model,
-                messages
-            })
+            body: JSON.stringify(requestBody)
         });
         
         if (!response.ok) {
@@ -48,11 +55,27 @@ router.post('/generate', asyncHandler(async (req, res) => {
             });
         }
         
-        const data = await response.json();
-        res.json({
-            success: true,
-            data
-        });
+        // If streaming, pipe the response directly to client
+        if (stream) {
+            res.setHeader('Content-Type', 'text/event-stream');
+            res.setHeader('Cache-Control', 'no-cache');
+            res.setHeader('Connection', 'keep-alive');
+            
+            // Pipe the stream from OpenRouter to the client
+            response.body.pipe(res);
+            
+            // Handle client disconnect
+            req.on('close', () => {
+                response.body.destroy();
+            });
+        } else {
+            // Non-streaming: return complete response
+            const data = await response.json();
+            res.json({
+                success: true,
+                data
+            });
+        }
     } catch (error) {
         console.error('Error calling OpenRouter API:', error);
         res.status(500).json({

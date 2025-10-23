@@ -1430,7 +1430,7 @@ IMPORTANT: Only include the JSON prompt block when explicitly requested by the u
         
         console.log('🖼️ Request body:', JSON.stringify(requestBody, null, 2));
         
-        // Use backend proxy API instead of calling OpenRouter directly
+        // Use backend proxy API (supports streaming!)
         const response = await fetch('/api/ai/generate', {
             method: 'POST',
             headers: {
@@ -1443,31 +1443,75 @@ IMPORTANT: Only include the JSON prompt block when explicitly requested by the u
             throw new Error(`API request failed: ${response.status} ${response.statusText}`);
         }
 
-        // Parse response from backend proxy
-        const result = await response.json();
-        
-        if (!result.success) {
-            throw new Error(result.error || 'API call failed');
-        }
-        
-        const data = result.data;
         let fullContent = '';
         let reasoning = '';
         let finalContent = '';
 
-        // Handle non-streaming response (backend proxy returns complete response)
-        if (data.choices && data.choices[0]) {
-            const choice = data.choices[0];
+        // Handle streaming response
+        if (requestBody.stream) {
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+
+            try {
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const chunk = decoder.decode(value, { stream: true });
+                    const lines = chunk.split('\n');
+
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const jsonStr = line.slice(6);
+                            if (jsonStr === '[DONE]') continue;
+
+                            try {
+                                const data = JSON.parse(jsonStr);
+                                if (data.choices && data.choices[0] && data.choices[0].delta) {
+                                    const delta = data.choices[0].delta;
+                                    
+                                    // Handle reasoning (thinking process)
+                                    if (delta.reasoning) {
+                                        reasoning += delta.reasoning;
+                                        this.showThinkingProcess(reasoning);
+                                    }
+                                    
+                                    // Handle final content
+                                    if (delta.content) {
+                                        finalContent += delta.content;
+                                    }
+                                }
+                            } catch (e) {
+                                // Skip invalid JSON lines
+                                continue;
+                            }
+                        }
+                    }
+                }
+            } finally {
+                reader.releaseLock();
+            }
+        } else {
+            // Non-streaming fallback
+            const result = await response.json();
             
-            // Handle reasoning if present
-            if (choice.message && choice.message.reasoning) {
-                reasoning = choice.message.reasoning;
-                this.showThinkingProcess(reasoning);
+            if (!result.success) {
+                throw new Error(result.error || 'API call failed');
             }
             
-            // Handle content
-            if (choice.message && choice.message.content) {
-                finalContent = choice.message.content;
+            const data = result.data;
+            
+            if (data.choices && data.choices[0]) {
+                const choice = data.choices[0];
+                
+                if (choice.message && choice.message.reasoning) {
+                    reasoning = choice.message.reasoning;
+                    this.showThinkingProcess(reasoning);
+                }
+                
+                if (choice.message && choice.message.content) {
+                    finalContent = choice.message.content;
+                }
             }
         }
 
