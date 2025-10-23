@@ -303,7 +303,7 @@ body {
 
 /* Sidebar */
 .sidebar {
-    width: 260px;
+    width: 338px;
     background: var(--bg-sidebar);
     border-right: 1px solid var(--border);
     display: flex;
@@ -621,15 +621,16 @@ input[type="number"],
 input[type="search"],
 textarea {
     width: 100%;
-    padding: 20px 40px;
+    padding: 10px 12px;
     background: var(--bg-input);
     border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
+    border-radius: 4px;
     color: var(--text-primary);
     font-family: code-saver, 'Courier New', monospace;
     font-size: 1rem;
     resize: vertical;
     transition: var(--transition);
+    line-height: 1.5;
 }
 
 input:focus,
@@ -664,15 +665,31 @@ select:focus {
 
 select {
     width: 100%;
-    padding: 20px 40px;
+    padding: 10px 12px;
     background: var(--bg-input);
     border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
+    border-radius: 4px;
     color: var(--text-primary);
     font-size: 1rem;
     font-family: code-saver, 'Courier New', monospace;
     cursor: pointer;
     transition: var(--transition);
+    line-height: 1.5;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 36px;
+}
+
+select:hover {
+    border-color: var(--text-secondary);
+}
+
+select option {
+    background: var(--bg-card);
+    color: var(--text-primary);
+    padding: 8px 12px;
 }
 
 /* Buttons */
@@ -680,12 +697,13 @@ button,
 .btn {
     font-family: code-saver, 'Courier New', monospace;
     font-size: 1rem;
-    padding: 8px 16px;
-    border-radius: var(--radius-sm);
+    padding: 10px 20px;
+    border-radius: 4px;
     cursor: pointer;
     transition: var(--transition);
     font-weight: 400;
     border: none;
+    line-height: 1.5;
 }
 
 .btn-large {
@@ -1221,9 +1239,6 @@ body:after {
 
 #templateSelect {
   margin-bottom: 15px;
-  width: 100%;
-  padding: 8px;
-  border-radius: 4px;
 }
 
 .input-wrapper {
@@ -1578,11 +1593,6 @@ label {
   margin-bottom: 15px;
 }
 
-.model-selection select {
-  width: 100%;
-  padding: 5px;
-}
-
 .prompt-input textarea {
   width: 100%;
   resize: vertical;
@@ -1653,14 +1663,6 @@ label {
   font-weight: 500;
   margin-bottom: 5px;
   color: #bbb;
-}
-
-.param-field select {
-  padding: 8px;
-  border: 1px solid #555;
-  border-radius: 4px;
-  background-color: #2d2d2d;
-  color: #e0e0e0;
 }
 
 /* Creative Enhancers Section */
@@ -2405,17 +2407,6 @@ details[open] summary {
   margin-bottom: 8px;
   font-weight: 500;
   color: #64b5f6;
-}
-
-#setup-module .model-selection select {
-  width: 100%;
-  padding: 8px;
-  border: 1px solid #555;
-  border-radius: 4px;
-  background-color: #2d2d2d;
-  color: #e0e0e0;
-  font-size: 0.9rem;
-  margin-bottom: 8px;
 }
 
 #setup-module .ai-model-description {
