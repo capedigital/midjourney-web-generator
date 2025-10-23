@@ -168,8 +168,8 @@ body {
 
 .form-icon {
     position: absolute;
-    left: 14px;
-    top: 50%;
+    left: 15px;
+    top: 40%;
     transform: translateY(-50%);
     color: var(--text-muted);
     font-size: 16px;
@@ -593,7 +593,7 @@ input[type="number"],
 input[type="search"],
 textarea {
     width: 100%;
-    padding: 8px 12px;
+    padding: 20px 40px;
     background: var(--bg-input);
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
@@ -636,7 +636,7 @@ select:focus {
 
 select {
     width: 100%;
-    padding: 8px 12px;
+    padding: 20px 40px;
     background: var(--bg-input);
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
