@@ -82,3 +82,253 @@
 ➡️  GET /api/prompts/history { ip: '::1', user: undefined, query: undefined }
 ✅ GET /history - 304 (6ms)
 🔌 Database client removed from pool
+➡️  GET /?module=template-builder-module {
+  ip: '::1',
+  user: undefined,
+  query: { module: 'template-builder-module' }
+}
+✅ GET /?module=template-builder-module - 200 (1ms)
+➡️  GET /css/styles.css { ip: '::1', user: undefined, query: undefined }
+✅ GET /css/styles.css - 304 (1ms)
+➡️  GET /css/ai-chat.css { ip: '::1', user: undefined, query: undefined }
+➡️  GET /css/enhanced-spacing.css { ip: '::1', user: undefined, query: undefined }
+✅ GET /css/ai-chat.css - 304 (1ms)
+✅ GET /css/enhanced-spacing.css - 304 (1ms)
+➡️  GET /css/discord-settings.css { ip: '::1', user: undefined, query: undefined }
+➡️  GET /css/split-pane.css { ip: '::1', user: undefined, query: undefined }
+✅ GET /css/discord-settings.css - 304 (1ms)
+✅ GET /css/split-pane.css - 200 (1ms)
+➡️  GET /js/logger.js { ip: '::1', user: undefined, query: undefined }
+➡️  GET /js/hal-messages.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/hal-messages.js - 304 (1ms)
+✅ GET /js/logger.js - 304 (1ms)
+➡️  GET /js/ipc-adapter.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/ipc-adapter.js - 304 (0ms)
+➡️  GET /js/config.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/config.js - 304 (1ms)
+➡️  GET /js/utils.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/utils.js - 304 (0ms)
+➡️  GET /js/api.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/api.js - 304 (1ms)
+➡️  GET /js/global-model-sync.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/global-model-sync.js - 304 (1ms)
+➡️  GET /js/hooks.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/hooks.js - 304 (1ms)
+➡️  GET /js/midjourney-handler.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/midjourney-handler.js - 304 (1ms)
+➡️  GET /js/generator.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/generator.js - 304 (0ms)
+➡️  GET /js/app.js { ip: '::1', user: undefined, query: undefined }
+➡️  GET /js/style-library.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/app.js - 304 (3ms)
+✅ GET /js/style-library.js - 304 (1ms)
+➡️  GET /js/template-suggestions.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/template-suggestions.js - 304 (0ms)
+➡️  GET /js/prompt-importer.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/prompt-importer.js - 304 (0ms)
+➡️  GET /js/ai-chat.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/ai-chat.js - 304 (0ms)
+➡️  GET /js/auth-manager.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/auth-manager.js - 304 (0ms)
+➡️  GET /js/diagnostic.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/diagnostic.js - 304 (0ms)
+➡️  GET /js/discord-settings.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/discord-settings.js - 304 (1ms)
+➡️  GET /js/split-pane.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/split-pane.js - 200 (0ms)
+➡️  GET /api/auth/profile { ip: '::1', user: undefined, query: undefined }
+➡️  GET /api/auth/profile { ip: '::1', user: undefined, query: undefined }
+✅ New database client connected
+✅ New database client connected
+✅ GET /profile - 304 (14ms)
+✅ GET /profile - 304 (11ms)
+➡️  GET /?module=template-builder-module {
+  ip: '::1',
+  user: undefined,
+  query: { module: 'template-builder-module' }
+}
+✅ GET /?module=template-builder-module - 200 (2ms)
+➡️  GET /css/styles.css { ip: '::1', user: undefined, query: undefined }
+➡️  GET /css/ai-chat.css { ip: '::1', user: undefined, query: undefined }
+➡️  GET /css/enhanced-spacing.css { ip: '::1', user: undefined, query: undefined }
+➡️  GET /css/discord-settings.css { ip: '::1', user: undefined, query: undefined }
+➡️  GET /css/split-pane.css { ip: '::1', user: undefined, query: undefined }
+✅ GET /css/ai-chat.css - 200 (3ms)
+✅ GET /css/enhanced-spacing.css - 200 (2ms)
+✅ GET /css/styles.css - 200 (5ms)
+✅ GET /css/discord-settings.css - 200 (1ms)
+✅ GET /css/split-pane.css - 200 (2ms)
+➡️  GET /js/hal-messages.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/hal-messages.js - 200 (1ms)
+➡️  GET /js/ipc-adapter.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/ipc-adapter.js - 200 (1ms)
+➡️  GET /js/logger.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/logger.js - 200 (1ms)
+➡️  GET /js/config.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/config.js - 200 (0ms)
+➡️  GET /js/utils.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/utils.js - 200 (1ms)
+➡️  GET /js/api.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/api.js - 200 (0ms)
+➡️  GET /js/global-model-sync.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/global-model-sync.js - 200 (1ms)
+➡️  GET /js/hooks.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/hooks.js - 200 (0ms)
+➡️  GET /js/midjourney-handler.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/midjourney-handler.js - 200 (1ms)
+➡️  GET /js/generator.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/generator.js - 200 (0ms)
+➡️  GET /js/app.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/app.js - 200 (1ms)
+➡️  GET /js/style-library.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/style-library.js - 200 (0ms)
+➡️  GET /js/template-suggestions.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/template-suggestions.js - 200 (0ms)
+➡️  GET /js/prompt-importer.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/prompt-importer.js - 200 (1ms)
+➡️  GET /js/ai-chat.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/ai-chat.js - 200 (0ms)
+➡️  GET /js/auth-manager.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/auth-manager.js - 200 (1ms)
+➡️  GET /js/diagnostic.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/diagnostic.js - 200 (1ms)
+➡️  GET /js/discord-settings.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/discord-settings.js - 200 (0ms)
+➡️  GET /js/split-pane.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/split-pane.js - 200 (1ms)
+➡️  GET /js/hal-messages.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/hal-messages.js - 200 (1ms)
+➡️  GET /js/ipc-adapter.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/ipc-adapter.js - 200 (1ms)
+➡️  GET /js/config.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/config.js - 200 (0ms)
+➡️  GET /js/utils.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/utils.js - 200 (0ms)
+➡️  GET /js/api.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/api.js - 200 (0ms)
+➡️  GET /js/global-model-sync.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/global-model-sync.js - 200 (1ms)
+➡️  GET /js/hooks.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/hooks.js - 200 (1ms)
+➡️  GET /js/midjourney-handler.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/midjourney-handler.js - 200 (3ms)
+➡️  GET /js/generator.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/generator.js - 200 (1ms)
+➡️  GET /js/app.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/app.js - 200 (2ms)
+➡️  GET /js/style-library.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/style-library.js - 200 (0ms)
+➡️  GET /js/template-suggestions.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/template-suggestions.js - 200 (2ms)
+➡️  GET /js/prompt-importer.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/prompt-importer.js - 200 (2ms)
+➡️  GET /js/ai-chat.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/ai-chat.js - 200 (1ms)
+➡️  GET /js/auth-manager.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/auth-manager.js - 200 (5ms)
+➡️  GET /js/diagnostic.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/diagnostic.js - 200 (0ms)
+➡️  GET /js/discord-settings.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/discord-settings.js - 200 (2ms)
+➡️  GET /js/split-pane.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/split-pane.js - 200 (2ms)
+➡️  GET /api/auth/profile { ip: '::1', user: undefined, query: undefined }
+➡️  GET /api/auth/profile { ip: '::1', user: undefined, query: undefined }
+✅ GET /profile - 200 (10ms)
+✅ GET /profile - 200 (9ms)
+➡️  GET /?module=prompt-generation-module {
+  ip: '::1',
+  user: undefined,
+  query: { module: 'prompt-generation-module' }
+}
+✅ GET /?module=prompt-generation-module - 200 (1ms)
+➡️  GET /css/styles.css { ip: '::1', user: undefined, query: undefined }
+➡️  GET /css/ai-chat.css { ip: '::1', user: undefined, query: undefined }
+➡️  GET /css/enhanced-spacing.css { ip: '::1', user: undefined, query: undefined }
+➡️  GET /css/discord-settings.css { ip: '::1', user: undefined, query: undefined }
+✅ GET /css/styles.css - 200 (2ms)
+✅ GET /css/ai-chat.css - 200 (1ms)
+➡️  GET /css/split-pane.css { ip: '::1', user: undefined, query: undefined }
+✅ GET /css/enhanced-spacing.css - 200 (1ms)
+✅ GET /css/discord-settings.css - 200 (1ms)
+✅ GET /css/split-pane.css - 200 (1ms)
+➡️  GET /js/logger.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/logger.js - 200 (1ms)
+➡️  GET /js/hal-messages.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/hal-messages.js - 200 (0ms)
+➡️  GET /js/ipc-adapter.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/ipc-adapter.js - 200 (1ms)
+➡️  GET /js/config.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/config.js - 200 (1ms)
+➡️  GET /js/utils.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/utils.js - 200 (0ms)
+➡️  GET /js/api.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/api.js - 200 (1ms)
+➡️  GET /js/global-model-sync.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/global-model-sync.js - 200 (0ms)
+➡️  GET /js/hooks.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/hooks.js - 200 (0ms)
+➡️  GET /js/midjourney-handler.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/midjourney-handler.js - 200 (1ms)
+➡️  GET /js/generator.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/generator.js - 200 (1ms)
+➡️  GET /js/app.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/app.js - 200 (1ms)
+➡️  GET /js/style-library.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/style-library.js - 200 (1ms)
+➡️  GET /js/template-suggestions.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/template-suggestions.js - 200 (0ms)
+➡️  GET /js/prompt-importer.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/prompt-importer.js - 200 (1ms)
+➡️  GET /js/ai-chat.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/ai-chat.js - 200 (1ms)
+➡️  GET /js/auth-manager.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/auth-manager.js - 200 (1ms)
+➡️  GET /js/diagnostic.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/diagnostic.js - 200 (0ms)
+➡️  GET /js/discord-settings.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/discord-settings.js - 200 (1ms)
+➡️  GET /js/split-pane.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/split-pane.js - 200 (0ms)
+➡️  GET /js/hal-messages.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/hal-messages.js - 200 (2ms)
+➡️  GET /js/ipc-adapter.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/ipc-adapter.js - 200 (0ms)
+➡️  GET /js/config.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/config.js - 200 (4ms)
+➡️  GET /js/utils.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/utils.js - 200 (1ms)
+➡️  GET /js/api.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/api.js - 200 (1ms)
+➡️  GET /js/global-model-sync.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/global-model-sync.js - 200 (1ms)
+➡️  GET /js/hooks.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/hooks.js - 200 (2ms)
+➡️  GET /js/midjourney-handler.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/midjourney-handler.js - 200 (1ms)
+➡️  GET /js/generator.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/generator.js - 200 (2ms)
+➡️  GET /js/app.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/app.js - 200 (2ms)
+➡️  GET /js/style-library.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/style-library.js - 200 (0ms)
+➡️  GET /js/template-suggestions.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/template-suggestions.js - 200 (2ms)
+➡️  GET /js/prompt-importer.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/prompt-importer.js - 200 (1ms)
+➡️  GET /js/ai-chat.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/ai-chat.js - 200 (3ms)
+➡️  GET /js/auth-manager.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/auth-manager.js - 200 (1ms)
+➡️  GET /js/diagnostic.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/diagnostic.js - 200 (0ms)
+➡️  GET /js/discord-settings.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/discord-settings.js - 200 (1ms)
+➡️  GET /js/split-pane.js { ip: '::1', user: undefined, query: undefined }
+✅ GET /js/split-pane.js - 200 (4ms)
+➡️  GET /api/auth/profile { ip: '::1', user: undefined, query: undefined }
+➡️  GET /api/auth/profile { ip: '::1', user: undefined, query: undefined }
+✅ GET /profile - 200 (6ms)
+✅ GET /profile - 200 (3ms)
+🔌 Database client removed from pool
+🔌 Database client removed from pool
