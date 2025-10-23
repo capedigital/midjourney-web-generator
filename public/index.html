@@ -510,6 +510,20 @@ Example ChatGPT output:
                             <button id="send-all-discord-btn" class="action-button" style="background-color: #5865F2;">
                                 <i class="fab fa-discord"></i> Send All to Discord
                             </button>
+                            
+                            <!-- Discord Send Status Bar -->
+                            <div id="discord-status-bar" style="display: none; margin-top: 16px; padding: 16px; background: rgba(88, 101, 242, 0.1); border-left: 3px solid #5865F2; border-radius: 4px;">
+                                <div id="discord-status-text" style="color: #5865F2; font-size: 13px; margin-bottom: 8px; font-family: 'code-saver', monospace;">
+                                    Preparing to send...
+                                </div>
+                                <div style="background: rgba(0, 0, 0, 0.3); border-radius: 4px; height: 6px; overflow: hidden;">
+                                    <div id="discord-progress-bar" style="background: linear-gradient(90deg, #5865F2, #7289DA); height: 100%; width: 0%; transition: width 0.3s ease;"></div>
+                                </div>
+                                <div id="discord-status-log" style="margin-top: 12px; max-height: 200px; overflow-y: auto; font-family: 'code-saver', monospace; font-size: 11px; line-height: 1.6;">
+                                    <!-- Individual prompt statuses will appear here -->
+                                </div>
+                            </div>
+                            
                             <div class="batch-send-label" style="margin-top: 12px;">External Browser <i class="fas fa-external-link-alt"></i>:</div>
                             <button id="send-ideogram-btn" class="action-button ideogram-btn">
                                 <i class="fas fa-external-link-alt"></i> Ideogram

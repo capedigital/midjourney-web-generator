@@ -141,22 +141,22 @@ const SplitPaneView = {
     },
 
     /**
-     * Update username in top nav
+     * Update username in top nav (matches sidebar user-name element)
      */
-    updateUsername(username) {
+    updateUsername(name) {
         const usernameEl = document.getElementById('top-nav-username');
         if (usernameEl) {
-            usernameEl.textContent = username || 'User';
+            usernameEl.textContent = name || 'User';
         }
     },
 
     /**
-     * Update user email in top nav
+     * Update user email in top nav (matches sidebar user-email element)
      */
     updateUserEmail(email) {
         const emailEl = document.getElementById('top-nav-email');
         if (emailEl) {
-            emailEl.textContent = email || 'email@example.com';
+            emailEl.textContent = email || '';
         }
     }
 };

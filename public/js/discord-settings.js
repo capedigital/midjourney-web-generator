@@ -91,9 +91,16 @@ const DiscordSettings = {
                 channelIdInput.value = user.discord_channel_id;
             }
 
-            // Show placeholder if bot token is configured (backend doesn't return actual token for security)
-            if (botTokenInput && user.discord_enabled && user.discord_channel_id) {
-                botTokenInput.placeholder = '••••••••••••••••••••••••••••••••••••• (Token saved securely)';
+            // Store flag if token exists on backend (don't show actual token for security)
+            if (botTokenInput) {
+                if (user.discord_enabled && user.discord_channel_id) {
+                    botTokenInput.placeholder = '••••••••••••••••••••••••••••••••••••• (Token saved securely)';
+                    // Store data attribute to track if token exists on backend
+                    botTokenInput.setAttribute('data-has-token', 'true');
+                } else {
+                    botTokenInput.placeholder = 'Bot Token';
+                    botTokenInput.removeAttribute('data-has-token');
+                }
             }
 
             logger.debug('Discord settings loaded', { enabled: user.discord_enabled });
@@ -150,11 +157,20 @@ const DiscordSettings = {
      */
     async saveSettings() {
         const enabled = document.getElementById('discord-enabled-checkbox').checked;
-        const botToken = document.getElementById('discord-bot-token').value.trim();
+        const botTokenInput = document.getElementById('discord-bot-token');
+        const botToken = botTokenInput.value.trim();
         const channelId = document.getElementById('discord-channel-id').value.trim();
+        
+        // Check if token exists on backend (from data attribute set during load)
+        const hasExistingToken = botTokenInput.getAttribute('data-has-token') === 'true';
 
-        if (enabled && (!botToken || !channelId)) {
-            this.showToast('Please enter both bot token and channel ID', 'error');
+        if (enabled && !channelId) {
+            this.showToast('Please enter a channel ID', 'error');
+            return;
+        }
+        
+        if (enabled && !botToken && !hasExistingToken) {
+            this.showToast('Please enter a bot token', 'error');
             return;
         }
 
@@ -163,17 +179,29 @@ const DiscordSettings = {
         saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
 
         try {
+            const payload = {
+                discord_enabled: enabled,
+                discord_channel_id: enabled ? channelId : null
+            };
+            
+            // Only include bot token if a new one was entered
+            // If user didn't enter anything, keep existing token on backend
+            if (botToken) {
+                payload.discord_bot_token = botToken;
+            } else if (!enabled) {
+                // If disabling, clear the token
+                payload.discord_bot_token = null;
+            }
+            // If enabled but no token entered and hasExistingToken, don't send token field
+            // This preserves existing token on backend
+
             const response = await fetch('/api/auth/profile', {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${localStorage.getItem('token')}`
                 },
-                body: JSON.stringify({
-                    discord_enabled: enabled,
-                    discord_bot_token: enabled ? botToken : null,
-                    discord_channel_id: enabled ? channelId : null
-                })
+                body: JSON.stringify(payload)
             });
 
             const data = await response.json();
@@ -181,6 +209,9 @@ const DiscordSettings = {
             if (response.ok) {
                 this.showToast('Discord settings saved successfully!', 'success');
                 logger.debug('Discord settings saved');
+                
+                // Reload settings to update placeholder
+                await this.loadSettings();
             } else {
                 this.showToast(data.error || 'Failed to save settings', 'error');
             }

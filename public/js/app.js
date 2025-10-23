@@ -544,43 +544,91 @@ class App {
         const btn = document.getElementById('send-all-discord-btn');
         if (!btn) return;
 
+        // Show status bar
+        const statusBar = document.getElementById('discord-status-bar');
+        const statusText = document.getElementById('discord-status-text');
+        const progressBar = document.getElementById('discord-progress-bar');
+        const statusLog = document.getElementById('discord-status-log');
+        
+        statusBar.style.display = 'block';
+        statusText.textContent = `Preparing to send ${selectedPrompts.length} prompts...`;
+        progressBar.style.width = '0%';
+        statusLog.innerHTML = '';
+
         btn.disabled = true;
-        btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Sending ${selectedPrompts.length} prompts...`;
+        btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Sending...`;
 
         try {
-            const response = await fetch('/api/discord/send-batch', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                },
-                body: JSON.stringify({ 
-                    prompts: selectedPrompts,
-                    delayMs: 1500 // 1.5 seconds between messages
-                })
-            });
+            // Send prompts one by one with status updates
+            let successful = 0;
+            let failed = 0;
+            
+            for (let i = 0; i < selectedPrompts.length; i++) {
+                const prompt = selectedPrompts[i];
+                const promptNum = i + 1;
+                const progress = ((i + 1) / selectedPrompts.length) * 100;
+                
+                // Update status
+                statusText.textContent = `Sending prompt ${promptNum}/${selectedPrompts.length}...`;
+                progressBar.style.width = `${progress}%`;
+                
+                // Add log entry
+                const logEntry = document.createElement('div');
+                logEntry.style.color = '#999';
+                logEntry.innerHTML = `<span style="color: #5865F2;">⟳</span> Prompt ${promptNum}: <span style="color: #aaa; font-size: 10px;">${prompt.substring(0, 60)}...</span>`;
+                statusLog.appendChild(logEntry);
+                statusLog.scrollTop = statusLog.scrollHeight;
+                
+                try {
+                    const response = await fetch('/api/discord/send', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${localStorage.getItem('token')}`
+                        },
+                        body: JSON.stringify({ prompt })
+                    });
 
-            const data = await response.json();
-
-            if (response.ok) {
-                const { successful, failed, total } = data;
-                if (failed === 0) {
-                    window.Utils.showToast(`✅ All ${successful} prompts sent to Discord!`, 'success');
-                } else {
-                    window.Utils.showToast(`⚠️ Sent ${successful}/${total} prompts. ${failed} failed.`, 'warning');
+                    if (response.ok) {
+                        successful++;
+                        logEntry.innerHTML = `<span style="color: #3ba55d;">✓</span> Prompt ${promptNum}: <span style="color: #3ba55d;">Sent successfully</span>`;
+                    } else {
+                        failed++;
+                        const data = await response.json();
+                        logEntry.innerHTML = `<span style="color: #ed4245;">✗</span> Prompt ${promptNum}: <span style="color: #ed4245;">${data.error || 'Failed'}</span>`;
+                    }
+                } catch (error) {
+                    failed++;
+                    logEntry.innerHTML = `<span style="color: #ed4245;">✗</span> Prompt ${promptNum}: <span style="color: #ed4245;">Network error</span>`;
                 }
-                btn.innerHTML = '<i class="fas fa-check"></i> Sent!';
-                setTimeout(() => {
-                    btn.innerHTML = '<i class="fab fa-discord"></i> Send All to Discord';
-                    btn.disabled = false;
-                }, 3000);
+                
+                statusLog.scrollTop = statusLog.scrollHeight;
+                
+                // Delay between messages (except for last one)
+                if (i < selectedPrompts.length - 1) {
+                    await new Promise(resolve => setTimeout(resolve, 1500));
+                }
+            }
+            
+            // Final status
+            progressBar.style.width = '100%';
+            if (failed === 0) {
+                statusText.innerHTML = `<span style="color: #3ba55d;">✅ All ${successful} prompts sent successfully!</span>`;
+                window.Utils.showToast(`✅ All ${successful} prompts sent to Discord!`, 'success');
             } else {
-                window.Utils.showToast(`❌ ${data.error || 'Failed to send batch'}`, 'error');
+                statusText.innerHTML = `<span style="color: #faa61a;">⚠️ Sent ${successful}/${selectedPrompts.length} prompts. ${failed} failed.</span>`;
+                window.Utils.showToast(`⚠️ Sent ${successful}/${selectedPrompts.length} prompts. ${failed} failed.`, 'warning');
+            }
+            
+            btn.innerHTML = '<i class="fas fa-check"></i> Sent!';
+            setTimeout(() => {
                 btn.innerHTML = '<i class="fab fa-discord"></i> Send All to Discord';
                 btn.disabled = false;
-            }
+            }, 3000);
+            
         } catch (error) {
             logger.error('Batch Discord send failed:', error);
+            statusText.innerHTML = `<span style="color: #ed4245;">❌ Error: ${error.message}</span>`;
             window.Utils.showToast('❌ Network error: ' + error.message, 'error');
             btn.innerHTML = '<i class="fab fa-discord"></i> Send All to Discord';
             btn.disabled = false;
