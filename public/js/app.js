@@ -109,6 +109,15 @@ class App {
         }
     }
 
+    loadUserSettings() {
+        // Load any user preferences from localStorage
+        // This can be expanded to load theme, default AI model, etc.
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) {
+            document.body.classList.add(savedTheme);
+        }
+    }
+
     switchModule(moduleName) {
         // Update nav items (menu-item for sidebar, nav-item for legacy)
         document.querySelectorAll('.menu-item, .nav-item').forEach(btn => {
