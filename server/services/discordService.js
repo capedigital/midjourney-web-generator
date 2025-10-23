@@ -11,21 +11,18 @@ const DISCORD_API_BASE = 'https://discord.com/api/v10';
  * Send a message to a Discord channel
  * @param {string} botToken - Discord bot token
  * @param {string} channelId - Discord channel ID
- * @param {string} content - Message content (will be formatted as /imagine command for Midjourney)
+ * @param {string} content - Message content (should already include /imagine command if for Midjourney)
  * @returns {Promise<object>} Discord message object
  */
 async function sendMessage(botToken, channelId, content) {
   try {
-    // Format the message as a Midjourney /imagine command
-    const midjourneyCommand = `/imagine prompt: ${content}`;
-    
     const response = await fetch(`${DISCORD_API_BASE}/channels/${channelId}/messages`, {
       method: 'POST',
       headers: {
         'Authorization': `Bot ${botToken}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ content: midjourneyCommand })
+      body: JSON.stringify({ content })
     });
 
     if (!response.ok) {
