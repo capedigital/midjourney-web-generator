@@ -26,6 +26,11 @@ class HALMessenger {
     
     start() {
         if (!this.element || this.messages.length === 0) return;
+        
+        // Ensure element is visible and has proper styling
+        this.element.style.opacity = '1';
+        this.element.style.display = 'flex';
+        
         this.type();
     }
     
