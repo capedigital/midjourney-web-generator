@@ -56,10 +56,14 @@ class HALMessenger {
         
         if (this.currentCharIndex < currentMessage.length) {
             const text = currentMessage.substring(0, this.currentCharIndex + 1);
-            this.element.textContent = text;
             
-            // Scroll to keep the cursor visible
-            this.element.scrollLeft = this.element.scrollWidth;
+            // Don't update if an input field is focused (1Password compatibility)
+            const activeElement = document.activeElement;
+            if (!activeElement || (activeElement.tagName !== 'INPUT' && activeElement.tagName !== 'TEXTAREA')) {
+                this.element.textContent = text;
+                // Scroll to keep the cursor visible
+                this.element.scrollLeft = this.element.scrollWidth;
+            }
             
             this.currentCharIndex++;
             setTimeout(this.type, this.typingSpeed);

@@ -433,11 +433,17 @@ class App {
             document.getElementById('user-name').textContent = this.currentUser.name || this.currentUser.email;
             document.getElementById('user-email').textContent = this.currentUser.email;
             
-            // Update top nav user profile
-            if (window.SplitPaneView) {
-                window.SplitPaneView.updateUsername(this.currentUser.name || this.currentUser.email);
-                window.SplitPaneView.updateUserEmail(this.currentUser.email);
-            }
+            // Update top nav user profile (wait for SplitPaneView to initialize)
+            const updateTopNav = () => {
+                if (window.SplitPaneView) {
+                    window.SplitPaneView.updateUsername(this.currentUser.name || this.currentUser.email);
+                    window.SplitPaneView.updateUserEmail(this.currentUser.email);
+                } else {
+                    // Retry after a short delay if not ready yet
+                    setTimeout(updateTopNav, 100);
+                }
+            };
+            updateTopNav();
         }
 
         // Check if there's a module in the URL, otherwise show dashboard
