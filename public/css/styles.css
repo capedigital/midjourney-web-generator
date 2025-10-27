@@ -1031,8 +1031,8 @@ button,
     background: var(--border-light);
 }
 :root {
-  --sidebar-width: 10%;
-  --content-width: 90%;
+  --sidebar-width: 20%;
+  --content-width: 80%;
   --sidebar-bg: #2a2a2a;
   --content-bg: #333333;
   --text-color: #eaeaea;
@@ -1045,7 +1045,7 @@ button,
   --bg-card: #333333;
   --text-primary: #eaeaea;
   --text-secondary: #bbbbbb;
-  --accent-color: #2a465d;
+  --accent-color: #4e94ce;
   --hover-bg: #3a3a3a;
 }
 
@@ -1324,67 +1324,8 @@ h3 {
   margin-top: 0;
 }
 
-textarea, input, select {
-  width: 100%;
-  padding: 10px;
-  margin-bottom: 10px;
-  box-sizing: border-box;
-  border-radius: 4px;
-  border: 1px solid #555;
-  background-color: #2d2d2d;
-  color: #e0e0e0;
-  font-family: Menlo, monospace;
-  font-size: .7rem;
-  width: 100%;
-  padding: 10px;
-  background-color: var(--bg-panel);
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  color: var(--text-primary);
-  margin-bottom: 10px;
-}
-
-textarea {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #444;
-  background-color: #333;
-  color: #eaeaea;
-  border-radius: 4px;
-  resize: vertical;
-  font-family: inherit;
-  min-height: 60px;
-  background-color: var(--bg-dark);
-  color: var(--text-primary);
-  padding: 12px;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  width: 100%;
-  box-sizing: border-box;
-  font-family: monospace;
-}
-
-textarea:focus, input:focus, select:focus {
-  outline: none;
-  border-color: #91e700;
-  box-shadow: 0 0 0 2px rgba(100, 181, 246, 0.3);
-}
-
-button, .button {
-  background-color: #4a6cf7;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  padding: 10px 20px;
-  margin: 5px;
-  cursor: pointer;
-  transition: background-color 0.3s;
-  margin-top: 10px;
-}
-
-button:hover, .button:hover {
-  background-color: #006786;
-}
+/* REMOVED DUPLICATE STYLES - All form inputs now styled in main Forms section (lines 640-720) */
+/* REMOVED DUPLICATE button, .button - Main button styles at lines 725-775 */
 
 .action-button {
     background-color: var(--accent-color);
@@ -1422,12 +1363,12 @@ button:hover, .button:hover {
   padding: 10px;
   margin-bottom: 10px;
   background-color: #2d2d2d;
-  color: #e0e0e0;
-  min-height: 250px;
+  color: #b0ee7a;
+  /* min-height: 250px; */
   box-sizing: border-box;
   resize: vertical;
-  font-family: Menlo, monospace;
-  font-size: 12px;
+  font-family: code-saver, monospace;
+  font-size: 10px;
 }
 
 .section {
@@ -2692,20 +2633,8 @@ details[open] summary {
   width: 100%;
 }
 
-/* Adjust clear button position for textareas */
-.input-wrapper {
-  position: relative;
-}
-
-.input-wrapper .clear-button {
-  position: absolute;
-  top: 5px; /* Position from top instead of transform */
-  right: 5px;
-  width: 16px;
-  height: 16px;
-  line-height: 16px;
-  font-size: 10px;
-}
+/* REMOVED DUPLICATE .input-wrapper - Main definition at line 1267 */
+/* REMOVED DUPLICATE .clear-button - Main definition at line 1274 */
 
 /* Toggle switch styles for individual fields */
 .separator-toggle-wrapper {
@@ -2859,9 +2788,7 @@ details[open] summary {
     margin-top: 10px;
 }
 
-#template-builder-module .input-wrapper {
-    margin-top: 5px;
-}
+/* REMOVED DUPLICATE #template-builder-module .input-wrapper - Not needed with click-to-edit */
 
 /* Enhancer Tags Container */
 .enhancer-tags-container {
@@ -2940,10 +2867,7 @@ details[open] summary {
   color: white;
 }
 
-/* Update input wrapper to handle dropdown positioning */
-.input-wrapper {
-    position: relative;
-}
+/* REMOVED DUPLICATE .input-wrapper - Main definition at line 1267 */
 
 /* Ensure enhancer input has proper z-index */
 .enhancer-input {
@@ -3853,54 +3777,8 @@ input:checked + .toggle-slider:before {
   color: white !important;
 }
 
-/* Strong form styling overrides - ensure consistent appearance */
-select,
-select.model-selector,
-select.setting-select,
-#ai-model-selector,
-#templateSelect,
-#chat-ai-model,
-#chat-template-mode,
-#chat-template-select,
-#browser-preference {
-    width: 100% !important;
-    padding: 10px 12px !important;
-    padding-right: 36px !important;
-    background: var(--bg-input) !important;
-    border: 1px solid var(--border) !important;
-    border-radius: 4px !important;
-    color: var(--text-primary) !important;
-    font-size: 1rem !important;
-    font-family: code-saver, 'Courier New', monospace !important;
-    cursor: pointer !important;
-    transition: var(--transition) !important;
-    line-height: 1.5 !important;
-    appearance: none !important;
-    -webkit-appearance: none !important;
-    -moz-appearance: none !important;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M6 9L1 4h10z'/%3E%3C/svg%3E") !important;
-    background-repeat: no-repeat !important;
-    background-position: right 12px center !important;
-}
+/* REMOVED DUPLICATE !important OVERRIDES - Main form styles at lines 640-720 are sufficient */
 
-input[type="text"],
-input[type="email"],
-input[type="password"],
-input[type="number"],
-input[type="search"],
-textarea {
-    padding: 20px 40px !important;
-    border-radius: 4px !important;
-    line-height: 1.5 !important;
-}
-
-button,
-.btn,
-.action-button {
-    padding: 10px 20px !important;
-    border-radius: 4px !important;
-    line-height: 1.5 !important;
-}
 .midjourney-btn:hover { 
   background-color: #E55A2B !important; 
 }

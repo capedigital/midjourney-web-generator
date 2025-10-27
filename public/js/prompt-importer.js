@@ -165,19 +165,24 @@ class PromptImporter {
     }
 
     switchToPromptGeneration() {
-        // Switch to the Prompt Generation module
-        const modules = document.querySelectorAll('.module-content');
-        const menuItems = document.querySelectorAll('.menu-item');
-        
-        modules.forEach(module => module.classList.remove('active'));
-        menuItems.forEach(item => item.classList.remove('active'));
-        
-        // Activate Prompt Generation module
-        const promptGenModule = document.getElementById('prompt-generation-module');
-        const promptGenMenuItem = menuItems[4]; // Adjusted index: Dashboard(0), Template(1), Importer(2), Prompt Gen(3), Style(4), Settings(5)
-        
-        if (promptGenModule) promptGenModule.classList.add('active');
-        if (promptGenMenuItem) promptGenMenuItem.classList.add('active');
+        // Use app's switchModule method to properly update navigation and URL
+        if (window.app && window.app.switchModule) {
+            window.app.switchModule('prompt-generation-module');
+        } else {
+            // Fallback to manual switching if app not available
+            const modules = document.querySelectorAll('.module-content');
+            const menuItems = document.querySelectorAll('.menu-item');
+            
+            modules.forEach(module => module.classList.remove('active'));
+            menuItems.forEach(item => item.classList.remove('active'));
+            
+            // Activate Prompt Generation module
+            const promptGenModule = document.getElementById('prompt-generation-module');
+            const promptGenMenuItem = document.querySelector('[data-module="prompt-generation-module"]');
+            
+            if (promptGenModule) promptGenModule.classList.add('active');
+            if (promptGenMenuItem) promptGenMenuItem.classList.add('active');
+        }
     }
 
     processPromptsWithParameters() {
@@ -242,31 +247,32 @@ class PromptImporter {
             <div class="prompt-header">
                 <input type="checkbox" class="prompt-selector" checked>
                 <span class="prompt-title">Prompt ${index}</span>
+                <div class="prompt-actions">
+                    <button class="copy-prompt">
+                        <i class="fas fa-copy"></i> Copy
+                    </button>
+                    <button class="edit-prompt">
+                        <i class="fas fa-edit"></i> Edit
+                    </button>
+                    <button class="delete-prompt">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                    <button class="send-midjourney midjourney-btn">
+                        <i class="fas fa-paint-brush"></i> Midjourney
+                    </button>
+                    <button class="send-ideogram ideogram-btn">
+                        <i class="fas fa-image"></i> Ideogram
+                    </button>
+                </div>
             </div>
             <textarea class="prompt-text">${initialPrompt}</textarea>
-            <div class="prompt-actions">
-                <button class="copy-prompt">
-                    <i class="fas fa-copy"></i> Copy
-                </button>
-                <button class="edit-prompt">
-                    <i class="fas fa-edit"></i> Edit
-                </button>
-                <button class="delete-prompt">
-                    <i class="fas fa-trash"></i> Delete
-                </button>
-                <button class="send-midjourney midjourney-btn">
-                    <i class="fas fa-paint-brush"></i> Midjourney
-                </button>
-                <button class="send-ideogram ideogram-btn">
-                    <i class="fas fa-image"></i> Ideogram
-                </button>
-            </div>
         `;
         
-        // Add event listeners for all buttons
-        this.attachButtonEventListeners(promptDiv);
-        
+        // CRITICAL: Add to DOM FIRST, then attach event listeners
         container.appendChild(promptDiv);
+        
+        // Add event listeners for all buttons AFTER element is in DOM
+        this.attachButtonEventListeners(promptDiv);
         
         // Update button styling to match current browser mode
         if (window.updateAllButtonsSimple) {
@@ -283,7 +289,21 @@ class PromptImporter {
     }
 
     attachButtonEventListeners(promptDiv) {
+        console.log('🔧🔧🔧 attachButtonEventListeners CALLED');
+        console.log('  - promptDiv:', promptDiv);
+        console.log('  - promptDiv className:', promptDiv?.className);
+        console.log('  - promptDiv HTML length:', promptDiv?.innerHTML?.length);
+        logger.debug('🔧 [IMPORTER] attachButtonEventListeners called');
+        
         const textarea = promptDiv.querySelector('.prompt-text');
+        if (!textarea) {
+            console.log('❌❌❌ NO TEXTAREA FOUND');
+            logger.error('❌ [IMPORTER] No textarea found in promptDiv');
+            return;
+        }
+        
+        console.log('✅✅✅ Textarea found, proceeding...');
+        logger.debug('✅ [IMPORTER] Found textarea, attaching button listeners...');
         
         // Copy button
         const copyBtn = promptDiv.querySelector('.copy-prompt');
@@ -318,21 +338,48 @@ class PromptImporter {
 
         // Midjourney button
         const midjourneyBtn = promptDiv.querySelector('.send-midjourney');
-        midjourneyBtn.addEventListener('click', () => {
+        console.log('🔍🔍🔍 Queried .send-midjourney button:', midjourneyBtn);
+        if (!midjourneyBtn) {
+            console.error('❌❌❌ Could not find .send-midjourney button in promptDiv!');
+            logger.error('❌ Could not find .send-midjourney button');
+            console.log('promptDiv innerHTML:', promptDiv.innerHTML.substring(0, 200));
+            return;
+        }
+        
+        console.log('✅✅✅ Found Midjourney button, attaching listener...');
+        console.log('  - Button element:', midjourneyBtn);
+        console.log('  - Button className:', midjourneyBtn.className);
+        console.log('  - Button tagName:', midjourneyBtn.tagName);
+        console.log('  - Button textContent:', midjourneyBtn.textContent);
+        logger.debug('✅ Attaching click listener to Midjourney button');
+        
+        // Store reference for debugging
+        const self = this; // Capture 'this' for use in handler
+        const clickHandler = function(e) {
+            console.log('🔵🔵🔵 MIDJOURNEY BUTTON CLICKED - THIS SHOULD ALWAYS SHOW');
+            console.log('  - Event:', e);
+            console.log('  - Event target:', e.target);
+            console.log('  - Event currentTarget:', e.currentTarget);
+            logger.debug('🔵 [IMPORTER] Midjourney button clicked!');
+            
             midjourneyBtn.disabled = true;
             midjourneyBtn.textContent = 'Sending...';
             
+            logger.debug('📝 [IMPORTER] Prompt value:', textarea.value.substring(0, 100) + '...');
+            
             // Use global browser setting
             if (window.sendPromptWithGlobalSetting) {
+                logger.debug('✅ [IMPORTER] Calling sendPromptWithGlobalSetting');
                 window.sendPromptWithGlobalSetting(textarea.value, 'midjourney');
-                this.showNotification('Sending prompt to Midjourney...', 'info');
+                self.showNotification('Sending prompt to Midjourney...', 'info');
             } else {
+                logger.error('❌ [IMPORTER] sendPromptWithGlobalSetting not available');
                 // Fallback to old method
                 if (window.ipcRenderer) {
                     window.ipcRenderer.send('send-to-midjourney', textarea.value);
-                    this.showNotification('Sending prompt to Midjourney...', 'info');
+                    self.showNotification('Sending prompt to Midjourney...', 'info');
                 } else {
-                    this.showNotification('Midjourney integration not available', 'error');
+                    self.showNotification('Midjourney integration not available', 'error');
                 }
             }
             
@@ -341,7 +388,11 @@ class PromptImporter {
                 midjourneyBtn.disabled = false;
                 midjourneyBtn.innerHTML = '<i class="fas fa-paint-brush"></i> Midjourney';
             }, 3000);
-        });
+        };
+        
+        midjourneyBtn.addEventListener('click', clickHandler);
+        console.log('✅ Click listener attached successfully');
+        console.log('  - Handler function:', clickHandler);
 
         // Ideogram button
         const ideogramBtn = promptDiv.querySelector('.send-ideogram');

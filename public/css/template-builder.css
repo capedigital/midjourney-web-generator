@@ -1,0 +1,286 @@
+/**
+ * Template Builder Styles
+ * Click-to-edit interface for template enhancer fields
+ */
+
+/* Template textarea (read-only) */
+#promptTemplate.template-textarea {
+    width: 100%;
+    min-height: 120px;
+    margin: 12px 0 20px 0;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    resize: vertical;
+}
+
+/* Enhancers section */
+.enhancers-section {
+    margin: 24px 0;
+}
+
+.enhancers-section h3 {
+    margin-bottom: 16px;
+    color: var(--text-primary);
+}
+
+/* Enhancer grid layout */
+.enhancer-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+@media (max-width: 900px) {
+    .enhancer-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Individual enhancer field */
+.enhancer-field {
+    display: flex;
+    flex-direction: column;
+}
+
+.enhancer-field label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+}
+
+/* Click-to-edit wrapper */
+.click-to-edit-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+/* Display mode */
+.click-to-edit-display {
+    min-height: 40px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 14px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.click-to-edit-display:hover {
+    border-color: var(--primary);
+    background: var(--bg-hover);
+}
+
+.click-to-edit-display.placeholder {
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+/* Edit mode */
+.click-to-edit-edit {
+    position: relative;
+}
+
+.click-to-edit-edit .edit-textarea {
+    width: 100%;
+    min-height: 80px;
+    padding: 10px 12px;
+    border: 2px solid var(--primary);
+    border-radius: 6px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1.5;
+    resize: vertical;
+    transition: border-color 0.2s ease;
+}
+
+.click-to-edit-edit .edit-textarea:focus {
+    outline: none;
+    border-color: var(--primary-light);
+    box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+}
+
+/* Action buttons */
+.click-to-edit-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+    justify-content: flex-end;
+}
+
+.click-to-edit-actions button {
+    padding: 6px 14px;
+    border: none;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.click-to-edit-actions .save-btn {
+    background: var(--success);
+    color: white;
+}
+
+.click-to-edit-actions .save-btn:hover {
+    background: var(--success-dark, #38a169);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(72, 187, 120, 0.3);
+}
+
+.click-to-edit-actions .cancel-btn {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+}
+
+.click-to-edit-actions .cancel-btn:hover {
+    background: var(--bg-hover);
+    border-color: var(--text-secondary);
+}
+
+/* Copywriter section */
+.copywriter-section {
+    margin: 24px 0;
+}
+
+.copywriter-section label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+.copywriter-section .click-to-edit-display {
+    min-height: 120px;
+}
+
+.copywriter-section .click-to-edit-edit .edit-textarea {
+    min-height: 150px;
+}
+
+/* Output preview section */
+.output-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.output-header h3 {
+    margin: 0;
+}
+
+.output-header select {
+    padding: 6px 12px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 13px;
+    cursor: pointer;
+}
+
+#outputPreview.preview-textarea {
+    width: 100%;
+    min-height: 150px;
+    margin-bottom: 16px;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    resize: vertical;
+}
+
+/* Generate button */
+.generate-prompts-button {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark, #3182ce) 100%);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.generate-prompts-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(66, 153, 225, 0.3);
+}
+
+.generate-prompts-button:active {
+    transform: translateY(0);
+}
+
+.generate-prompts-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Template select dropdown */
+#templateSelect {
+    width: 100%;
+    padding: 10px 12px;
+    margin-bottom: 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 14px;
+    cursor: pointer;
+    transition: border-color 0.2s ease;
+}
+
+#templateSelect:hover {
+    border-color: var(--primary);
+}
+
+#templateSelect:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+}
+
+/* AI Model select */
+#template-ai-model {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 13px;
+    cursor: pointer;
+    margin-bottom: 16px;
+}
+
+#template-ai-model:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+}
