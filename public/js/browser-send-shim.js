@@ -90,10 +90,74 @@ function addRecentPrompt(promptText) {
     return true;
 }
 
+/**
+ * Close Midjourney browser
+ */
+async function closeMidjourneyBrowser() {
+    logger.debug('🔴 [SHIM] Closing Midjourney browser...');
+    
+    try {
+        const response = await fetch('/api/midjourney/close', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            window.Utils.showToast('✅ Browser closed', 'success');
+            logger.debug('Browser closed successfully');
+            return { success: true };
+        } else {
+            throw new Error(data.error || 'Failed to close browser');
+        }
+    } catch (error) {
+        logger.error('❌ Close browser failed:', error);
+        window.Utils.showToast(`❌ Error: ${error.message}`, 'error');
+        return { success: false, error: error.message };
+    }
+}
+
+/**
+ * Close Ideogram browser
+ */
+async function closeIdeogramBrowser() {
+    logger.debug('🔴 [SHIM] Closing Ideogram browser...');
+    
+    try {
+        const response = await fetch('/api/ideogram/close', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            window.Utils.showToast('✅ Browser closed', 'success');
+            logger.debug('Browser closed successfully');
+            return { success: true };
+        } else {
+            throw new Error(data.error || 'Failed to close browser');
+        }
+    } catch (error) {
+        logger.error('❌ Close browser failed:', error);
+        window.Utils.showToast(`❌ Error: ${error.message}`, 'error');
+        return { success: false, error: error.message };
+    }
+}
+
 // Export to window object
 window.sendPromptWithGlobalSetting = sendPromptWithGlobalSetting;
 window.getCurrentBrowserMode = getCurrentBrowserMode;
 window.getBrowserMode = getBrowserMode;
 window.addRecentPrompt = addRecentPrompt;
+window.closeMidjourneyBrowser = closeMidjourneyBrowser;
+window.closeIdeogramBrowser = closeIdeogramBrowser;
 
 logger.debug('✅ Browser send shim loaded');

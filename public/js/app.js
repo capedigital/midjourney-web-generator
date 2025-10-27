@@ -62,6 +62,8 @@ class App {
     }
 
     setupEventListeners() {
+        console.log('Setting up event listeners...');
+        
         // Auth tabs
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -75,16 +77,55 @@ class App {
         });
 
         // Login form
-        document.getElementById('login-form').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.handleLogin();
-        });
+        const loginForm = document.getElementById('login-form');
+        console.log('Login form element:', loginForm);
+        if (loginForm) {
+            // Remove any existing listeners and add new one
+            const handleLoginSubmit = (e) => {
+                console.log('Login form submitted');
+                e.preventDefault();
+                e.stopPropagation();
+                this.handleLogin();
+                return false;
+            };
+            loginForm.addEventListener('submit', handleLoginSubmit, true);
+            
+            // Also prevent default on the submit button directly
+            const loginButton = loginForm.querySelector('button[type="submit"]');
+            if (loginButton) {
+                loginButton.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    this.handleLogin();
+                    return false;
+                });
+            }
+        } else {
+            console.error('Login form not found!');
+        }
 
         // Register form
-        document.getElementById('register-form').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.handleRegister();
-        });
+        const registerForm = document.getElementById('register-form');
+        if (registerForm) {
+            const handleRegisterSubmit = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.handleRegister();
+                return false;
+            };
+            registerForm.addEventListener('submit', handleRegisterSubmit, true);
+            
+            // Also prevent default on the submit button directly
+            const registerButton = registerForm.querySelector('button[type="submit"]');
+            if (registerButton) {
+                registerButton.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    this.handleRegister();
+                    return false;
+                });
+            }
+        } else {
+            console.error('Register form not found!');
+        }
 
         // Module navigation (using menu-item for sidebar, nav-item for legacy)
         document.querySelectorAll('.menu-item, .nav-item').forEach(btn => {
@@ -150,11 +191,24 @@ class App {
             });
         }
 
-        // Batch send to Discord
-        const sendAllDiscordBtn = document.getElementById('send-all-discord-btn');
-        if (sendAllDiscordBtn) {
-            sendAllDiscordBtn.addEventListener('click', () => {
-                this.sendAllToDiscord();
+        // Batch send to Midjourney
+        const sendAllMidjourneyBtn = document.getElementById('send-all-midjourney-btn');
+        console.log('🔍 sendAllMidjourneyBtn:', sendAllMidjourneyBtn);
+        if (sendAllMidjourneyBtn) {
+            console.log('✅ Attaching batch send listener to send-all-midjourney-btn');
+            sendAllMidjourneyBtn.addEventListener('click', () => {
+                console.log('🚀🚀🚀 BATCH SEND BUTTON CLICKED!');
+                this.sendAllToMidjourney();
+            });
+        } else {
+            console.error('❌ send-all-midjourney-btn not found!');
+        }
+
+        // Batch send to Ideogram
+        const sendAllIdeogramBtn = document.getElementById('send-all-ideogram-btn');
+        if (sendAllIdeogramBtn) {
+            sendAllIdeogramBtn.addEventListener('click', () => {
+                this.sendAllToIdeogram();
             });
         }
     }
@@ -212,8 +266,12 @@ class App {
         const password = document.getElementById('login-password').value;
         const errorEl = document.getElementById('login-error');
 
+        console.log('Login attempt:', email);
+        
         try {
+            console.log('Calling API login...');
             const data = await window.api.login(email, password);
+            console.log('Login response:', data);
             this.currentUser = data.user;
             
             // Show "access granted" message then proceed
@@ -503,7 +561,122 @@ class App {
         this.switchModule('generator');
     }
 
-    async sendAllToDiscord() {
+    async sendAllToMidjourney() {
+        console.log('🎯🎯🎯 sendAllToMidjourney CALLED');
+        
+        // Get all selected prompts
+        const selectedPrompts = [];
+        document.querySelectorAll('.prompt-selector:checked').forEach(checkbox => {
+            const promptItem = checkbox.closest('.prompt-item');
+            const textarea = promptItem?.querySelector('.prompt-text');
+            if (textarea) {
+                selectedPrompts.push(textarea.value);
+            }
+        });
+
+        console.log('📋 Selected prompts:', selectedPrompts.length);
+
+        if (selectedPrompts.length === 0) {
+            window.Utils.showToast('No prompts selected', 'error');
+            return;
+        }
+
+        const btn = document.getElementById('send-all-midjourney-btn');
+        console.log('🔍 Looking for send-all-midjourney-btn:', btn);
+        if (!btn) return;
+
+        // Show status console
+        const statusConsole = document.getElementById('batch-status-console');
+        const statusLog = document.getElementById('status-log');
+        const statusProgress = document.getElementById('status-progress');
+        
+        if (statusConsole) {
+            statusConsole.style.display = 'block';
+            statusLog.innerHTML = '';
+            this.addStatusMessage('🚀 Initializing batch send...', 'info');
+            statusProgress.textContent = `0/${selectedPrompts.length}`;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Sending...`;
+
+        try {
+            this.addStatusMessage(`📋 Sending ${selectedPrompts.length} prompts to Midjourney`, 'info');
+            
+            const response = await fetch('/api/midjourney/batch', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({ 
+                    prompts: selectedPrompts,
+                    delayMs: 500 
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                const successful = data.results.filter(r => r.success).length;
+                const failed = data.results.length - successful;
+                
+                if (statusProgress) statusProgress.textContent = `${successful}/${selectedPrompts.length}`;
+                
+                if (failed === 0) {
+                    this.addStatusMessage(`✅ All ${successful} prompts sent successfully!`, 'success');
+                    window.Utils.showToast(`✅ All ${successful} prompts sent!`, 'success');
+                } else {
+                    this.addStatusMessage(`⚠️ ${successful} succeeded, ${failed} failed`, 'warning');
+                    window.Utils.showToast(`⚠️ Sent ${successful}/${selectedPrompts.length} prompts`, 'warning');
+                }
+                
+                btn.innerHTML = '<i class="fas fa-check"></i> Sent!';
+                setTimeout(() => {
+                    btn.innerHTML = '<i class="fas fa-robot"></i> Send to Midjourney';
+                    btn.disabled = false;
+                }, 3000);
+            } else {
+                this.addStatusMessage(`❌ Failed: ${data.error}`, 'error');
+                throw new Error(data.error || 'Failed to send');
+            }
+        } catch (error) {
+            logger.error('Midjourney batch send failed:', error);
+            this.addStatusMessage(`❌ Error: ${error.message}`, 'error');
+            window.Utils.showToast('❌ Error: ' + error.message, 'error');
+            btn.innerHTML = '<i class="fas fa-robot"></i> Send to Midjourney';
+            btn.disabled = false;
+        }
+    }
+
+    addStatusMessage(message, type = 'info') {
+        const statusLog = document.getElementById('status-log');
+        if (!statusLog) return;
+
+        const colors = {
+            info: '#888',
+            success: '#4CAF50',
+            warning: '#FF9800',
+            error: '#F44336'
+        };
+
+        const timestamp = new Date().toLocaleTimeString('en-US', { 
+            hour12: false, 
+            hour: '2-digit', 
+            minute: '2-digit', 
+            second: '2-digit' 
+        });
+
+        const entry = document.createElement('div');
+        entry.style.color = colors[type] || colors.info;
+        entry.style.marginTop = '4px';
+        entry.textContent = `[${timestamp}] ${message}`;
+        
+        statusLog.appendChild(entry);
+        statusLog.scrollTop = statusLog.scrollHeight;
+    }
+
+    async sendAllToIdeogram() {
         // Get all selected prompts
         const selectedPrompts = [];
         document.querySelectorAll('.prompt-selector:checked').forEach(checkbox => {
@@ -519,101 +692,49 @@ class App {
             return;
         }
 
-        if (selectedPrompts.length > 20) {
-            window.Utils.showToast('Maximum 20 prompts per batch. Please deselect some prompts.', 'error');
-            return;
-        }
-
-        const btn = document.getElementById('send-all-discord-btn');
+        const btn = document.getElementById('send-all-ideogram-btn');
         if (!btn) return;
 
-        // Show status bar
-        const statusBar = document.getElementById('discord-status-bar');
-        const statusText = document.getElementById('discord-status-text');
-        const progressBar = document.getElementById('discord-progress-bar');
-        const statusLog = document.getElementById('discord-status-log');
-        
-        statusBar.style.display = 'block';
-        statusText.textContent = `Preparing to send ${selectedPrompts.length} prompts...`;
-        progressBar.style.width = '0%';
-        statusLog.innerHTML = '';
-
         btn.disabled = true;
-        btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Sending...`;
+        btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Sending to Ideogram...`;
 
         try {
-            // Send prompts one by one with status updates
-            let successful = 0;
-            let failed = 0;
-            
-            for (let i = 0; i < selectedPrompts.length; i++) {
-                const prompt = selectedPrompts[i];
-                const promptNum = i + 1;
-                const progress = ((i + 1) / selectedPrompts.length) * 100;
-                
-                // Update status
-                statusText.textContent = `Sending prompt ${promptNum}/${selectedPrompts.length}...`;
-                progressBar.style.width = `${progress}%`;
-                
-                // Add log entry
-                const logEntry = document.createElement('div');
-                logEntry.style.color = '#999';
-                logEntry.innerHTML = `<span style="color: #5865F2;">⟳</span> Prompt ${promptNum}: <span style="color: #aaa; font-size: 10px;">${prompt.substring(0, 60)}...</span>`;
-                statusLog.appendChild(logEntry);
-                statusLog.scrollTop = statusLog.scrollHeight;
-                
-                try {
-                    const response = await fetch('/api/discord/send', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${localStorage.getItem('token')}`
-                        },
-                        body: JSON.stringify({ prompt })
-                    });
+            const response = await fetch('/api/ideogram/batch', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({ 
+                    prompts: selectedPrompts,
+                    delayMs: 500 
+                })
+            });
 
-                    if (response.ok) {
-                        successful++;
-                        logEntry.innerHTML = `<span style="color: #3ba55d;">✓</span> Prompt ${promptNum}: <span style="color: #3ba55d;">Sent successfully</span>`;
-                    } else {
-                        failed++;
-                        const data = await response.json();
-                        logEntry.innerHTML = `<span style="color: #ed4245;">✗</span> Prompt ${promptNum}: <span style="color: #ed4245;">${data.error || 'Failed'}</span>`;
-                    }
-                } catch (error) {
-                    failed++;
-                    logEntry.innerHTML = `<span style="color: #ed4245;">✗</span> Prompt ${promptNum}: <span style="color: #ed4245;">Network error</span>`;
+            const data = await response.json();
+
+            if (data.success) {
+                const successful = data.results.filter(r => r.success).length;
+                const failed = data.results.length - successful;
+                
+                if (failed === 0) {
+                    window.Utils.showToast(`✅ All ${successful} prompts sent to Ideogram!`, 'success');
+                } else {
+                    window.Utils.showToast(`⚠️ Sent ${successful}/${selectedPrompts.length} prompts. ${failed} failed.`, 'warning');
                 }
                 
-                statusLog.scrollTop = statusLog.scrollHeight;
-                
-                // Delay between messages (except for last one)
-                if (i < selectedPrompts.length - 1) {
-                    await new Promise(resolve => setTimeout(resolve, 1500));
-                }
-            }
-            
-            // Final status
-            progressBar.style.width = '100%';
-            if (failed === 0) {
-                statusText.innerHTML = `<span style="color: #3ba55d;">✅ All ${successful} prompts sent successfully!</span>`;
-                window.Utils.showToast(`✅ All ${successful} prompts sent to Discord!`, 'success');
+                btn.innerHTML = '<i class="fas fa-check"></i> Sent!';
+                setTimeout(() => {
+                    btn.innerHTML = '<i class="fas fa-image"></i> Send to Ideogram';
+                    btn.disabled = false;
+                }, 3000);
             } else {
-                statusText.innerHTML = `<span style="color: #faa61a;">⚠️ Sent ${successful}/${selectedPrompts.length} prompts. ${failed} failed.</span>`;
-                window.Utils.showToast(`⚠️ Sent ${successful}/${selectedPrompts.length} prompts. ${failed} failed.`, 'warning');
+                throw new Error(data.error || 'Failed to send');
             }
-            
-            btn.innerHTML = '<i class="fas fa-check"></i> Sent!';
-            setTimeout(() => {
-                btn.innerHTML = '<i class="fab fa-discord"></i> Send All to Discord';
-                btn.disabled = false;
-            }, 3000);
-            
         } catch (error) {
-            logger.error('Batch Discord send failed:', error);
-            statusText.innerHTML = `<span style="color: #ed4245;">❌ Error: ${error.message}</span>`;
-            window.Utils.showToast('❌ Network error: ' + error.message, 'error');
-            btn.innerHTML = '<i class="fab fa-discord"></i> Send All to Discord';
+            logger.error('Ideogram batch send failed:', error);
+            window.Utils.showToast('❌ Error: ' + error.message, 'error');
+            btn.innerHTML = '<i class="fas fa-image"></i> Send to Ideogram';
             btn.disabled = false;
         }
     }
