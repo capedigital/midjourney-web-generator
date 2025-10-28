@@ -211,10 +211,6 @@ window.MidjourneyHandler = {
     },
 
     sendToIdeogram: async function(prompt, isPartOfBatch = false) {
-        if (!window.ipcRenderer) {
-            window.Utils.showToast('Ideogram sending not available', 'error');
-            return;
-        }
         try {
             // Simple validation - prompt should already be clean if passed from basePrompt
             let cleanPrompt = String(prompt || '').trim();
@@ -222,17 +218,24 @@ window.MidjourneyHandler = {
             // Only do minimal cleaning in case this is called with a raw prompt
             cleanPrompt = cleanPrompt.replace(/^\/imagine prompt:\s*/i, '');
             
+            // Remove ALL Midjourney parameters for Ideogram
+            cleanPrompt = cleanPrompt.replace(/\s+(--ar\s+[\d:]+|--stylize\s+\d+|--chaos\s+\d+|--c\s+\d+|--weird\s+\d+|--style\s+\w+|--niji\s+\d+|--turbo|--fast|--relax|--v\s+[\d\.]+|--zoom\s+[\d\.]+|--draft|--standard|--mode\s+\w+|--sw\s+\d+|--no\s+[\w\s,]+|--p\s+\w+|--sref\s+[\w\-:/.]+)/g, '').trim();
+            
             if (!cleanPrompt) {
                 throw new Error('Empty prompt');
             }
             
             logger.debug('🎨 Sending clean prompt to Ideogram:', cleanPrompt);
             
-            // Send via IPC and wait for response
-            await window.ipcRenderer.invoke('send-to-ideogram', {
-                prompt: cleanPrompt
-            });
-            window.Utils.showToast('Prompt sent to Ideogram!', 'success');
+            // Send via HTTP API
+            const result = await window.api.ideogramSubmit(cleanPrompt);
+            
+            if (result.success) {
+                window.Utils.showToast('Prompt sent to Ideogram!', 'success');
+            } else {
+                throw new Error(result.error || 'Failed to submit to Ideogram');
+            }
+            
             // Add delay between batch items 
             if (isPartOfBatch) {
                 await new Promise(resolve => setTimeout(resolve, 3000));
@@ -246,15 +249,20 @@ window.MidjourneyHandler = {
     batchSendToIdeogram: async function(prompts) {
         const cleanedPrompts = Array.isArray(prompts) ? prompts : [prompts];
         
-        for (let i = 0; i < cleanedPrompts.length; i++) {
-            try {
-                window.Utils.showToast(`Processing prompt ${i + 1} of ${cleanedPrompts.length}`, 'info');
-                await this.sendToIdeogram(cleanedPrompts[i], true);
-            } catch (error) {
-                console.error(`Error sending prompt ${i + 1}:`, error);
+        try {
+            window.Utils.showToast(`Starting batch of ${cleanedPrompts.length} prompts to Ideogram`, 'info');
+            
+            // Use the batch API endpoint for better performance
+            const result = await window.api.ideogramBatch(cleanedPrompts, 3000);
+            
+            if (result.success) {
+                window.Utils.showToast('Batch processing complete!', 'success');
+            } else {
+                throw new Error(result.error || 'Batch processing failed');
             }
+        } catch (error) {
+            console.error('Error in batch send to Ideogram:', error);
+            window.Utils.showToast('Batch error: ' + error.message, 'error');
         }
-        
-        window.Utils.showToast('Batch processing complete', 'success');
     }
 };

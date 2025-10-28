@@ -83,7 +83,7 @@
 }
 
 .click-to-edit-display.placeholder {
-    color: var(--text-secondary);
+    color: var(--text-muted);
     font-style: italic;
     background: var(--bg-primary);
 }

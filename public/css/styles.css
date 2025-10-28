@@ -7,6 +7,7 @@
     --danger: #ef4444;
     --warning: #f59e0b;
     --info: #3b82f6;
+    --accent-color: #4d552a;
 
     
     --bg-main: #1f1f1f;
@@ -389,12 +390,12 @@ body {
 }
 
 .menu-item:hover {
-    background: var(--bg-hover);
+    background: var(--accent-color);
     color: var(--text-primary);
 }
 
 .menu-item.active {
-    background: var(--primary);
+    background: var(--accent-color);
     color: white;
     box-shadow: var(--shadow-sm);
 }
@@ -667,6 +668,7 @@ body {
     margin-bottom: 20px;
 }
 
+
 input[type="text"],
 input[type="email"],
 input[type="password"],
@@ -745,11 +747,16 @@ select option {
     padding: 8px 12px;
 }
 
+input::placeholder, textarea::placeholder {
+    color: var(--text-muted)!important;
+}
+
+
 /* Buttons */
 button,
 .btn {
     font-family: input-mono, 'Courier New', monospace;
-    font-size: 1rem;
+    font-size: .8rem;
     padding: 10px 20px;
     border-radius: 4px;
     cursor: pointer;
@@ -1069,7 +1076,7 @@ button,
   --bg-card: #333333;
   --text-primary: #eaeaea;
   --text-secondary: #bbbbbb;
-  --accent-color: #4e94ce;
+  --accent-color: #464931;
   --hover-bg: #3a3a3a;
 }
 
@@ -1080,7 +1087,7 @@ html, body {
 }
 
 body {
-  font-family: Arial, sans-serif;
+  font-family: input-mono, Arial, sans-serif;
   font-size: 12px;
   margin: 0;
   padding: 0;
@@ -1089,7 +1096,7 @@ body {
   height: 100vh;
   margin: 0;
   padding: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  font-family: input-mono, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
   background-color: var(--bg-dark);
   color: var(--text-primary);
   line-height: 1.5;
@@ -3780,5 +3787,50 @@ input:checked + .toggle-slider:before {
   color: var(--text-secondary);
   font-style: italic;
   padding: 2em;
+}
+
+/* Settings - Authentication Status Indicators */
+.auth-indicator {
+  display: inline-block;
+  margin-right: 8px;
+  font-size: 20px;
+  line-height: 1;
+  transition: color 0.3s ease;
+}
+
+.auth-indicator.not-authenticated {
+  color: #DC3545; /* Red */
+}
+
+.auth-indicator.authenticated {
+  color: #28A745; /* Green */
+}
+
+.status-message {
+  display: inline-block;
+  margin-left: 8px;
+  font-size: 0.9em;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.status-message.success {
+  color: #28A745;
+  background: rgba(40, 167, 69, 0.1);
+}
+
+.status-message.error {
+  color: #DC3545;
+  background: rgba(220, 53, 69, 0.1);
+}
+
+.status-message.warning {
+  color: #FFC107;
+  background: rgba(255, 193, 7, 0.1);
+}
+
+.status-message.info {
+  color: #17A2B8;
+  background: rgba(23, 162, 184, 0.1);
 }
 

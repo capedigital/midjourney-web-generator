@@ -11,11 +11,24 @@ class MidjourneyBrowserService {
   }
 
   /**
+   * Clean up lock files that might prevent browser from starting
+   */
+  async cleanupLockFiles() {
+    try {
+      const lockFile = path.join(this.userDataDir, 'SingletonLock');
+      await fs.unlink(lockFile).catch(() => {});
+      console.log('🧹 Cleaned up lock files');
+    } catch (error) {
+      // Ignore errors - lock file might not exist
+    }
+  }
+
+  /**
    * Initialize browser with persistent profile
    */
   async initialize(headless = true) {
-    if (this.browser && this.isInitialized) {
-      console.log('✅ Browser already initialized');
+    if (this.browser && this.browser.isConnected()) {
+      console.log('✅ Browser already running and connected');
       return;
     }
 
@@ -32,6 +45,9 @@ class MidjourneyBrowserService {
       this.isInitialized = false;
     }
 
+    // Clean up any stale lock files
+    await this.cleanupLockFiles();
+
     console.log('🚀 Initializing Midjourney browser automation...');
     console.log(`   Headless mode: ${headless}`);
     console.log(`   User data dir: ${this.userDataDir}`);
@@ -44,16 +60,17 @@ class MidjourneyBrowserService {
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-blink-features=AutomationControlled',
-        '--window-position=3000,3000',
-        '--disable-popup-blocking'
+        '--window-position=100,100',
+        '--disable-popup-blocking',
+        '--disable-background-mode',
+        '--disable-backgrounding-occluded-windows',
+        '--disable-features=TranslateUI',
+        '--disable-ipc-flooding-protection',
+        '--enable-features=NetworkService,NetworkServiceInProcess'
       ],
-      ignoreDefaultArgs: ['--enable-automation'],
+      ignoreDefaultArgs: ['--enable-automation', '--enable-blink-features=IdleDetection'],
       defaultViewport: null
-    };    if (!headless) {
-      // Add args to keep window visible and in foreground
-      launchOptions.args.push('--disable-background-mode');
-      launchOptions.args.push('--disable-backgrounding-occluded-windows');
-    }
+    };
 
     console.log('   Launch options:', JSON.stringify(launchOptions, null, 2));
 
@@ -76,6 +93,52 @@ class MidjourneyBrowserService {
 
       this.page = await this.browser.newPage();
       console.log('✅ New page created');
+      
+      // Enhanced stealth: Remove webdriver flags and set realistic properties
+      await this.page.evaluateOnNewDocument(() => {
+        // Remove webdriver property
+        Object.defineProperty(navigator, 'webdriver', {
+          get: () => false,
+        });
+        
+        // Mock plugins
+        Object.defineProperty(navigator, 'plugins', {
+          get: () => [1, 2, 3, 4, 5],
+        });
+        
+        // Mock languages
+        Object.defineProperty(navigator, 'languages', {
+          get: () => ['en-US', 'en'],
+        });
+        
+        // Chrome runtime
+        window.chrome = {
+          runtime: {}
+        };
+        
+        // Permissions
+        const originalQuery = window.navigator.permissions.query;
+        window.navigator.permissions.query = (parameters) => (
+          parameters.name === 'notifications' ?
+            Promise.resolve({ state: Notification.permission }) :
+            originalQuery(parameters)
+        );
+      });
+      
+      // Set realistic viewport and user agent
+      await this.page.setViewport({ width: 1920, height: 1080 });
+      await this.page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36');
+      
+      // Set extra headers
+      await this.page.setExtraHTTPHeaders({
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+        'Sec-Fetch-Site': 'none',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-User': '?1',
+        'Sec-Fetch-Dest': 'document'
+      });
 
       this.isInitialized = true;
       console.log('✅ Midjourney browser initialized with persistent profile');
@@ -149,11 +212,15 @@ class MidjourneyBrowserService {
     try {
       console.log('🔐 Opening Midjourney for manual authentication...');
       
-      // Close any existing browser instance first
+      // Force close any existing browser instance
       if (this.browser) {
         console.log('🔄 Closing existing browser instance...');
         await this.close();
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Wait for cleanup
       }
+      
+      // Clean up lock files before launching
+      await this.cleanupLockFiles();
       
       // Initialize with visible browser
       await this.initialize(false);
@@ -423,10 +490,18 @@ class MidjourneyBrowserService {
    */
   async close() {
     if (this.browser) {
-      await this.browser.close();
+      try {
+        await this.browser.close();
+      } catch (error) {
+        console.log('⚠️ Error closing browser:', error.message);
+      }
       this.browser = null;
       this.page = null;
       this.isInitialized = false;
+      
+      // Clean up lock files after closing
+      await this.cleanupLockFiles();
+      
       console.log('✅ Midjourney browser closed');
     }
   }

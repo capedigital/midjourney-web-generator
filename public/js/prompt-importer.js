@@ -245,7 +245,7 @@ class PromptImporter {
         
         promptDiv.innerHTML = `
             <div class="prompt-header-compact">
-                // <input type="checkbox" class="prompt-selector" checked>
+                
                 <span class="prompt-title">${index}</span>
             </div>
             <div class="prompt-content-compact">
