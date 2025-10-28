@@ -37,6 +37,26 @@ class HALMessenger {
         this.element.style.opacity = '1';
         this.element.style.display = 'flex';
         
+        // Pause when any input field gets focus
+        document.addEventListener('focusin', (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                this.stop();
+            }
+        });
+        
+        // Resume when input fields lose focus
+        document.addEventListener('focusout', (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                // Check if another input immediately gained focus
+                setTimeout(() => {
+                    const activeElement = document.activeElement;
+                    if (!activeElement || (activeElement.tagName !== 'INPUT' && activeElement.tagName !== 'TEXTAREA')) {
+                        this.resume();
+                    }
+                }, 100);
+            }
+        });
+        
         this.type();
     }
     
@@ -59,14 +79,25 @@ class HALMessenger {
             
             // Don't update if an input field is focused (1Password compatibility)
             const activeElement = document.activeElement;
-            if (!activeElement || (activeElement.tagName !== 'INPUT' && activeElement.tagName !== 'TEXTAREA')) {
+            const isInputFocused = activeElement && 
+                                  (activeElement.tagName === 'INPUT' || 
+                                   activeElement.tagName === 'TEXTAREA' ||
+                                   activeElement.tagName === 'BUTTON');
+            
+            if (!isInputFocused) {
                 this.element.textContent = text;
                 // Scroll to keep the cursor visible
                 this.element.scrollLeft = this.element.scrollWidth;
             }
             
             this.currentCharIndex++;
-            setTimeout(this.type, this.typingSpeed);
+            // Only continue typing if input is not focused
+            if (!isInputFocused) {
+                setTimeout(this.type, this.typingSpeed);
+            } else {
+                // Retry later if input is focused
+                setTimeout(this.type, 500);
+            }
         } else {
             // Message fully typed, wait then fade out
             setTimeout(() => this.fadeOut(), this.pauseBeforeDelete);

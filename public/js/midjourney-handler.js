@@ -112,9 +112,16 @@ window.MidjourneyHandler = {
     applyParametersToAll: function() {
         const prompts = document.querySelectorAll('textarea.prompt-text');
         
+        if (prompts.length === 0) {
+            logger.debug('⚠️ No prompts found to apply parameters to');
+            return;
+        }
+        
         // Get FRESH current parameters (not cached ones)
         const paramString = this.getCurrentMJParameters();
+        logger.debug('🔧 Applying parameters to', prompts.length, 'prompts:', paramString);
 
+        let updatedCount = 0;
         prompts.forEach((promptTextarea, index) => {
             let basePrompt = promptTextarea.dataset.basePrompt;
             
@@ -131,6 +138,7 @@ window.MidjourneyHandler = {
                     
                     // Store it for future use
                     promptTextarea.dataset.basePrompt = basePrompt;
+                    logger.debug(`📝 Extracted and stored basePrompt for prompt ${index}:`, basePrompt.substring(0, 50) + '...');
                 }
             }
             
@@ -142,7 +150,12 @@ window.MidjourneyHandler = {
                 const newValue = cleanParamString 
                     ? `/imagine prompt: ${cleanBasePrompt} ${cleanParamString}`
                     : `/imagine prompt: ${cleanBasePrompt}`;
+                
                 promptTextarea.value = newValue;
+                updatedCount++;
+                logger.debug(`✅ Updated prompt ${index}:`, newValue.substring(0, 100) + '...');
+            } else {
+                logger.warn(`⚠️ No basePrompt found for prompt ${index}`);
             }
         });
 
@@ -151,8 +164,10 @@ window.MidjourneyHandler = {
 
         // Show toast notification
         if (window.Utils) {
-            window.Utils.showToast('Parameters updated for all prompts', 'success');
+            window.Utils.showToast(`Parameters updated for ${updatedCount} prompts`, 'success');
         }
+        
+        logger.debug(`✅ Applied parameters to ${updatedCount} of ${prompts.length} prompts`);
     },
 
     stripMJParameters: function(prompt) {

@@ -26,7 +26,7 @@ const SplitPaneView = {
                 </button>
                 <div class="app-logo">
                     <i class="fas fa-magic"></i>
-                    <span>PromptLab</span>
+                    <span>PromptGen</span>
                 </div>
             </div>
             <div class="top-nav-right">

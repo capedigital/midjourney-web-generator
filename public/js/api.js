@@ -75,6 +75,68 @@ class API {
     async getProfile() {
         return this.request('/api/auth/profile');
     }
+
+    // Ideogram API methods
+    async ideogramSetup() {
+        return this.request('/api/ideogram/setup', {
+            method: 'POST'
+        });
+    }
+
+    async ideogramStatus() {
+        return this.request('/api/ideogram/status');
+    }
+
+    async ideogramSubmit(prompt, options = {}) {
+        return this.request('/api/ideogram/submit', {
+            method: 'POST',
+            body: JSON.stringify({ prompt, options })
+        });
+    }
+
+    async ideogramBatch(prompts, delayMs = 3000) {
+        return this.request('/api/ideogram/batch', {
+            method: 'POST',
+            body: JSON.stringify({ prompts, delayMs })
+        });
+    }
+
+    async ideogramClose() {
+        return this.request('/api/ideogram/close', {
+            method: 'POST'
+        });
+    }
+
+    // Midjourney API methods
+    async midjourneySetup() {
+        return this.request('/api/midjourney/setup', {
+            method: 'POST'
+        });
+    }
+
+    async midjourneyStatus() {
+        return this.request('/api/midjourney/status');
+    }
+
+    async midjourneySubmit(prompt, options = {}) {
+        return this.request('/api/midjourney/submit', {
+            method: 'POST',
+            body: JSON.stringify({ prompt, options })
+        });
+    }
+
+    async midjourneyBatch(prompts, delayMs = 3000) {
+        return this.request('/api/midjourney/batch', {
+            method: 'POST',
+            body: JSON.stringify({ prompts, delayMs })
+        });
+    }
+
+    async midjourneyClose() {
+        return this.request('/api/midjourney/close', {
+            method: 'POST'
+        });
+    }
 }
 
 window.api = new API();

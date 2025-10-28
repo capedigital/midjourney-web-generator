@@ -223,7 +223,7 @@ const PromptSplitPane = {
             gap: '8px',
             zIndex: '1000',
             fontSize: '14px',
-            fontFamily: "'code-saver', 'Courier New', monospace",
+            fontFamily: "'input-mono', 'Courier New', monospace",
             boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
             animation: 'slideIn 0.3s ease'
         });

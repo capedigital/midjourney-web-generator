@@ -244,28 +244,27 @@ class PromptImporter {
         logger.debug('🔍 Initial prompt value:', initialPrompt.substring(0, 100) + '...');
         
         promptDiv.innerHTML = `
-            <div class="prompt-header">
-                <input type="checkbox" class="prompt-selector" checked>
-                <span class="prompt-title">Prompt ${index}</span>
-                <div class="prompt-actions">
-                    <button class="copy-prompt">
-                        <i class="fas fa-copy"></i> Copy
-                    </button>
-                    <button class="edit-prompt">
-                        <i class="fas fa-edit"></i> Edit
-                    </button>
-                    <button class="delete-prompt">
-                        <i class="fas fa-trash"></i> Delete
-                    </button>
-                    <button class="send-midjourney midjourney-btn">
-                        <i class="fas fa-paint-brush"></i> Midjourney
-                    </button>
-                    <button class="send-ideogram ideogram-btn">
-                        <i class="fas fa-image"></i> Ideogram
-                    </button>
-                </div>
+            <div class="prompt-header-compact">
+                // <input type="checkbox" class="prompt-selector" checked>
+                <span class="prompt-title">${index}</span>
             </div>
-            <textarea class="prompt-text">${initialPrompt}</textarea>
+            <div class="prompt-content-compact">
+                <textarea class="prompt-text">${initialPrompt}</textarea>
+            </div>
+            <div class="prompt-actions-compact">
+                <button class="copy-prompt" title="Copy to clipboard">
+                    <i class="fas fa-copy"></i>  Copy
+                </button>
+                <button class="delete-prompt" title="Delete prompt">
+                    <i class="fas fa-trash"></i>  Delete    
+                </button>
+                <button class="send-ideogram ideogram-btn" title="Send to Ideogram">
+                    <i class="fas fa-image"></i> Ideogram
+                </button>
+                <button class="send-midjourney midjourney-btn" title="Send to Midjourney">
+                    <i class="fas fa-paint-brush"></i> Midjourney
+                </button>
+            </div>
         `;
         
         // CRITICAL: Add to DOM FIRST, then attach event listeners
@@ -279,7 +278,7 @@ class PromptImporter {
             window.updateAllButtonsSimple();
         }
         
-        // CRITICAL: Store the clean base prompt in the dataset like Template Builder does
+        // CRITICAL: Store the clean base prompt in the dataset
         const textarea = promptDiv.querySelector('.prompt-text');
         if (textarea) {
             logger.debug('🔍 Storing basePrompt for prompt', index, ':', cleanPrompt.substring(0, 50) + '...');
@@ -290,21 +289,18 @@ class PromptImporter {
 
     attachButtonEventListeners(promptDiv) {
         console.log('🔧🔧🔧 attachButtonEventListeners CALLED');
-        console.log('  - promptDiv:', promptDiv);
-        console.log('  - promptDiv className:', promptDiv?.className);
-        console.log('  - promptDiv HTML length:', promptDiv?.innerHTML?.length);
         logger.debug('🔧 [IMPORTER] attachButtonEventListeners called');
         
         const textarea = promptDiv.querySelector('.prompt-text');
+        
         if (!textarea) {
-            console.log('❌❌❌ NO TEXTAREA FOUND');
+            console.log('❌ NO TEXTAREA FOUND');
             logger.error('❌ [IMPORTER] No textarea found in promptDiv');
             return;
         }
         
-        console.log('✅✅✅ Textarea found, proceeding...');
-        logger.debug('✅ [IMPORTER] Found textarea, attaching button listeners...');
-        
+        logger.debug('✅ [IMPORTER] Found textarea, setting up event listeners...');
+
         // Copy button
         const copyBtn = promptDiv.querySelector('.copy-prompt');
         copyBtn.addEventListener('click', () => {
@@ -313,20 +309,6 @@ class PromptImporter {
             }).catch(() => {
                 this.showNotification('Failed to copy prompt', 'error');
             });
-        });
-
-        // Edit button
-        const editBtn = promptDiv.querySelector('.edit-prompt');
-        editBtn.addEventListener('click', () => {
-            const isReadOnly = textarea.readOnly;
-            textarea.readOnly = !isReadOnly;
-            if (!isReadOnly) {
-                textarea.focus();
-                textarea.select();
-                this.showNotification('Editing enabled - click outside to save', 'info');
-            } else {
-                this.showNotification('Changes saved', 'success');
-            }
         });
 
         // Delete button
@@ -338,61 +320,33 @@ class PromptImporter {
 
         // Midjourney button
         const midjourneyBtn = promptDiv.querySelector('.send-midjourney');
-        console.log('🔍🔍🔍 Queried .send-midjourney button:', midjourneyBtn);
         if (!midjourneyBtn) {
-            console.error('❌❌❌ Could not find .send-midjourney button in promptDiv!');
-            logger.error('❌ Could not find .send-midjourney button');
-            console.log('promptDiv innerHTML:', promptDiv.innerHTML.substring(0, 200));
+            console.error('❌ Could not find .send-midjourney button');
             return;
         }
         
-        console.log('✅✅✅ Found Midjourney button, attaching listener...');
-        console.log('  - Button element:', midjourneyBtn);
-        console.log('  - Button className:', midjourneyBtn.className);
-        console.log('  - Button tagName:', midjourneyBtn.tagName);
-        console.log('  - Button textContent:', midjourneyBtn.textContent);
-        logger.debug('✅ Attaching click listener to Midjourney button');
-        
-        // Store reference for debugging
-        const self = this; // Capture 'this' for use in handler
-        const clickHandler = function(e) {
-            console.log('🔵🔵🔵 MIDJOURNEY BUTTON CLICKED - THIS SHOULD ALWAYS SHOW');
-            console.log('  - Event:', e);
-            console.log('  - Event target:', e.target);
-            console.log('  - Event currentTarget:', e.currentTarget);
+        const self = this;
+        midjourneyBtn.addEventListener('click', function(e) {
+            console.log('🔵 MIDJOURNEY BUTTON CLICKED');
             logger.debug('🔵 [IMPORTER] Midjourney button clicked!');
             
             midjourneyBtn.disabled = true;
             midjourneyBtn.textContent = 'Sending...';
             
-            logger.debug('📝 [IMPORTER] Prompt value:', textarea.value.substring(0, 100) + '...');
-            
-            // Use global browser setting
             if (window.sendPromptWithGlobalSetting) {
                 logger.debug('✅ [IMPORTER] Calling sendPromptWithGlobalSetting');
                 window.sendPromptWithGlobalSetting(textarea.value, 'midjourney');
                 self.showNotification('Sending prompt to Midjourney...', 'info');
             } else {
                 logger.error('❌ [IMPORTER] sendPromptWithGlobalSetting not available');
-                // Fallback to old method
-                if (window.ipcRenderer) {
-                    window.ipcRenderer.send('send-to-midjourney', textarea.value);
-                    self.showNotification('Sending prompt to Midjourney...', 'info');
-                } else {
-                    self.showNotification('Midjourney integration not available', 'error');
-                }
+                self.showNotification('Midjourney integration not available', 'error');
             }
             
-            // Re-enable button after delay
             setTimeout(() => {
                 midjourneyBtn.disabled = false;
                 midjourneyBtn.innerHTML = '<i class="fas fa-paint-brush"></i> Midjourney';
             }, 3000);
-        };
-        
-        midjourneyBtn.addEventListener('click', clickHandler);
-        console.log('✅ Click listener attached successfully');
-        console.log('  - Handler function:', clickHandler);
+        });
 
         // Ideogram button
         const ideogramBtn = promptDiv.querySelector('.send-ideogram');
@@ -400,26 +354,16 @@ class PromptImporter {
             ideogramBtn.disabled = true;
             ideogramBtn.textContent = 'Sending...';
             
-            // Strip ALL Midjourney parameters for Ideogram
             let ideogramPrompt = textarea.value.replace(/^\/imagine prompt:\s+/i, '');
-            // Remove all Midjourney parameters including newer ones
             ideogramPrompt = ideogramPrompt.replace(/\s+(--ar\s+[\d:]+|--stylize\s+\d+|--chaos\s+\d+|--c\s+\d+|--weird\s+\d+|--style\s+\w+|--niji\s+\d+|--turbo|--fast|--relax|--v\s+[\d\.]+|--zoom\s+[\d\.]+|--draft|--standard|--mode\s+\w+|--sw\s+\d+|--no\s+[\w\s,]+|--p\s+\w+|--sref\s+[\w\-:/.]+)/g, '');
             
-            // Use global browser setting
             if (window.sendPromptWithGlobalSetting) {
                 window.sendPromptWithGlobalSetting(ideogramPrompt.trim(), 'ideogram');
                 this.showNotification('Sending prompt to Ideogram...', 'info');
             } else {
-                // Fallback to old method
-                if (window.MidjourneyHandler && window.MidjourneyHandler.sendToIdeogram) {
-                    window.MidjourneyHandler.sendToIdeogram(ideogramPrompt.trim());
-                    this.showNotification('Sending prompt to Ideogram...', 'info');
-                } else {
-                    this.showNotification('Ideogram integration not available', 'error');
-                }
+                this.showNotification('Ideogram integration not available', 'error');
             }
             
-            // Re-enable button after delay
             setTimeout(() => {
                 ideogramBtn.disabled = false;
                 ideogramBtn.innerHTML = '<i class="fas fa-image"></i> Ideogram';

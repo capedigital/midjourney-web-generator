@@ -46,11 +46,17 @@ class App {
             const data = await window.api.getProfile();
             this.currentUser = data.user;
             
-            // Update username (same IDs used in both sidebar and top nav)
-            const userNameEl = document.getElementById('user-name');
-            const userEmailEl = document.getElementById('user-email');
-            if (userNameEl) userNameEl.textContent = data.user.name || data.user.email || 'User';
-            if (userEmailEl) userEmailEl.textContent = data.user.email || '';
+            // Update sidebar user profile
+            const sidebarUserName = document.getElementById('user-name');
+            const sidebarUserEmail = document.getElementById('user-email');
+            if (sidebarUserName) sidebarUserName.textContent = data.user.name || data.user.email || 'User';
+            if (sidebarUserEmail) sidebarUserEmail.textContent = data.user.email || '';
+            
+            // Update header user profile
+            const headerUserName = document.getElementById('header-user-name');
+            const headerUserEmail = document.getElementById('header-user-email');
+            if (headerUserName) headerUserName.textContent = data.user.name || data.user.email || 'User';
+            if (headerUserEmail) headerUserEmail.textContent = data.user.email || '';
             
             this.showMainScreen();
         } catch (error) {
@@ -140,6 +146,11 @@ class App {
             this.switchModule('settings-module');
         });
 
+        // Header user profile click (same as sidebar)
+        document.getElementById('header-user-profile')?.addEventListener('click', () => {
+            this.switchModule('settings-module');
+        });
+
         // Quick actions (old IDs for compatibility)
         document.getElementById('quick-action-generate')?.addEventListener('click', () => {
             this.switchModule('generator-module');
@@ -159,35 +170,18 @@ class App {
             });
         });
 
-        // Logout (only exists on main screen)
+        // Logout buttons (sidebar and header)
         const logoutBtn = document.getElementById('logout-btn');
         if (logoutBtn) {
             logoutBtn.addEventListener('click', () => {
                 this.handleLogout();
             });
         }
-
-        // Generate prompts (only exists on main screen)
-        const generateBtn = document.getElementById('generate-btn');
-        if (generateBtn) {
-            generateBtn.addEventListener('click', () => {
-                this.handleGenerate();
-            });
-        }
-
-        // Copy all prompts (only exists on main screen)
-        const copyAllBtn = document.getElementById('copy-all-btn');
-        if (copyAllBtn) {
-            copyAllBtn.addEventListener('click', () => {
-                this.copyAllPrompts();
-            });
-        }
-
-        // Copy session link (only exists on main screen)
-        const copySessionLinkBtn = document.getElementById('copy-session-link');
-        if (copySessionLinkBtn) {
-            copySessionLinkBtn.addEventListener('click', () => {
-                this.copySessionLink();
+        
+        const logoutBtnHeader = document.getElementById('logout-btn-header');
+        if (logoutBtnHeader) {
+            logoutBtnHeader.addEventListener('click', () => {
+                this.handleLogout();
             });
         }
 
@@ -239,13 +233,6 @@ class App {
             targetModule.classList.add('active');
         }
 
-        // Sync with split view if active
-        if (window.SplitPaneView && window.SplitPaneView.isActive) {
-            setTimeout(() => {
-                window.SplitPaneView.syncModuleContent();
-            }, 50);
-        }
-
         // Update browser history
         if (pushState) {
             const url = new URL(window.location);
@@ -254,9 +241,7 @@ class App {
         }
 
         // Load data for specific modules
-        if (moduleName === 'history-module') {
-            this.loadHistory();
-        } else if (moduleName === 'dashboard-module') {
+        if (moduleName === 'dashboard-module') {
             this.loadDashboardStats();
         }
     }
@@ -331,145 +316,11 @@ class App {
         this.showAuthScreen();
     }
 
-    async handleGenerate() {
-        const promptText = document.getElementById('prompt-input').value.trim();
-        const model = document.getElementById('model-select').value;
-        const generateBtn = document.getElementById('generate-btn');
-        const loading = document.getElementById('loading');
-        const promptsContainer = document.getElementById('prompts-container');
-
-        if (!promptText) {
-            this.showToast('Please enter a prompt', 'error');
-            return;
-        }
-
-        try {
-            generateBtn.disabled = true;
-            loading.classList.remove('hidden');
-            promptsContainer.classList.add('hidden');
-
-            const data = await window.api.generatePrompts(promptText, model);
-            this.currentSession = data;
-            
-            this.displayPrompts(data.prompts, data.sessionId);
-            this.showToast(`Generated ${data.prompts.length} prompts successfully!`, 'success');
-            this.loadDashboardStats(); // Update dashboard stats
-        } catch (error) {
-            this.showToast('Error generating prompts: ' + error.message, 'error');
-        } finally {
-            generateBtn.disabled = false;
-            loading.classList.add('hidden');
-        }
-    }
-
-    displayPrompts(prompts, sessionId) {
-        const container = document.getElementById('prompts-container');
-        const list = document.getElementById('prompts-list');
-        const sessionIdEl = document.getElementById('session-id');
-
-        list.innerHTML = '';
-        
-        prompts.forEach((prompt, index) => {
-            const item = document.createElement('div');
-            item.className = 'prompt-item';
-            item.innerHTML = `
-                <textarea readonly>${prompt}</textarea>
-                <div class="prompt-actions">
-                    <button onclick="app.copyPrompt(${index})">📋 Copy</button>
-                </div>
-            `;
-            list.appendChild(item);
-        });
-
-        sessionIdEl.textContent = sessionId;
-        container.classList.remove('hidden');
-    }
-
-    copyPrompt(index) {
-        const prompts = this.currentSession.prompts;
-        const prompt = prompts[index];
-        
-        navigator.clipboard.writeText(prompt).then(() => {
-            this.showToast('Prompt copied to clipboard!', 'success');
-        }).catch(() => {
-            this.showToast('Failed to copy prompt', 'error');
-        });
-    }
-
-    copyAllPrompts() {
-        if (!this.currentSession) return;
-        
-        const allPrompts = this.currentSession.prompts.join('\n\n');
-        navigator.clipboard.writeText(allPrompts).then(() => {
-            this.showToast('All prompts copied to clipboard!', 'success');
-        }).catch(() => {
-            this.showToast('Failed to copy prompts', 'error');
-        });
-    }
-
-    copySessionLink() {
-        if (!this.currentSession) return;
-        
-        const link = `${window.location.origin}/api/prompts/session/${this.currentSession.sessionId}`;
-        navigator.clipboard.writeText(link).then(() => {
-            this.showToast('Session link copied! Share this with Claude Desktop.', 'success');
-        }).catch(() => {
-            this.showToast('Failed to copy link', 'error');
-        });
-    }
-
-    async loadHistory() {
-        try {
-            const data = await window.api.getHistory();
-            this.displayHistory(data.sessions);
-        } catch (error) {
-            console.error('Error loading history:', error);
-        }
-    }
-
-    displayHistory(sessions) {
-        const list = document.getElementById('history-list');
-        
-        if (sessions.length === 0) {
-            list.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 24px;">No sessions yet. Generate some prompts to get started!</p>';
-            return;
-        }
-
-        list.innerHTML = sessions.map(session => {
-            const date = new Date(session.created_at).toLocaleString();
-            const preview = session.input_text.substring(0, 100);
-            let promptCount = 0;
-            try {
-                promptCount = JSON.parse(session.prompts).length;
-            } catch (e) {
-                promptCount = 0;
-            }
-            
-            return `
-                <div class="history-item" onclick="app.loadSessionAndSwitch(${session.id})">
-                    <div class="history-item-header">
-                        <span class="history-item-model">${session.model || 'Midjourney'}</span>
-                        <span class="history-item-date">${date}</span>
-                    </div>
-                    <div class="history-item-preview">${preview}${session.input_text.length > 100 ? '...' : ''}</div>
-                    <div class="history-item-count">${promptCount} prompts</div>
-                </div>
-            `;
-        }).join('');
-    }
-
-    async loadSession(sessionId) {
-        try {
-            const data = await window.api.getSession(sessionId);
-            this.currentSession = {
-                sessionId: data.id,
-                prompts: JSON.parse(data.prompts)
-            };
-            this.displayPrompts(this.currentSession.prompts, sessionId);
-            this.showToast('Session loaded successfully!', 'success');
-        } catch (error) {
-            this.showToast('Error loading session: ' + error.message, 'error');
-        }
+    handleLogout() {
+        window.api.clearToken();
+        this.currentUser = null;
+        this.currentSession = null;
+        this.showAuthScreen();
     }
 
     showAuthScreen() {
@@ -477,14 +328,56 @@ class App {
         document.getElementById('main-screen').classList.add('hidden');
     }
 
+    async loadSession(sessionId) {
+        try {
+            const response = await fetch(`/api/prompts/session/${sessionId}`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                let prompts = [];
+                try {
+                    prompts = JSON.parse(data.prompts);
+                } catch (e) {
+                    prompts = data.prompts;
+                }
+                
+                // Display the prompts
+                if (window.Generator) {
+                    window.Generator.displayGeneratedPrompts(prompts);
+                }
+                
+                // Switch to prompt generation module
+                this.switchModule('prompt-generation-module');
+                
+                window.Utils.showToast('Session loaded!', 'success');
+            }
+        } catch (error) {
+            console.error('Error loading session:', error);
+            window.Utils.showToast('Error loading session', 'error');
+        }
+    }
+
     showMainScreen() {
         document.getElementById('auth-screen').classList.add('hidden');
         document.getElementById('main-screen').classList.remove('hidden');
         
         if (this.currentUser) {
-            // Update user profile (same IDs used in both sidebar and top nav)
-            document.getElementById('user-name').textContent = this.currentUser.name || this.currentUser.email;
-            document.getElementById('user-email').textContent = this.currentUser.email;
+            // Update sidebar user profile
+            const sidebarUserName = document.getElementById('user-name');
+            const sidebarUserEmail = document.getElementById('user-email');
+            if (sidebarUserName) sidebarUserName.textContent = this.currentUser.name || this.currentUser.email;
+            if (sidebarUserEmail) sidebarUserEmail.textContent = this.currentUser.email;
+            
+            // Update header user profile
+            const headerUserName = document.getElementById('header-user-name');
+            const headerUserEmail = document.getElementById('header-user-email');
+            if (headerUserName) headerUserName.textContent = this.currentUser.name || this.currentUser.email;
+            if (headerUserEmail) headerUserEmail.textContent = this.currentUser.email;
         }
 
         // Check if there's a module in the URL, otherwise show dashboard
@@ -520,9 +413,63 @@ class App {
             if (recentSessions) {
                 this.displayRecentSessions(sessions.slice(0, 5));
             }
+            
+            // Also load recent prompts
+            this.loadRecentPrompts();
         } catch (error) {
             console.error('Error loading dashboard stats:', error);
         }
+    }
+
+    async loadRecentPrompts() {
+        try {
+            const response = await fetch('/api/prompts/recent?limit=10', {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+            
+            const data = await response.json();
+            
+            if (data.success && data.sessions) {
+                this.displayRecentPrompts(data.sessions);
+            }
+        } catch (error) {
+            console.error('Error loading recent prompts:', error);
+        }
+    }
+
+    displayRecentPrompts(sessions) {
+        const container = document.getElementById('recent-prompts-list');
+        if (!container) return;
+        
+        if (sessions.length === 0) {
+            container.innerHTML = '<div class="placeholder">Your recent prompts will appear here</div>';
+            return;
+        }
+
+        container.innerHTML = sessions.map(session => {
+            const date = new Date(session.created_at).toLocaleString();
+            let prompts = [];
+            try {
+                prompts = JSON.parse(session.prompts);
+            } catch (e) {
+                prompts = [];
+            }
+            
+            const firstPrompt = prompts[0] || 'No prompts';
+            const preview = firstPrompt.substring(0, 100);
+            
+            return `
+                <div class="recent-prompt-card" onclick="app.loadSession(${session.id})">
+                    <div class="recent-prompt-preview">${preview}${firstPrompt.length > 100 ? '...' : ''}</div>
+                    <div class="recent-prompt-meta">
+                        <span class="recent-prompt-count">${prompts.length} prompts</span>
+                        <span class="recent-prompt-date">${date}</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
     }
 
     displayRecentSessions(sessions) {
@@ -544,7 +491,7 @@ class App {
             }
             
             return `
-                <div class="history-item" onclick="app.loadSessionAndSwitch(${session.id})">
+                <div class="history-item" onclick="app.loadSession(${session.id})">
                     <div class="history-item-header">
                         <span class="history-item-model">${session.model || 'Midjourney'}</span>
                         <span class="history-item-date">${date}</span>
@@ -556,28 +503,21 @@ class App {
         }).join('');
     }
 
-    async loadSessionAndSwitch(sessionId) {
-        await this.loadSession(sessionId);
-        this.switchModule('generator');
-    }
-
     async sendAllToMidjourney() {
         console.log('🎯🎯🎯 sendAllToMidjourney CALLED');
         
-        // Get all selected prompts
-        const selectedPrompts = [];
-        document.querySelectorAll('.prompt-selector:checked').forEach(checkbox => {
-            const promptItem = checkbox.closest('.prompt-item');
-            const textarea = promptItem?.querySelector('.prompt-text');
-            if (textarea) {
-                selectedPrompts.push(textarea.value);
+        // Get ALL prompts (no selection needed)
+        const allPrompts = [];
+        document.querySelectorAll('.prompt-text').forEach(textarea => {
+            if (textarea && textarea.value) {
+                allPrompts.push(textarea.value);
             }
         });
 
-        console.log('📋 Selected prompts:', selectedPrompts.length);
+        console.log('📋 All prompts:', allPrompts.length);
 
-        if (selectedPrompts.length === 0) {
-            window.Utils.showToast('No prompts selected', 'error');
+        if (allPrompts.length === 0) {
+            window.Utils.showToast('No prompts to send', 'error');
             return;
         }
 
@@ -594,14 +534,14 @@ class App {
             statusConsole.style.display = 'block';
             statusLog.innerHTML = '';
             this.addStatusMessage('🚀 Initializing batch send...', 'info');
-            statusProgress.textContent = `0/${selectedPrompts.length}`;
+            statusProgress.textContent = `0/${allPrompts.length}`;
         }
 
         btn.disabled = true;
         btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Sending...`;
 
         try {
-            this.addStatusMessage(`📋 Sending ${selectedPrompts.length} prompts to Midjourney`, 'info');
+            this.addStatusMessage(`📋 Sending ${allPrompts.length} prompts to Midjourney`, 'info');
             
             const response = await fetch('/api/midjourney/batch', {
                 method: 'POST',
@@ -610,7 +550,7 @@ class App {
                     'Authorization': `Bearer ${localStorage.getItem('token')}`
                 },
                 body: JSON.stringify({ 
-                    prompts: selectedPrompts,
+                    prompts: allPrompts,
                     delayMs: 500 
                 })
             });
@@ -621,14 +561,14 @@ class App {
                 const successful = data.results.filter(r => r.success).length;
                 const failed = data.results.length - successful;
                 
-                if (statusProgress) statusProgress.textContent = `${successful}/${selectedPrompts.length}`;
+                if (statusProgress) statusProgress.textContent = `${successful}/${allPrompts.length}`;
                 
                 if (failed === 0) {
                     this.addStatusMessage(`✅ All ${successful} prompts sent successfully!`, 'success');
                     window.Utils.showToast(`✅ All ${successful} prompts sent!`, 'success');
                 } else {
                     this.addStatusMessage(`⚠️ ${successful} succeeded, ${failed} failed`, 'warning');
-                    window.Utils.showToast(`⚠️ Sent ${successful}/${selectedPrompts.length} prompts`, 'warning');
+                    window.Utils.showToast(`⚠️ Sent ${successful}/${allPrompts.length} prompts`, 'warning');
                 }
                 
                 btn.innerHTML = '<i class="fas fa-check"></i> Sent!';
@@ -677,18 +617,16 @@ class App {
     }
 
     async sendAllToIdeogram() {
-        // Get all selected prompts
-        const selectedPrompts = [];
-        document.querySelectorAll('.prompt-selector:checked').forEach(checkbox => {
-            const promptItem = checkbox.closest('.prompt-item');
-            const textarea = promptItem?.querySelector('.prompt-text');
-            if (textarea) {
-                selectedPrompts.push(textarea.value);
+        // Get ALL prompts (no selection needed)
+        const allPrompts = [];
+        document.querySelectorAll('.prompt-text').forEach(textarea => {
+            if (textarea && textarea.value) {
+                allPrompts.push(textarea.value);
             }
         });
 
-        if (selectedPrompts.length === 0) {
-            window.Utils.showToast('No prompts selected', 'error');
+        if (allPrompts.length === 0) {
+            window.Utils.showToast('No prompts to send', 'error');
             return;
         }
 
@@ -706,7 +644,7 @@ class App {
                     'Authorization': `Bearer ${localStorage.getItem('token')}`
                 },
                 body: JSON.stringify({ 
-                    prompts: selectedPrompts,
+                    prompts: allPrompts,
                     delayMs: 500 
                 })
             });
@@ -720,7 +658,7 @@ class App {
                 if (failed === 0) {
                     window.Utils.showToast(`✅ All ${successful} prompts sent to Ideogram!`, 'success');
                 } else {
-                    window.Utils.showToast(`⚠️ Sent ${successful}/${selectedPrompts.length} prompts. ${failed} failed.`, 'warning');
+                    window.Utils.showToast(`⚠️ Sent ${successful}/${allPrompts.length} prompts. ${failed} failed.`, 'warning');
                 }
                 
                 btn.innerHTML = '<i class="fas fa-check"></i> Sent!';

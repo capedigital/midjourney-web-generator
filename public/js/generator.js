@@ -46,30 +46,29 @@ window.Generator = {
             
             promptDiv.innerHTML = `
                 <div class="prompt-header">
-                    <input type="checkbox" class="prompt-selector" checked>
                     <span class="prompt-title">Prompt ${index + 1}</span>
+                    <div class="prompt-actions">
+                        <button class="copy-prompt">
+                            <i class="fas fa-copy"></i> Copy
+                        </button>
+                        <button class="edit-prompt">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                        <button class="delete-prompt">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                        <button class="send-discord-btn" title="Send to Discord/Midjourney">
+                            <i class="fab fa-discord"></i> Send
+                        </button>
+                        <button class="ideogram-btn ${isInternal ? 'send-btn-internal' : 'send-btn-external'}" title="${modeTooltip}">
+                            <i class="${isInternal ? 'fas fa-desktop' : 'fas fa-external-link-alt'}"></i> Ideogram
+                        </button>
+                        <button class="midjourney-btn ${isInternal ? 'send-btn-internal' : 'send-btn-external'}" title="${modeTooltip}">
+                            <i class="${isInternal ? 'fas fa-desktop' : 'fas fa-external-link-alt'}"></i> Midjourney
+                        </button>
+                    </div>
                 </div>
                 <textarea class="prompt-text">${fullPrompt}</textarea>
-                <div class="prompt-actions">
-                    <button class="copy-prompt">
-                        <i class="fas fa-copy"></i> Copy
-                    </button>
-                    <button class="edit-prompt">
-                        <i class="fas fa-edit"></i> Edit
-                    </button>
-                    <button class="delete-prompt">
-                        <i class="fas fa-trash"></i> Delete
-                    </button>
-                    <button class="send-discord-btn" title="Send to Discord/Midjourney">
-                        <i class="fab fa-discord"></i> Send to Discord
-                    </button>
-                    <button class="ideogram-btn ${isInternal ? 'send-btn-internal' : 'send-btn-external'}" title="${modeTooltip}">
-                        ${isInternal ? '<i class="fas fa-desktop"></i>' : '<i class="fas fa-external-link-alt"></i>'} Ideogram ${isInternal ? '(Internal)' : '(External)'}
-                    </button>
-                    <button class="midjourney-btn ${isInternal ? 'send-btn-internal' : 'send-btn-external'}" title="${modeTooltip}">
-                        ${isInternal ? '<i class="fas fa-desktop"></i>' : '<i class="fas fa-external-link-alt"></i>'} Midjourney ${isInternal ? '(Internal)' : '(External)'}
-                    </button>
-                </div>
             `;
             container.appendChild(promptDiv);
 
@@ -95,6 +94,16 @@ window.Generator = {
     },
 
     setupPromptActionHandlers: function() {
+        logger.debug('🔧 Setting up prompt action handlers...');
+        
+        const copyButtons = document.querySelectorAll('.copy-prompt');
+        const editButtons = document.querySelectorAll('.edit-prompt');
+        const deleteButtons = document.querySelectorAll('.delete-prompt');
+        const ideogramButtons = document.querySelectorAll('.ideogram-btn');
+        const midjourneyButtons = document.querySelectorAll('.midjourney-btn');
+        
+        logger.debug(`Found buttons - Copy: ${copyButtons.length}, Edit: ${editButtons.length}, Delete: ${deleteButtons.length}, Ideogram: ${ideogramButtons.length}, Midjourney: ${midjourneyButtons.length}`);
+        
         // Individual prompt handlers
         document.querySelectorAll('.copy-prompt').forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -218,10 +227,26 @@ window.Generator = {
         });
 
         document.querySelectorAll('.midjourney-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
+            btn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                logger.debug('🔵 Midjourney button clicked!');
+                
                 const promptDiv = e.target.closest('.prompt-item');
-                if (!promptDiv) return;
+                if (!promptDiv) {
+                    logger.error('Could not find prompt-item parent');
+                    return;
+                }
+                
                 const textarea = promptDiv.querySelector('.prompt-text');
+                if (!textarea) {
+                    logger.error('Could not find prompt-text textarea');
+                    return;
+                }
+                
+                logger.debug('📝 Sending prompt:', textarea.value.substring(0, 100) + '...');
+                
                 if (textarea) {
                     btn.disabled = true;
                     
@@ -234,7 +259,12 @@ window.Generator = {
                     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
                     
                     // Always use global browser setting for Midjourney
-                    window.sendPromptWithGlobalSetting(textarea.value, 'midjourney');
+                    try {
+                        await window.sendPromptWithGlobalSetting(textarea.value, 'midjourney');
+                        logger.debug('✅ Send completed successfully');
+                    } catch (error) {
+                        logger.error('❌ Send failed:', error);
+                    }
                     
                     // Re-enable button after delay
                     setTimeout(() => {
@@ -273,62 +303,50 @@ window.Generator = {
     },
 
     generateWithChatGPT: async function(promptText, model = 'openai/gpt-4.1-mini') {
-        // Use backend proxy to keep API key secure
-        const apiUrl = '/api/ai/generate';
+        // Use backend proxy to keep API key secure AND save to database
+        const apiUrl = '/api/prompts/generate';
 
         // Show loading state
         const loadingOverlay = document.querySelector('.loading-overlay');
         if (loadingOverlay) loadingOverlay.style.display = 'flex';
 
         try {
-            // Add retry logic with exponential backoff
-            const maxRetries = 3;
-            let attempt = 0;
-            let lastError;
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({
+                    promptText: promptText,
+                    model: model
+                })
+            });
 
-            while (attempt < maxRetries) {
-                try {
-                    const response = await fetch(apiUrl, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            model: model,
-                            messages: [{
-                                role: 'user',
-                                content: promptText
-                            }]
-                        })
-                    });
-
-                    const result = await response.json();
-                    
-                    if (!result.success) {
-                        throw new Error(result.error || 'API error');
-                    }
-
-                    const generatedText = result.data.choices[0].message.content;
-
-                    // Parse the prompts into a clean array, without parameters.
-                    const prompts = this.parseGeneratedPrompts(generatedText);
-                    
-                    // Display the prompts, which will add the current parameters for display.
-                    this.displayGeneratedPrompts(prompts);
-
-                    window.Utils.showToast('Successfully generated prompts!', 'success');
-                    return prompts;
-                } catch (error) {
-                    lastError = error;
-                    attempt++;
-                    if (attempt < maxRetries) {
-                        // Wait with exponential backoff
-                        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
-                    }
-                }
+            const result = await response.json();
+            
+            if (!result.success) {
+                throw new Error(result.error || 'API error');
             }
 
-            throw lastError; // If all retries failed
+            // The backend returns already parsed prompts
+            const prompts = result.prompts;
+            
+            // Store session ID for potential future use
+            if (result.sessionId) {
+                logger.debug('Prompt session saved with ID:', result.sessionId);
+            }
+            
+            // Display the prompts, which will add the current parameters for display.
+            this.displayGeneratedPrompts(prompts);
+
+            // Load recent prompts for dashboard
+            if (window.app && window.app.loadRecentPrompts) {
+                window.app.loadRecentPrompts();
+            }
+
+            window.Utils.showToast('Successfully generated and saved prompts!', 'success');
+            return prompts;
         } catch (error) {
             console.error('Error generating prompts:', error);
             window.Utils.showToast('Error generating prompts: ' + error.message, 'error');

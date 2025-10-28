@@ -13,8 +13,8 @@
     border-radius: 6px;
     background: var(--bg-secondary);
     color: var(--text-secondary);
-    font-family: 'Courier New', monospace;
-    font-size: 13px;
+    font-family: input-mono'Courier New', monospace;
+    font-size: 11px;
     resize: vertical;
 }
 
@@ -85,6 +85,7 @@
 .click-to-edit-display.placeholder {
     color: var(--text-secondary);
     font-style: italic;
+    background: var(--bg-primary);
 }
 
 /* Edit mode */
@@ -130,7 +131,7 @@
     cursor: pointer;
     transition: all 0.2s ease;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 6px;
 }
 

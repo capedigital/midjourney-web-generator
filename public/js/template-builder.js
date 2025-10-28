@@ -8,7 +8,152 @@ window.TemplateBuilder = {
         logger.debug('Initializing Template Builder...');
         this.populateTemplateDropdown();
         this.setupEventListeners();
+        this.initializeClickToEdit();
         logger.debug('Template Builder initialized');
+    },
+
+    /**
+     * Initialize click-to-edit for all enhancer fields
+     */
+    initializeClickToEdit: function() {
+        // Apply to all enhancer textareas
+        const enhancerInputs = document.querySelectorAll('.enhancer-input');
+        enhancerInputs.forEach(input => {
+            this.convertToClickToEdit(input);
+        });
+
+        // Apply to copywriter brief
+        const briefTextarea = document.getElementById('copywriterBrief');
+        if (briefTextarea) {
+            this.convertToClickToEdit(briefTextarea);
+        }
+    },
+
+    /**
+     * Convert a textarea to click-to-edit interface
+     */
+    convertToClickToEdit: function(textarea) {
+        // Create wrapper
+        const wrapper = document.createElement('div');
+        wrapper.className = 'click-to-edit-wrapper';
+        
+        // Create display element
+        const display = document.createElement('div');
+        display.className = 'click-to-edit-display';
+        display.textContent = textarea.value || textarea.placeholder;
+        if (!textarea.value) {
+            display.classList.add('placeholder');
+        }
+        
+        // Create edit container
+        const editContainer = document.createElement('div');
+        editContainer.className = 'click-to-edit-edit';
+        editContainer.style.display = 'none';
+        
+        // Clone the textarea
+        const editTextarea = textarea.cloneNode(true);
+        editTextarea.className = textarea.className + ' edit-textarea';
+        
+        // Create action buttons
+        const actions = document.createElement('div');
+        actions.className = 'click-to-edit-actions';
+        actions.innerHTML = `
+            <button class="save-btn" type="button"><i class="fas fa-check"></i> Save</button>
+            <button class="cancel-btn" type="button"><i class="fas fa-times"></i> Cancel</button>
+        `;
+        
+        editContainer.appendChild(editTextarea);
+        editContainer.appendChild(actions);
+        
+        // Insert wrapper and move elements
+        textarea.parentNode.insertBefore(wrapper, textarea);
+        wrapper.appendChild(display);
+        wrapper.appendChild(editContainer);
+        wrapper.appendChild(textarea);
+        textarea.style.display = 'none';
+        
+        // Store references
+        wrapper._textarea = textarea;
+        wrapper._display = display;
+        wrapper._editContainer = editContainer;
+        wrapper._editTextarea = editTextarea;
+        
+        // Click to edit
+        display.addEventListener('click', () => {
+            this.enterEditMode(wrapper);
+        });
+        
+        // Save button
+        actions.querySelector('.save-btn').addEventListener('click', () => {
+            this.saveEdit(wrapper);
+        });
+        
+        // Cancel button
+        actions.querySelector('.cancel-btn').addEventListener('click', () => {
+            this.cancelEdit(wrapper);
+        });
+        
+        // Enter to save
+        editTextarea.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                this.saveEdit(wrapper);
+            } else if (e.key === 'Escape') {
+                this.cancelEdit(wrapper);
+            }
+        });
+    },
+
+    /**
+     * Enter edit mode
+     */
+    enterEditMode: function(wrapper) {
+        const { _display, _editContainer, _editTextarea, _textarea } = wrapper;
+        
+        _display.style.display = 'none';
+        _editContainer.style.display = 'block';
+        _editTextarea.value = _textarea.value;
+        _editTextarea.focus();
+        
+        // Auto-resize textarea
+        _editTextarea.style.height = 'auto';
+        _editTextarea.style.height = _editTextarea.scrollHeight + 'px';
+    },
+
+    /**
+     * Save edit
+     */
+    saveEdit: function(wrapper) {
+        const { _display, _editContainer, _editTextarea, _textarea } = wrapper;
+        
+        const newValue = _editTextarea.value.trim();
+        _textarea.value = newValue;
+        
+        // Update display
+        if (newValue) {
+            _display.textContent = newValue;
+            _display.classList.remove('placeholder');
+        } else {
+            _display.textContent = _textarea.placeholder;
+            _display.classList.add('placeholder');
+        }
+        
+        // Exit edit mode
+        _display.style.display = 'block';
+        _editContainer.style.display = 'none';
+        
+        // Trigger change event for preview update
+        _textarea.dispatchEvent(new Event('input', { bubbles: true }));
+    },
+
+    /**
+     * Cancel edit
+     */
+    cancelEdit: function(wrapper) {
+        const { _display, _editContainer } = wrapper;
+        
+        _display.style.display = 'block';
+        _editContainer.style.display = 'none';
     },
 
     /**

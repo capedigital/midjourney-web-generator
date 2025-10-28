@@ -602,11 +602,11 @@ class AIChatAssistant {
                 <div class="prompt-detection" id="${promptId}">
                     <i class="fas fa-magic"></i>
                     <span>Found ${detectedPrompts.length} prompt${detectedPrompts.length > 1 ? 's' : ''}!</span>
-                    <button class="import-prompts-btn">
-                        Import to Prompt Generation
-                    </button>
                     <button class="copy-json-btn" title="Copy clean JSON for manual import">
                         Copy JSON
+                    </button>
+                    <button class="import-prompts-btn">
+                        Import to Prompt Generation
                     </button>
                 </div>
             `;
@@ -687,9 +687,9 @@ class AIChatAssistant {
                             // Close the history modal first
                             this.closeChatHistoryModal();
                             
-                            // Switch to prompt generation module
-                            if (window.switchToModule) {
-                                window.switchToModule('prompt-generation-module');
+                            // Switch to prompt generation module using app's method
+                            if (window.app && window.app.switchModule) {
+                                window.app.switchModule('prompt-generation-module');
                             }
                             
                             // Import the prompts
@@ -710,13 +710,13 @@ class AIChatAssistant {
         logger.debug('🔄 Closing history modal...');
         this.closeChatHistoryModal();
         
-        // Switch to prompt generation module
+        // Switch to prompt generation module using app's switchModule method
         logger.debug('🔄 Switching to prompt generation module...');
-        if (window.switchToModule) {
-            const result = window.switchToModule('prompt-generation-module');
-            logger.debug('🔄 Module switch result:', result);
+        if (window.app && window.app.switchModule) {
+            window.app.switchModule('prompt-generation-module');
+            logger.debug('🔄 Module switched via app.switchModule');
         } else {
-            console.error('❌ switchToModule function not available');
+            console.error('❌ app.switchModule function not available');
         }
         
         // Small delay to ensure module switch completes
@@ -1451,6 +1451,7 @@ IMPORTANT: Only include the JSON prompt block when explicitly requested by the u
         if (requestBody.stream) {
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
+            let chunkCount = 0;
 
             try {
                 while (true) {
@@ -1474,11 +1475,23 @@ IMPORTANT: Only include the JSON prompt block when explicitly requested by the u
                                     if (delta.reasoning) {
                                         reasoning += delta.reasoning;
                                         this.showThinkingProcess(reasoning);
+                                        
+                                        // Auto-scroll during streaming (every 3 chunks to avoid performance issues)
+                                        chunkCount++;
+                                        if (chunkCount % 3 === 0) {
+                                            this.scrollToBottom();
+                                        }
                                     }
                                     
                                     // Handle final content
                                     if (delta.content) {
                                         finalContent += delta.content;
+                                        
+                                        // Also scroll when content is streaming
+                                        chunkCount++;
+                                        if (chunkCount % 3 === 0) {
+                                            this.scrollToBottom();
+                                        }
                                     }
                                 }
                             } catch (e) {
@@ -1490,6 +1503,8 @@ IMPORTANT: Only include the JSON prompt block when explicitly requested by the u
                 }
             } finally {
                 reader.releaseLock();
+                // Final scroll after streaming completes
+                this.scrollToBottom();
             }
         } else {
             // Non-streaming fallback
@@ -1908,11 +1923,11 @@ IMPORTANT: Only include the JSON prompt block when explicitly requested by the u
         promptDetection.innerHTML = `
             <i class="fas fa-magic"></i>
             <span>Found ${prompts.length} prompt${prompts.length > 1 ? 's' : ''}!</span>
+            <button class="copy-json-btn" title="Copy clean JSON for manual import">
+            Copy JSON
+            </button>
             <button class="import-prompts-btn" data-prompts='${JSON.stringify(prompts)}'>
                 Import to Prompt Generation
-            </button>
-            <button class="copy-json-btn" title="Copy clean JSON for manual import">
-                Copy JSON
             </button>
         `;
 
@@ -1929,6 +1944,10 @@ IMPORTANT: Only include the JSON prompt block when explicitly requested by the u
         });
 
         messageContent.appendChild(promptDetection);
+        
+        // Scroll to bottom after the import box is added
+        // Use a delay to account for the box rendering and expanding the content
+        this.scrollToBottomDelayed(150);
     }
 
     copyCleanJson(prompts) {
@@ -2023,7 +2042,19 @@ IMPORTANT: Only include the JSON prompt block when explicitly requested by the u
     }
 
     scrollToBottom() {
-        this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+        if (!this.chatMessages) return;
+        
+        // Use requestAnimationFrame for smoother scrolling
+        requestAnimationFrame(() => {
+            this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+        });
+    }
+    
+    // Scroll to bottom with delay (for when content height changes after rendering)
+    scrollToBottomDelayed(delay = 100) {
+        setTimeout(() => {
+            this.scrollToBottom();
+        }, delay);
     }
 
     handleFileUpload(file) {
