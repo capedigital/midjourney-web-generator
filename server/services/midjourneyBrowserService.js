@@ -54,7 +54,7 @@ class MidjourneyBrowserService {
 
     // Launch browser with persistent profile (skip CDP connection to avoid Cloudflare)
     const launchOptions = {
-      headless: false,
+      headless: headless, // Use the parameter value (true on Railway, false locally)
       userDataDir: this.userDataDir,
       args: [
         '--no-sandbox',
