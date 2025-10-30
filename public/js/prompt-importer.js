@@ -247,22 +247,26 @@ class PromptImporter {
         localStorage.setItem('mj-auto-apply', 'false');
 
         // Process each prompt - add to display WITHOUT parameters
-        // Parameters should NOT be automatically applied to imports
         logger.debug('PromptImporter: Processing', this.parsedPrompts.length, 'individual prompts');
         this.parsedPrompts.forEach((prompt, index) => {
             logger.debug(`PromptImporter: Adding prompt ${index + 1}:`, prompt.substring(0, 50) + '...');
             this.addPromptWithParameters(prompt, generatedPromptsDiv);
         });
         
-        // DO NOT apply parameters automatically - imports should be clean base prompts
-        // User can manually apply parameters if needed using the parameter UI
-        
-        // Restore original auto-apply setting
-        if (originalAutoApply !== null) {
-            localStorage.setItem('mj-auto-apply', originalAutoApply);
-        } else {
-            localStorage.removeItem('mj-auto-apply');
-        }
+        // After importing, apply current parameters to all prompts (like Template Builder does)
+        setTimeout(() => {
+            if (window.MidjourneyHandler && window.MidjourneyHandler.applyParametersToAll) {
+                logger.debug('PromptImporter: Applying current parameters to imported prompts');
+                window.MidjourneyHandler.applyParametersToAll();
+            }
+            
+            // Restore original auto-apply setting
+            if (originalAutoApply !== null) {
+                localStorage.setItem('mj-auto-apply', originalAutoApply);
+            } else {
+                localStorage.removeItem('mj-auto-apply');
+            }
+        }, 500); // Delay to ensure proper timing
     }
 
     addPromptWithParameters(prompt, container) {
