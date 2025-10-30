@@ -1,9 +1,9 @@
 /**
- * Content Script - Runs on Midjourney.com pages
+ * Content Script - Runs on AI generation sites
  * Helps with prompt submission and page interaction
  */
 
-console.log('🌉 Midjourney Bridge Extension loaded');
+console.log('🌉 Prompt Bridge Extension loaded on:', window.location.hostname);
 
 // Listen for messages from background script
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {

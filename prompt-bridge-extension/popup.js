@@ -26,15 +26,27 @@ setInterval(updateStatus, 2000);
 connectBtn.addEventListener('click', () => {
   const token = tokenInput.value.trim();
   
+  console.log('🔵 Connect button clicked');
+  
   if (!token) {
     alert('Please enter an auth token');
     return;
   }
   
+  console.log('🔵 Sending SET_TOKEN message with token:', token.substring(0, 10) + '...');
+  
   // Send token to background script
   chrome.runtime.sendMessage(
     { type: 'SET_TOKEN', token },
     (response) => {
+      console.log('🔵 Response from background:', response);
+      
+      if (chrome.runtime.lastError) {
+        console.error('❌ Runtime error:', chrome.runtime.lastError);
+        alert('Error connecting: ' + chrome.runtime.lastError.message);
+        return;
+      }
+      
       if (response && response.success) {
         connectBtn.textContent = 'Connecting...';
         connectBtn.disabled = true;
@@ -44,6 +56,8 @@ connectBtn.addEventListener('click', () => {
           connectBtn.textContent = 'Connect';
           connectBtn.disabled = false;
         }, 1000);
+      } else {
+        alert('Failed to connect. Check the background console.');
       }
     }
   );

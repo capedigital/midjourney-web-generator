@@ -31,11 +31,11 @@ class LocalBridgeUI {
     }
 
     createStatusIndicator() {
-        // Find a good place in the UI - next to the model selector
-        const topNav = document.querySelector('.top-nav') || document.querySelector('header');
+        // Find the model selector to place indicator before it
+        const modelSelector = document.getElementById('top-nav-model-selector');
         
-        if (!topNav) {
-            console.warn('Could not find top nav for status indicator');
+        if (!modelSelector) {
+            console.warn('Could not find model selector for status indicator');
             return;
         }
 
@@ -49,7 +49,8 @@ class LocalBridgeUI {
         
         indicator.addEventListener('click', () => this.showSettings());
         
-        topNav.appendChild(indicator);
+        // Insert BEFORE the model selector so everything stays flush right
+        modelSelector.parentNode.insertBefore(indicator, modelSelector);
         this.statusIndicator = indicator;
         
         // Add styles

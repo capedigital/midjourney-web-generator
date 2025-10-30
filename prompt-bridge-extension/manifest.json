@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Midjourney Local Bridge Extension",
+  "name": "Prompt Bridge Extension",
   "version": "1.0.0",
-  "description": "Connects your authenticated Midjourney browser session to the web app via local bridge",
+  "description": "Connects your authenticated AI image generation sessions (Midjourney, Ideogram, etc.) to the web app via local bridge",
   "permissions": [
     "activeTab",
     "tabs",
@@ -10,6 +10,7 @@
   ],
   "host_permissions": [
     "https://www.midjourney.com/*",
+    "https://ideogram.ai/*",
     "https://discord.com/*"
   ],
   "background": {
@@ -20,7 +21,10 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://www.midjourney.com/*"],
+      "matches": [
+        "https://www.midjourney.com/*",
+        "https://ideogram.ai/*"
+      ],
       "js": ["content.js"],
       "run_at": "document_idle"
     }

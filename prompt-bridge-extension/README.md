@@ -1,6 +1,6 @@
-# Midjourney Local Bridge Chrome Extension
+# Prompt Bridge Chrome Extension
 
-Connects your authenticated Midjourney browser session to the web app via a secure local WebSocket bridge.
+Connects your authenticated AI image generation sessions (Midjourney, Ideogram, etc.) to the web app via a secure local WebSocket bridge.
 
 ## Features
 
@@ -18,11 +18,11 @@ Connects your authenticated Midjourney browser session to the web app via a secu
 
 2. **Load Extension:**
    - Click "Load unpacked"
-   - Select this `browser-extension` folder
+   - Select this `prompt-bridge-extension` folder
 
 3. **Pin Extension:**
    - Click the puzzle icon in Chrome toolbar
-   - Pin "Midjourney Local Bridge Extension"
+   - Pin "Prompt Bridge Extension"
 
 ## Setup
 
@@ -40,7 +40,7 @@ Connects your authenticated Midjourney browser session to the web app via a secu
    - Click "Connect"
    - Status should show "Connected & Ready"
 
-4. **Open Midjourney.com** in a tab and log in
+4. **Open Midjourney.com or Ideogram.ai** in a tab and log in
 
 ## Usage
 
@@ -49,9 +49,9 @@ Once set up:
 1. Open the Railway web app
 2. Look for "🟢 Extension Ready" indicator
 3. Generate/import prompts
-4. Click "Send to Midjourney" buttons
+4. Click "Send to Midjourney" or "Send to Ideogram" buttons
 5. Extension will automatically:
-   - Find/open Midjourney tab
+   - Find/open the appropriate tab (Midjourney or Ideogram)
    - Fill in the prompt
    - Submit it
 
@@ -64,7 +64,7 @@ Local Bridge Server (127.0.0.1:3001)
     ↓ WebSocket
 Chrome Extension (background)
     ↓ Chrome APIs
-Midjourney.com Tab (your authenticated session)
+Midjourney/Ideogram Tab (your authenticated session)
 ```
 
 ## Troubleshooting
@@ -75,9 +75,9 @@ Midjourney.com Tab (your authenticated session)
 - Look at extension console (chrome://extensions → Details → Inspect)
 
 **Prompts not submitting:**
-- Make sure you're logged in to Midjourney.com
-- Check the content script console on Midjourney tab
-- Verify selectors in content.js match Midjourney's UI
+- Make sure you're logged in to the target site (Midjourney/Ideogram)
+- Check the content script console on the site's tab
+- Verify selectors in content.js match the site's UI
 
 **"Extension not found" in web app:**
 - Extension must be connected to bridge
@@ -89,13 +89,13 @@ Midjourney.com Tab (your authenticated session)
 - ✅ Auth token required
 - ✅ No credentials stored in extension
 - ✅ Uses Chrome's secure messaging APIs
-- ✅ Only runs on Midjourney.com
+- ✅ Only runs on whitelisted AI generation sites
 
 ## Development
 
 **View logs:**
 - Background script: `chrome://extensions` → Extension details → Inspect service worker
-- Content script: Open Midjourney.com → F12 Developer Tools → Console
+- Content script: Open target site → F12 Developer Tools → Console
 - Popup: Right-click extension icon → Inspect popup
 
 **Hot reload:**

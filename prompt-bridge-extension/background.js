@@ -40,20 +40,25 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 function connect() {
+  console.log('🔵 connect() called');
+  
   if (!authToken) {
     console.log('⚠️ No auth token set');
     return;
   }
 
+  console.log('🔵 Auth token present:', authToken.substring(0, 10) + '...');
+
   if (ws && (ws.readyState === WebSocket.CONNECTING || ws.readyState === WebSocket.OPEN)) {
-    console.log('Already connected or connecting');
+    console.log('Already connected or connecting, readyState:', ws.readyState);
     return;
   }
 
-  console.log('🔌 Connecting to local bridge...');
+  console.log('🔌 Connecting to local bridge at ws://127.0.0.1:3001...');
 
   try {
     ws = new WebSocket('ws://127.0.0.1:3001');
+    console.log('🔵 WebSocket created, readyState:', ws.readyState);
 
     ws.onopen = () => {
       console.log('✅ WebSocket connected');
