@@ -42,8 +42,24 @@ async function runMigrations() {
         console.log('🔄 Running database migrations...');
         client = await migrationPool.connect();
         
+        // Run main schema first
         const schema = fs.readFileSync(path.join(__dirname, '../schema.sql'), 'utf8');
         await client.query(schema);
+        
+        // Run all migration files in the migrations directory
+        const migrationsDir = path.join(__dirname, 'migrations');
+        if (fs.existsSync(migrationsDir)) {
+            const migrationFiles = fs.readdirSync(migrationsDir)
+                .filter(f => f.endsWith('.sql'))
+                .sort(); // Run in order
+            
+            for (const file of migrationFiles) {
+                console.log(`🔄 Running migration: ${file}`);
+                const migration = fs.readFileSync(path.join(migrationsDir, file), 'utf8');
+                await client.query(migration);
+                console.log(`✅ Completed migration: ${file}`);
+            }
+        }
         
         console.log('✅ Database migrations completed successfully!');
     } catch (err) {
