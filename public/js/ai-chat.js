@@ -2463,13 +2463,39 @@ IMPORTANT: Only include the JSON prompt block when explicitly requested by the u
         }, 0);
         const estimatedTokens = Math.ceil(totalChars / 4);
         
+        // Calculate estimated cost based on current model
+        let costText = '';
+        const currentModel = window.globalModelSync?.getCurrentModel();
+        if (currentModel && window.topNavModelSelector?.currentModel) {
+            const model = window.topNavModelSelector.currentModel;
+            if (model.promptPrice && model.completionPrice) {
+                // Estimate 60% prompt tokens, 40% completion tokens
+                const estimatedPromptTokens = Math.ceil(estimatedTokens * 0.6);
+                const estimatedCompletionTokens = Math.ceil(estimatedTokens * 0.4);
+                
+                // Calculate cost (pricing is per million tokens)
+                const promptCost = (estimatedPromptTokens / 1000000) * model.promptPrice;
+                const completionCost = (estimatedCompletionTokens / 1000000) * model.completionPrice;
+                const totalCost = promptCost + completionCost;
+                
+                // Format cost display
+                if (totalCost >= 0.01) {
+                    costText = ` • ~$${totalCost.toFixed(4)}`;
+                } else if (totalCost >= 0.0001) {
+                    costText = ` • ~$${totalCost.toFixed(6)}`;
+                } else {
+                    costText = ` • <$0.0001`;
+                }
+            }
+        }
+        
         // Show warning if getting expensive
         const warningClass = estimatedTokens > 5000 ? 'token-warning' : '';
         const warningIcon = estimatedTokens > 5000 ? '⚠️ ' : '';
         
         statusEl.innerHTML = `
             <small class="${warningClass}" style="color: var(--text-secondary); font-size: 11px;">
-                ${warningIcon}Session: ${messageCount} messages (~${estimatedTokens.toLocaleString()} tokens)
+                ${warningIcon}Session: ${messageCount} messages (~${estimatedTokens.toLocaleString()} tokens)${costText}
                 ${estimatedTokens > 5000 ? ' - <strong>Click "New Chat" to reduce costs</strong>' : ''}
             </small>
         `;

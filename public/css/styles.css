@@ -176,7 +176,7 @@ body {
 .form-icon {
     position: absolute;
     left: 15px;
-    top: 40%;
+    top: 50%;
     transform: translateY(-50%);
     color: var(--text-muted);
     font-size: 16px;
@@ -240,6 +240,9 @@ body {
   line-height: 1.5 !important;
 }
 
+input#login-email, input#login-password {
+    padding-left: 40px;
+}
 
 /* HAL 9000 Streaming Messages */
 .hal-message {
