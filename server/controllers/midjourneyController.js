@@ -115,9 +115,10 @@ async function submitPrompt(req, res) {
     
     const service = getMidjourneyService();
     
-    // Initialize if needed
+    // Initialize if needed - use headless mode on production (Railway)
     if (!service.isInitialized) {
-      await service.initialize(false);
+      const isProduction = process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT;
+      await service.initialize(isProduction); // headless on Railway, visible locally
     }
     
     const result = await service.submitPrompt(prompt, options?.autoSubmit !== false);
@@ -164,9 +165,10 @@ async function submitBatch(req, res) {
     
     const service = getMidjourneyService();
     
-    // Initialize if needed (visible mode to debug Cloudflare)
+    // Initialize if needed - use headless mode on production (Railway)
     if (!service.isInitialized) {
-      await service.initialize(false); // false = visible
+      const isProduction = process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT;
+      await service.initialize(isProduction); // headless on Railway, visible locally
     }
     
     const results = await service.submitBatch(prompts, delayMs, autoClose);
