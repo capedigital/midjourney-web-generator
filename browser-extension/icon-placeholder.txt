@@ -1,0 +1,13 @@
+Icon files needed:
+- icon16.png (16x16)
+- icon48.png (48x48)
+- icon128.png (128x128)
+
+For now, create simple colored squares:
+1. Open any image editor
+2. Create a square image at each size
+3. Fill with a color (e.g., blue #3498db)
+4. Add white text "MB" or bridge icon
+5. Save as icon16.png, icon48.png, icon128.png
+
+Or use: https://www.favicon-generator.org/

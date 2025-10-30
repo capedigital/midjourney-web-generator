@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Midjourney Bridge</title>
+  <style>
+    body {
+      width: 350px;
+      padding: 16px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 14px;
+    }
+    
+    h1 {
+      font-size: 18px;
+      margin: 0 0 16px 0;
+      color: #2c3e50;
+    }
+    
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 16px;
+      font-size: 13px;
+    }
+    
+    .status-disconnected {
+      background: #fee;
+      color: #c0392b;
+    }
+    
+    .status-connected {
+      background: #e8f5e9;
+      color: #27ae60;
+    }
+    
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+    
+    .form-group {
+      margin-bottom: 16px;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 4px;
+      font-weight: 500;
+      color: #34495e;
+    }
+    
+    input {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 13px;
+      box-sizing: border-box;
+    }
+    
+    input:focus {
+      outline: none;
+      border-color: #3498db;
+    }
+    
+    .btn {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 4px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .btn-primary {
+      background: #3498db;
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background: #2980b9;
+    }
+    
+    .btn-secondary {
+      background: #95a5a6;
+      color: white;
+      margin-top: 8px;
+    }
+    
+    .btn-secondary:hover {
+      background: #7f8c8d;
+    }
+    
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .help-text {
+      font-size: 12px;
+      color: #7f8c8d;
+      margin-top: 4px;
+    }
+    
+    .section {
+      margin-bottom: 16px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #ecf0f1;
+    }
+    
+    .section:last-child {
+      border-bottom: none;
+    }
+    
+    .info-grid {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 8px;
+      font-size: 12px;
+      margin-top: 12px;
+    }
+    
+    .info-label {
+      color: #7f8c8d;
+    }
+    
+    .info-value {
+      color: #2c3e50;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+  <h1>🌉 Midjourney Local Bridge</h1>
+  
+  <div id="status" class="status status-disconnected">
+    <div class="status-dot"></div>
+    <span>Disconnected</span>
+  </div>
+  
+  <div class="section">
+    <div class="form-group">
+      <label for="token">Bridge Auth Token</label>
+      <input 
+        type="text" 
+        id="token" 
+        placeholder="Paste token from bridge server..."
+      >
+      <div class="help-text">
+        Get this from the local bridge server terminal
+      </div>
+    </div>
+    
+    <button id="connectBtn" class="btn btn-primary">Connect</button>
+    <button id="disconnectBtn" class="btn btn-secondary" style="display: none;">Disconnect</button>
+  </div>
+  
+  <div class="section">
+    <strong>Setup:</strong>
+    <ol style="font-size: 12px; padding-left: 20px; margin: 8px 0;">
+      <li>Start bridge server: <code>npm start</code></li>
+      <li>Copy auth token from terminal</li>
+      <li>Paste token above and click Connect</li>
+      <li>Open Midjourney.com in a tab</li>
+    </ol>
+  </div>
+  
+  <div id="info" class="section" style="display: none;">
+    <strong>Connection Info:</strong>
+    <div class="info-grid">
+      <span class="info-label">Status:</span>
+      <span class="info-value" id="infoStatus">-</span>
+      
+      <span class="info-label">Authenticated:</span>
+      <span class="info-value" id="infoAuth">-</span>
+      
+      <span class="info-label">Server:</span>
+      <span class="info-value">ws://127.0.0.1:3001</span>
+    </div>
+  </div>
+  
+  <script src="popup.js"></script>
+</body>
+</html>
