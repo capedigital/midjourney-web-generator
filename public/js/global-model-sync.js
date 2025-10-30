@@ -1,101 +1,69 @@
 /**
  * Global Model Synchronization System
- * Keeps all AI model dropdowns in sync across the application
+ * Bridges between TopNavModelSelector and other components
  */
 
-// Default AI model
-const DEFAULT_AI_MODEL = 'openai/gpt-4.1-nano';
+// Default AI model (fallback if nothing is available)
+const DEFAULT_AI_MODEL = 'google/gemini-2.0-flash-001';
 
-// Initialize global model synchronization when DOM is loaded
-document.addEventListener('DOMContentLoaded', function() {
-    initializeGlobalModelSync();
-});
-
-function initializeGlobalModelSync() {
-    // Get all model selector dropdowns
-    const selectors = {
-        dashboard: document.getElementById('ai-model-selector'),
-        template: document.getElementById('template-ai-model'),
-        chat: document.getElementById('chat-ai-model')
-    };
-
-    // Remove null selectors
-    Object.keys(selectors).forEach(key => {
-        if (!selectors[key]) delete selectors[key];
-    });
-
-    if (Object.keys(selectors).length === 0) {
-        if (window.logger) logger.debug('No model selectors found for sync');
-        return;
-    }
-
-    // Get saved model preference or default to our preferred model
-    const savedModel = localStorage.getItem('global-ai-model');
-    let currentModel = savedModel;
-
-    // If no saved model or saved model not available, use our default
-    if (!currentModel || !validateModelExists(currentModel, selectors)) {
-        // First try our preferred default
-        if (validateModelExists(DEFAULT_AI_MODEL, selectors)) {
-            currentModel = DEFAULT_AI_MODEL;
-            // Save the default so it persists
-            localStorage.setItem('global-ai-model', currentModel);
-        } else {
-            // Fall back to first available option
-            currentModel = Object.values(selectors)[0].value;
+// Create global model sync object that other modules can use
+window.globalModelSync = {
+    subscribers: [],
+    
+    getCurrentModel() {
+        // Try to get from TopNavModelSelector first
+        if (window.topNavModelSelector && window.topNavModelSelector.currentModel) {
+            return {
+                id: window.topNavModelSelector.currentModel.id,
+                name: window.topNavModelSelector.currentModel.name
+            };
         }
-        if (window.logger) logger.debug('Using default AI model:', currentModel);
-    }
-
-    // Set all dropdowns to the current model
-    syncAllDropdowns(selectors, currentModel);
-
-    // Add event listeners to all dropdowns
-    Object.entries(selectors).forEach(([name, selector]) => {
-        selector.addEventListener('change', (e) => {
-            const newModel = e.target.value;
-            if (window.logger) logger.debug(`${name} dropdown changed to:`, newModel);
-            
-            // Save globally
-            localStorage.setItem('global-ai-model', newModel);
-            
-            // Sync other dropdowns
-            syncAllDropdowns(selectors, newModel, name);
-        });
-    });
-
-    if (window.logger) logger.debug('Global model sync initialized with model:', currentModel);
-}
-
-function validateModelExists(model, selectors) {
-    // Check if the model exists in at least one dropdown
-    return Object.values(selectors).some(selector => {
-        return selector.querySelector(`option[value="${model}"]`);
-    });
-}
-
-function syncAllDropdowns(selectors, model, excludeSelector = null) {
-    Object.entries(selectors).forEach(([name, selector]) => {
-        // Skip the selector that triggered the change
-        if (name === excludeSelector) return;
         
-        // Check if this dropdown has the model option
-        const option = selector.querySelector(`option[value="${model}"]`);
-        if (selector && selector.value !== model) {
-            selector.value = model;
-            if (window.logger) logger.debug(`Synced ${name} dropdown to:`, model);
+        // Fallback to saved model
+        const savedModel = localStorage.getItem('selected-ai-model');
+        if (savedModel) {
+            return { id: savedModel, name: savedModel };
         }
-    });
-}
+        
+        // Final fallback
+        return { id: DEFAULT_AI_MODEL, name: DEFAULT_AI_MODEL };
+    },
+    
+    updateModel(modelId) {
+        // Update localStorage
+        localStorage.setItem('selected-ai-model', modelId);
+        
+        // Notify all subscribers
+        this.notifySubscribers(modelId);
+    },
+    
+    subscribe(callback) {
+        if (typeof callback === 'function') {
+            this.subscribers.push(callback);
+        }
+    },
+    
+    notifySubscribers(modelId) {
+        this.subscribers.forEach(callback => {
+            try {
+                callback(modelId);
+            } catch (error) {
+                console.error('Error in globalModelSync subscriber:', error);
+            }
+        });
+    }
+};
 
-// Export for use by other modules
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { initializeGlobalModelSync };
-}
+// Initialize on DOM load
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('✅ globalModelSync initialized');
+});
 
 // Global function to reset to default model (for debugging/manual override)
 window.resetToDefaultModel = function() {
-    localStorage.setItem('global-ai-model', DEFAULT_AI_MODEL);
-    location.reload(); // Reload to apply changes
-    if (window.logger) logger.debug('Reset to default model:', DEFAULT_AI_MODEL);
+    localStorage.setItem('selected-ai-model', DEFAULT_AI_MODEL);
+    if (window.topNavModelSelector) {
+        window.topNavModelSelector.setModel(DEFAULT_AI_MODEL);
+    }
+    console.log('Reset to default model:', DEFAULT_AI_MODEL);
 };
