@@ -42,17 +42,18 @@ class PromptsController {
             });
         }
 
-        // Clean prompts - remove Midjourney parameters
+        // CRITICAL: Clean prompts to ONLY base text - no prefix, no parameters
         const cleanPrompts = prompts.map(p => {
             let promptText = typeof p === 'string' ? p : p.text || p.prompt || String(p);
             
-            // Remove /imagine prompt: prefix
-            promptText = promptText.replace(/^\/imagine\s+prompt:\s*/i, '').trim();
+            // Strip EVERYTHING - only keep base text
+            promptText = promptText
+                .replace(/^\/imagine\s+prompt:\s*/i, '')  // Remove /imagine prefix
+                .replace(/^prompt:\s*/i, '')  // Remove standalone "prompt:" prefix
+                .replace(/\s+--[\w-]+(?:\s+[\w:,.\/\-]+)?/g, '')  // Remove ALL parameters
+                .trim();
             
-            // Remove all Midjourney parameters
-            promptText = promptText.replace(/\s+(--ar\s+[\d:]+|--stylize\s+\d+|--chaos\s+\d+|--c\s+\d+|--weird\s+\d+|--w\s+\d+|--style\s+\w+|--niji\s+\d+|--turbo|--fast|--relax|--v\s+[\d\.]+|--zoom\s+[\d\.]+|--draft|--standard|--mode\s+\w+|--sw\s+\d+|--no\s+[\w\s,]+|--p\s+\w+|--sref\s+[\w\-:/.]+|--q\s+[\d\.]+)/g, '');
-            
-            return promptText.trim();
+            return promptText;
         });
 
         // Save session to database

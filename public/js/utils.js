@@ -38,15 +38,17 @@ window.Utils = {
     cleanPromptText: function(promptText) {
         if (!promptText || typeof promptText !== 'string') return '';
         
+        // CRITICAL: Strip EVERYTHING - return ONLY base text
         let cleaned = promptText.trim();
         
-        // Remove /imagine prefix
+        // Remove /imagine prompt: prefix (all variations)
+        cleaned = cleaned.replace(/^\/imagine\s+prompt:\s*/i, '');
         cleaned = cleaned.replace(/^\/imagine\s+/i, '');
+        cleaned = cleaned.replace(/^prompt:\s*/i, '');
         
-        // Remove Midjourney parameters (everything starting with --)
-        // This regex matches all -- parameters at the end of the prompt
-        cleaned = cleaned.replace(/\s+--\w+(\s+[\w:,.\/\-]+)?(?=\s+--|$)/g, '');
+        // Remove ALL Midjourney parameters
+        cleaned = cleaned.replace(/\s+--[\w-]+(?:\s+[\w:,.\/\-]+)?/g, '');
         
         return cleaned.trim();
-    }
+    },
 };

@@ -55,7 +55,7 @@ class PromptGenerator {
     }
 
     /**
-     * Parse generated prompts - exact copy from window.Generator.parseGeneratedPrompts
+     * Parse generated prompts - ONLY return clean base text
      */
     parseGeneratedPrompts(text) {
         console.log('Raw response from AI:', text);
@@ -63,8 +63,12 @@ class PromptGenerator {
             .map(line => line.trim())
             .filter(line => line && !line.startsWith("Here are") && !line.startsWith("Sure,"))
             .map(prompt => {
-                // Remove any accidental prefixes from the AI
-                return prompt.replace(/^\/imagine prompt:\s*/i, '').trim();
+                // CRITICAL: Strip EVERYTHING - only return base text
+                return prompt
+                    .replace(/^\/imagine\s+prompt:\s*/i, '')  // Remove /imagine prefix
+                    .replace(/^prompt:\s*/i, '')  // Remove standalone "prompt:" prefix
+                    .replace(/\s+--[\w-]+(?:\s+[\w:,.\/\-]+)?/g, '')  // Remove ALL parameters
+                    .trim();
             });
     }
 }

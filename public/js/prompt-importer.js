@@ -159,11 +159,13 @@ class PromptImporter {
     cleanPrompt(prompt) {
         if (!prompt) return '';
         
-        // Clean up the prompt - return ONLY the base prompt text
-        // Do NOT add /imagine prefix - that's added by the display layer
+        // CRITICAL: Return ONLY clean base text - no prefix, no parameters
         prompt = prompt.trim()
             .replace(/^["']|["']$/g, '')  // Remove surrounding quotes
             .replace(/^\/imagine\s+prompt:\s*/i, '')  // Remove /imagine prompt: prefix
+            .replace(/^\/imagine\s+/i, '')  // Remove /imagine prefix
+            .replace(/^prompt:\s*/i, '')  // Remove standalone "prompt:" prefix
+            .replace(/\s+--[\w-]+(?:\s+[\w:,.\/\-]+)?/g, '')  // Remove ALL parameters
             .trim();
         
         return prompt;
@@ -264,9 +266,12 @@ class PromptImporter {
     }
 
     addPromptWithParameters(prompt, container) {
-        // Store clean base prompt and let the display system handle parameters like Template Builder
-        const cleanPrompt = prompt.replace(/^\/imagine\s+prompt:\s*/i, '').trim();
-        logger.debug('🔍 addPromptWithParameters called with clean prompt:', cleanPrompt.substring(0, 100) + '...');
+        // CRITICAL: Clean the prompt to ONLY base text - no prefix, no parameters
+        const cleanPrompt = prompt
+            .replace(/^\/imagine\s+prompt:\s*/i, '')  // Remove /imagine prefix
+            .replace(/\s+--[\w-]+(?:\s+[\w:,.\/\-]+)?/g, '')  // Remove ALL parameters
+            .trim();
+        logger.debug('🔍 addPromptWithParameters - CLEAN base prompt:', cleanPrompt.substring(0, 100) + '...');
         
         // Create prompt element using existing system structure
         const promptDiv = document.createElement('div');
@@ -275,11 +280,11 @@ class PromptImporter {
         // Get the prompt index for title
         const existingPrompts = container.querySelectorAll('.prompt-item');
         const index = existingPrompts.length + 1;
-        logger.debug('🔍 Creating prompt element', index, 'existing prompts:', existingPrompts.length);
+        logger.debug('🔍 Creating prompt element', index);
         
-        // Create initial display with /imagine prefix but NO parameters yet
+        // Display with /imagine prefix ONLY (NO parameters - user adds them manually)
         const initialPrompt = `/imagine prompt: ${cleanPrompt}`;
-        logger.debug('🔍 Initial prompt value:', initialPrompt.substring(0, 100) + '...');
+        logger.debug('🔍 Initial display value:', initialPrompt.substring(0, 100) + '...');
         
         promptDiv.innerHTML = `
             <div class="prompt-header-compact">

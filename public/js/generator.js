@@ -27,8 +27,11 @@ window.Generator = {
             const promptDiv = document.createElement('div');
             promptDiv.className = 'prompt-item';
 
-            // Store the clean base prompt WITHOUT any /imagine prefix or parameters
-            const cleanBasePrompt = basePrompt.replace(/^\/imagine\s+prompt:\s*/i, '').trim();
+            // CRITICAL: Ensure basePrompt is ONLY clean text - no prefix, no parameters
+            const cleanBasePrompt = basePrompt
+                .replace(/^\/imagine\s+prompt:\s*/i, '')  // Remove /imagine prefix
+                .replace(/\s+--[\w-]+(?:\s+[\w:,.\/\-]+)?/g, '')  // Remove ALL parameters
+                .trim();
 
             // Construct the full prompt text for display with current parameters
             const fullPrompt = `/imagine prompt: ${cleanBasePrompt} ${parameterSuffix}`.replace(/\s+/g, ' ').trim();
@@ -359,14 +362,17 @@ window.Generator = {
 
     parseGeneratedPrompts: function(text) {
         logger.debug('Raw response from AI:', text);
-        // This function now ONLY cleans the AI response into an array of prompts.
-        // It should not add any prefixes or parameters.
+        // CRITICAL: Return ONLY clean base text - no prefix, no parameters
         return text.split('\n')
             .map(line => line.trim())
-            .filter(line => line && !line.startsWith("Here are") && !line.startsWith("Sure,")) // Filter out conversational filler
+            .filter(line => line && !line.startsWith("Here are") && !line.startsWith("Sure,"))
             .map(prompt => {
-                // Remove any accidental prefixes from the AI, but don't add our own.
-                return prompt.replace(/^\/imagine prompt:\s*/i, '').trim();
+                // Strip EVERYTHING - only return base text
+                return prompt
+                    .replace(/^\/imagine\s+prompt:\s*/i, '')  // Remove /imagine prefix
+                    .replace(/^prompt:\s*/i, '')  // Remove standalone "prompt:" prefix
+                    .replace(/\s+--[\w-]+(?:\s+[\w:,.\/\-]+)?/g, '')  // Remove ALL parameters
+                    .trim();
             });
     }
 };
