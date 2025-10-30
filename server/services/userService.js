@@ -128,6 +128,34 @@ class UserService {
     }
 
     /**
+     * Update user's OpenRouter API key
+     */
+    async updateOpenRouterKey(userId, apiKey) {
+        // If apiKey is empty string or null, set to NULL in database
+        const keyValue = apiKey && apiKey.trim() ? apiKey.trim() : null;
+        
+        const result = await pool.query(
+            `UPDATE users SET openrouter_api_key = $1 WHERE id = $2 
+             RETURNING id, email, username`,
+            [keyValue, userId]
+        );
+
+        return result.rows[0];
+    }
+
+    /**
+     * Get user's OpenRouter API key
+     */
+    async getOpenRouterKey(userId) {
+        const result = await pool.query(
+            'SELECT openrouter_api_key FROM users WHERE id = $1',
+            [userId]
+        );
+
+        return result.rows[0]?.openrouter_api_key || null;
+    }
+
+    /**
      * Change user password
      */
     async changePassword(userId, currentPassword, newPassword) {

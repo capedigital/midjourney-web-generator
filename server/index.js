@@ -100,12 +100,14 @@ app.get('/health', asyncHandler(async (req, res) => {
 
 // Import AI routes
 const aiRoutes = require('./routes/ai');
+const openrouterRoutes = require('./routes/openrouter');
 
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/prompts', promptsRoutes);
 app.use('/api/templates', templatesRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/openrouter', openrouterRoutes);
 app.use('/api/midjourney', midjourneyRoutes);
 app.use('/api/ideogram', ideogramRoutes);
 

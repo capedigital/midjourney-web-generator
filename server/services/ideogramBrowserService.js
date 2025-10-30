@@ -8,6 +8,8 @@ class IdeogramBrowserService {
     this.page = null;
     this.userDataDir = path.join(__dirname, '../../browser-profiles/ideogram');
     this.isInitialized = false;
+    this.currentStatus = 'idle'; // idle, initializing, submitting, batch
+    this.batchProgress = { current: 0, total: 0, currentPrompt: '' };
   }
 
   /**
@@ -24,9 +26,9 @@ class IdeogramBrowserService {
   }
 
   /**
-   * Initialize browser instance with persistent profile
+   * Initialize browser with persistent profile
    */
-  async initialize(headless = true) {
+  async initialize(headless = false) {
     if (this.browser && this.browser.isConnected()) {
       console.log('✅ Browser already running and connected');
       return;
@@ -46,17 +48,11 @@ class IdeogramBrowserService {
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
         '--disable-blink-features=AutomationControlled',
         '--window-position=100,100',
-        '--disable-popup-blocking',
-        '--disable-background-mode',
-        '--disable-backgrounding-occluded-windows',
-        '--disable-features=TranslateUI',
-        '--disable-ipc-flooding-protection',
-        '--enable-features=NetworkService,NetworkServiceInProcess'
+        '--disable-infobars'
       ],
-      ignoreDefaultArgs: ['--enable-automation', '--enable-blink-features=IdleDetection'],
+      ignoreDefaultArgs: ['--enable-automation'],
       defaultViewport: null
     });
 
@@ -163,23 +159,35 @@ class IdeogramBrowserService {
     try {
       console.log('🔐 Opening Ideogram for manual authentication...');
       
-      // Force close any existing browser instance
-      if (this.browser) {
-        console.log('🔄 Closing existing browser instance...');
-        await this.close();
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Wait for cleanup
+      // Check if browser is already initialized and connected
+      const browserConnected = this.browser && this.browser.isConnected && this.browser.isConnected();
+      
+      if (browserConnected && this.isInitialized) {
+        console.log('✅ Browser already open, navigating to login page...');
+        // Don't close - just navigate to login
+        await this.page.goto('https://ideogram.ai/login', {
+          waitUntil: 'networkidle2',
+          timeout: 30000
+        });
+      } else {
+        // Force close any existing browser instance only if it's not connected
+        if (this.browser) {
+          console.log('🔄 Closing stale browser instance...');
+          await this.close();
+          await new Promise(resolve => setTimeout(resolve, 1000)); // Wait for cleanup
+        }
+        
+        // Clean up lock files before launching
+        await this.cleanupLockFiles();
+        
+        // Initialize with visible browser
+        await this.initialize(false);
+        
+        await this.page.goto('https://ideogram.ai/login', {
+          waitUntil: 'networkidle2',
+          timeout: 30000
+        });
       }
-      
-      // Clean up lock files before launching
-      await this.cleanupLockFiles();
-      
-      // Initialize with visible browser
-      await this.initialize(false);
-      
-      await this.page.goto('https://ideogram.ai/login', {
-        waitUntil: 'networkidle2',
-        timeout: 30000
-      });
 
       console.log('✅ Navigated to Ideogram login page');
       console.log('⏳ Browser opened for manual login...');
@@ -233,10 +241,13 @@ class IdeogramBrowserService {
       // Only navigate if we're not already on Ideogram
       if (!isOnIdeogram) {
         console.log('🔄 Navigating to Ideogram...');
-        await this.page.goto('https://ideogram.ai/t/explore', {
+        await this.page.goto('https://ideogram.ai', {
           waitUntil: 'networkidle2',
           timeout: 30000
         });
+        
+        // Wait a bit for login state to be recognized
+        await new Promise(resolve => setTimeout(resolve, 2000));
       } else {
         console.log('✅ Already on Ideogram page');
         // Bring the page to front
@@ -276,35 +287,320 @@ class IdeogramBrowserService {
           textarea.value = text;
           textarea.dispatchEvent(new Event('input', { bubbles: true }));
           textarea.dispatchEvent(new Event('change', { bubbles: true }));
+          textarea.focus();
         }
       }, cleanPrompt);
 
-      console.log('✅ Prompt pasted into field');
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Add a few space keypresses to trigger validation/recognition
+      await new Promise(resolve => setTimeout(resolve, 100));
+      await this.page.keyboard.press('Space');
+      await new Promise(resolve => setTimeout(resolve, 50));
+      await this.page.keyboard.press('Backspace');
+      
+      console.log('✅ Prompt pasted into field with validation trigger');
+
+      // Verify the textarea kept the value. Some SPA/react inputs ignore direct value assignment.
+      let currentValue = await this.page.evaluate(() => {
+        const ta = document.querySelector('textarea');
+        return ta ? ta.value : null;
+      });
+
+      if (currentValue !== cleanPrompt) {
+        console.log('⚠️ Programmatic paste did not stick, falling back to simulated typing');
+
+        // Focus the textarea and type the prompt slowly so React-controlled inputs pick it up
+        try {
+          await textarea.focus();
+        } catch (e) {
+          // If textarea handle is stale, try to re-select
+          await this.page.evaluate(() => {
+            const ta = document.querySelector('textarea');
+            if (ta) ta.focus();
+          });
+        }
+
+        // Give a tiny pause before typing
+        await new Promise(resolve => setTimeout(resolve, 200));
+
+        // Type each character with a small delay to mimic a user
+        await this.page.keyboard.type(cleanPrompt, { delay: 25 });
+
+        // Dispatch input/change events after typing
+        await this.page.evaluate(() => {
+          const ta = document.querySelector('textarea');
+          if (ta) {
+            ta.dispatchEvent(new Event('input', { bubbles: true }));
+            ta.dispatchEvent(new Event('change', { bubbles: true }));
+            ta.focus();
+          }
+        });
+
+        // Re-read value for verification
+        currentValue = await this.page.evaluate(() => {
+          const ta = document.querySelector('textarea');
+          return ta ? ta.value : null;
+        });
+
+        if (currentValue !== cleanPrompt) {
+          console.log('❌ After typing fallback the textarea still does not match prompt. Current value length:', currentValue ? currentValue.length : 0);
+        } else {
+          console.log('✅ Typing fallback succeeded and textarea now contains the prompt');
+        }
+      } else {
+        console.log('✅ Prompt paste verified');
+      }
+
+      // Wait for button to become enabled instead of fixed delay
+      console.log('⏳ Waiting for Generate button to become enabled...');
+      try {
+        await this.page.waitForFunction(() => {
+          const buttons = Array.from(document.querySelectorAll('button'));
+          const generateBtn = buttons.find(btn => {
+            const text = btn.textContent || '';
+            return text.toLowerCase().includes('generate') || text.toLowerCase().includes('create');
+          });
+          return generateBtn && !generateBtn.disabled;
+        }, { timeout: 3000 });
+        console.log('✅ Generate button is enabled');
+      } catch (e) {
+        console.log('⚠️ Generate button did not enable within 3s, attempting click anyway');
+      }
 
       // Try multiple methods to submit
       let submitted = false;
 
-      // Method 1: Click Generate button
+      // Log textarea value immediately before attempting to submit so we can debug SPA clearing
       try {
-        const generateButton = await this.page.evaluate(() => {
+        const beforeClickValue = await this.page.evaluate(() => {
+          const ta = document.querySelector('textarea');
+          return ta ? ta.value : null;
+        });
+        console.log('🔎 Textarea length before submit attempt:', beforeClickValue ? beforeClickValue.length : 0);
+        if (beforeClickValue !== cleanPrompt) {
+          console.log('⚠️ Textarea content differs from expected before submit. Waiting a bit to allow UI to settle...');
+          await new Promise(resolve => setTimeout(resolve, 800));
+        }
+      } catch (e) {
+        console.log('⚠️ Could not read textarea before submit:', e.message);
+      }
+
+      // Method 1: Click Generate button (comprehensive search like Electron app)
+      try {
+        const buttonInfo = await this.page.evaluate(() => {
           // Look for Generate button by text content
           const buttons = Array.from(document.querySelectorAll('button'));
-          const generateBtn = buttons.find(btn => 
-            btn.textContent.toLowerCase().includes('generate') ||
-            btn.textContent.toLowerCase().includes('create')
-          );
+          const generateBtn = buttons.find(btn => {
+            const text = btn.textContent || '';
+            return text.toLowerCase().includes('generate') ||
+                   text.toLowerCase().includes('create');
+          });
           
           if (generateBtn) {
-            generateBtn.click();
-            return true;
+            // Check visibility and enabled state
+            const isVisible = generateBtn.offsetParent !== null;
+            const isEnabled = !generateBtn.disabled;
+            const computedStyle = window.getComputedStyle(generateBtn);
+            const isDisplayed = computedStyle.display !== 'none' && computedStyle.visibility !== 'hidden';
+            
+            const state = { isVisible, isEnabled, isDisplayed, disabled: generateBtn.disabled, text: generateBtn.textContent.trim() };
+            
+            if (isEnabled && isVisible && isDisplayed) {
+              // Scroll button into view first
+              generateBtn.scrollIntoView({ behavior: 'instant', block: 'center' });
+              
+              // Focus the button first
+              generateBtn.focus();
+              
+              // Click it
+              generateBtn.click();
+              
+              return { clicked: true, state };
+            } else {
+              return { clicked: false, state, reason: 'Button not ready' };
+            }
           }
-          return false;
+          
+          return { clicked: false, state: null, reason: 'Button not found' };
         });
 
-        if (generateButton) {
+        console.log('🔎 Button info:', JSON.stringify(buttonInfo, null, 2));
+
+        if (buttonInfo.clicked) {
           console.log('✅ Clicked Generate button');
           submitted = true;
+          
+          // Wait a moment after clicking, then check for error messages
+          await new Promise(resolve => setTimeout(resolve, 800));
+          
+          // Check if Ideogram is showing an error
+          const errorCheck = await this.page.evaluate(() => {
+            const textarea = document.querySelector('textarea');
+            const textareaValue = textarea ? textarea.value : null;
+            
+            // Look for error messages
+            const errorElements = Array.from(document.querySelectorAll('*')).filter(el => {
+              const text = el.textContent || '';
+              return text.toLowerCase().includes('please enter') || 
+                     text.toLowerCase().includes('prompt') && text.toLowerCase().includes('continue');
+            });
+            
+            return {
+              textareaValueLength: textareaValue ? textareaValue.length : 0,
+              hasError: errorElements.length > 0,
+              errorText: errorElements.length > 0 ? errorElements[0].textContent.trim() : null
+            };
+          });
+          
+          console.log('🔎 Post-click check:', JSON.stringify(errorCheck, null, 2));
+          
+          if (errorCheck.hasError || errorCheck.textareaValueLength === 0) {
+            console.log('⚠️ Ideogram cleared textarea after click. Attempting recovery...');
+            
+            // Recovery: Re-paste the prompt and click again
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            // Re-paste using keyboard typing (more reliable than programmatic set)
+            const textarea = await this.page.$('textarea');
+            if (textarea) {
+              await textarea.click();
+              await new Promise(resolve => setTimeout(resolve, 30));
+              
+              // Clear any existing text
+              await this.page.keyboard.down('Meta');
+              await this.page.keyboard.press('A');
+              await this.page.keyboard.up('Meta');
+              await this.page.keyboard.press('Backspace');
+              await new Promise(resolve => setTimeout(resolve, 30));
+              
+              // Type the prompt at 2ms/char for ~1.3s on 650-char prompts
+              console.log('🔄 Re-typing prompt after clear...');
+              await this.page.keyboard.type(cleanPrompt, { delay: 2 });
+              
+              // Add validation trigger
+              await this.page.keyboard.press('Space');
+              await new Promise(resolve => setTimeout(resolve, 20));
+              await this.page.keyboard.press('Backspace');
+              
+              // Wait for button to be enabled instead of fixed delay
+              console.log('⏳ Waiting for Generate button to become enabled after recovery...');
+              try {
+                await this.page.waitForFunction(() => {
+                  const buttons = Array.from(document.querySelectorAll('button'));
+                  const generateBtn = buttons.find(btn => {
+                    const text = btn.textContent || '';
+                    return text.toLowerCase().includes('generate') || text.toLowerCase().includes('create');
+                  });
+                  return generateBtn && !generateBtn.disabled;
+                }, { timeout: 2000 });
+                console.log('✅ Button enabled after recovery');
+              } catch (e) {
+                console.log('⚠️ Button did not enable, clicking anyway');
+              }
+              
+              // Verify it stuck this time
+              const verifyValue = await this.page.evaluate(() => {
+                const ta = document.querySelector('textarea');
+                return ta ? ta.value : null;
+              });
+              
+              console.log('🔎 After re-type, textarea length:', verifyValue ? verifyValue.length : 0);
+              
+              if (verifyValue && verifyValue.length > 0) {
+                // Try clicking Generate again
+                
+                const secondClick = await this.page.evaluate(() => {
+                  const buttons = Array.from(document.querySelectorAll('button'));
+                  const generateBtn = buttons.find(btn => {
+                    const text = btn.textContent || '';
+                    return text.toLowerCase().includes('generate') ||
+                           text.toLowerCase().includes('create');
+                  });
+                  
+                  if (generateBtn && !generateBtn.disabled) {
+                    generateBtn.scrollIntoView({ behavior: 'instant', block: 'center' });
+                    generateBtn.focus();
+                    generateBtn.click();
+                    return true;
+                  }
+                  return false;
+                });
+                
+                if (secondClick) {
+                  console.log('✅ Recovery click successful');
+                  // Brief wait for submission to process
+                  await new Promise(resolve => setTimeout(resolve, 200));
+                  
+                  const finalCheck = await this.page.evaluate(() => {
+                    const ta = document.querySelector('textarea');
+                    return { valueLength: ta ? ta.value.length : 0 };
+                  });
+                  
+                  console.log('🔎 Final check - textarea length:', finalCheck.valueLength);
+                } else {
+                  console.log('⚠️ Recovery click failed - button not ready');
+                }
+              } else {
+                console.log('❌ Re-type failed - textarea still empty');
+              }
+            }
+          }
+        } else {
+          console.log('⚠️ Generate button not ready, waiting and retrying...');
+          
+          // Wait longer for button to become enabled
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          
+          const retryInfo = await this.page.evaluate(() => {
+            const buttons = Array.from(document.querySelectorAll('button'));
+            const generateBtn = buttons.find(btn => {
+              const text = btn.textContent || '';
+              return text.toLowerCase().includes('generate') ||
+                     text.toLowerCase().includes('create');
+            });
+            
+            if (generateBtn) {
+              const isVisible = generateBtn.offsetParent !== null;
+              const isEnabled = !generateBtn.disabled;
+              const computedStyle = window.getComputedStyle(generateBtn);
+              const isDisplayed = computedStyle.display !== 'none' && computedStyle.visibility !== 'hidden';
+              
+              const state = { isVisible, isEnabled, isDisplayed, text: generateBtn.textContent.trim() };
+              
+              if (isEnabled && isVisible && isDisplayed) {
+                generateBtn.scrollIntoView({ behavior: 'instant', block: 'center' });
+                generateBtn.focus();
+                generateBtn.click();
+                return { clicked: true, state };
+              }
+              return { clicked: false, state };
+            }
+            return { clicked: false, state: null };
+          });
+          
+          console.log('🔎 Retry button info:', JSON.stringify(retryInfo, null, 2));
+          
+          if (retryInfo.clicked) {
+            console.log('✅ Clicked Generate button on retry');
+            submitted = true;
+            await new Promise(resolve => setTimeout(resolve, 800));
+            
+            // Check for error after retry too
+            const errorCheck = await this.page.evaluate(() => {
+              const textarea = document.querySelector('textarea');
+              const textareaValue = textarea ? textarea.value : null;
+              const errorElements = Array.from(document.querySelectorAll('*')).filter(el => {
+                const text = el.textContent || '';
+                return text.toLowerCase().includes('please enter') || 
+                       text.toLowerCase().includes('prompt') && text.toLowerCase().includes('continue');
+              });
+              return {
+                textareaValueLength: textareaValue ? textareaValue.length : 0,
+                hasError: errorElements.length > 0,
+                errorText: errorElements.length > 0 ? errorElements[0].textContent.trim() : null
+              };
+            });
+            console.log('🔎 Post-retry check:', JSON.stringify(errorCheck, null, 2));
+          }
         }
       } catch (error) {
         console.log('⚠️ Could not click Generate button:', error.message);
@@ -347,18 +643,37 @@ class IdeogramBrowserService {
   }
 
   /**
+   * Get current service status
+   */
+  getStatus() {
+    return {
+      browserRunning: this.browser && this.browser.isConnected(),
+      isInitialized: this.isInitialized,
+      status: this.currentStatus,
+      batchProgress: this.batchProgress
+    };
+  }
+
+  /**
    * Submit multiple prompts with delays
    */
   async submitBatch(prompts, delayMs = 3000, autoClose = true) {
     const results = [];
+    this.currentStatus = 'batch';
+    this.batchProgress = { current: 0, total: prompts.length, currentPrompt: '' };
 
     for (let i = 0; i < prompts.length; i++) {
       const prompt = prompts[i];
+      this.batchProgress.current = i + 1;
+      this.batchProgress.currentPrompt = prompt.substring(0, 50) + '...';
+      
       console.log(`📤 Submitting prompt ${i + 1}/${prompts.length}`);
 
       try {
+        this.currentStatus = 'submitting';
         const result = await this.submitPrompt(prompt);
         results.push(result);
+        this.currentStatus = 'batch';
 
         // Wait before next prompt (except for last one)
         if (i < prompts.length - 1) {
@@ -373,6 +688,9 @@ class IdeogramBrowserService {
         });
       }
     }
+
+    this.currentStatus = 'idle';
+    this.batchProgress = { current: 0, total: 0, currentPrompt: '' };
 
     // Auto-close the browser window after all prompts are submitted
     if (autoClose && this.browser) {

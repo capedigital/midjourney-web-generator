@@ -1,4 +1,5 @@
 const { getInstance: getMidjourneyService } = require('../services/midjourneyBrowserService');
+const promptsService = require('../services/promptsService');
 
 /**
  * Initialize Midjourney browser (opens persistent browser window)
@@ -121,6 +122,22 @@ async function submitPrompt(req, res) {
     
     const result = await service.submitPrompt(prompt, options?.autoSubmit !== false);
     
+    // Save to database if user is authenticated
+    if (req.user && req.user.id) {
+      try {
+        await promptsService.createSession({
+          userId: req.user.id,
+          inputText: prompt,
+          prompts: [{ text: prompt, index: 1 }],
+          model: 'midjourney-browser'
+        });
+        console.log('✅ Saved prompt to database for user', req.user.id);
+      } catch (dbError) {
+        console.error('⚠️ Failed to save prompt to database:', dbError.message);
+        // Don't fail the request if database save fails
+      }
+    }
+    
     res.json(result);
   } catch (error) {
     console.error('Error submitting prompt to Midjourney:', error);
@@ -155,6 +172,35 @@ async function submitBatch(req, res) {
     const results = await service.submitBatch(prompts, delayMs, autoClose);
     
     const successCount = results.filter(r => r.success).length;
+    
+    // Save batch to database if user is authenticated
+    if (req.user && req.user.id) {
+      try {
+        // Extract base prompts (strip all Midjourney parameters)
+        const basePrompts = prompts.map(p => {
+          const promptText = typeof p === 'string' ? p : p.text || p.prompt || String(p);
+          
+          // Remove /imagine prompt: prefix
+          let cleanPrompt = promptText.replace(/^\/imagine\s+prompt:\s*/i, '').trim();
+          
+          // Remove all Midjourney parameters using the same regex as Electron app
+          cleanPrompt = cleanPrompt.replace(/\s+(--ar\s+[\d:]+|--stylize\s+\d+|--chaos\s+\d+|--c\s+\d+|--weird\s+\d+|--w\s+\d+|--style\s+\w+|--niji\s+\d+|--turbo|--fast|--relax|--v\s+[\d\.]+|--zoom\s+[\d\.]+|--draft|--standard|--mode\s+\w+|--sw\s+\d+|--no\s+[\w\s,]+|--p\s+\w+|--sref\s+[\w\-:/.]+|--q\s+[\d\.]+)/g, '');
+          
+          return cleanPrompt.trim();
+        });
+
+        await promptsService.createSession({
+          userId: req.user.id,
+          inputText: `Batch of ${prompts.length} prompts sent to Midjourney`,
+          prompts: basePrompts,
+          model: 'midjourney-browser-batch'
+        });
+        console.log(`✅ Saved batch of ${prompts.length} base prompts to database for user`, req.user.id);
+      } catch (dbError) {
+        console.error('⚠️ Failed to save batch to database:', dbError.message);
+        // Don't fail the request if database save fails
+      }
+    }
     
     res.json({
       success: true,

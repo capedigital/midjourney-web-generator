@@ -15,4 +15,8 @@ router.post('/change-password', auth, authController.changePassword);
 router.post('/logout', auth, authController.logout);
 router.get('/verify', auth, authController.verifyToken);
 
+// OpenRouter API Key management
+router.put('/openrouter-key', auth, authController.updateOpenRouterKey);
+router.get('/openrouter-key', auth, authController.getOpenRouterKey);
+
 module.exports = router;

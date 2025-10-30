@@ -279,7 +279,8 @@ window.TemplateBuilder = {
         }
 
         const count = promptCount ? parseInt(promptCount.value) : 3;
-        const model = document.getElementById('template-ai-model')?.value || 'openai/gpt-4o-mini';
+        // Get model from global sync (top nav selector)
+        const model = window.globalModelSync?.getCurrentModel()?.id || 'openai/gpt-4o-mini';
 
         // Build AI prompt with enhancers
         const aiPrompt = window.Config.updateAIPromptWithEnhancers();
@@ -294,7 +295,6 @@ window.TemplateBuilder = {
         const templateSelect = document.getElementById('templateSelect');
         const generateBtn = document.getElementById('generate-image-prompts');
         const promptCount = document.getElementById('prompt-count');
-        const aiModel = document.getElementById('template-ai-model');
         
         if (!templateSelect || !templateSelect.value) {
             window.Utils.showToast('Please select a template first', 'error');
@@ -302,7 +302,8 @@ window.TemplateBuilder = {
         }
 
         const count = promptCount ? parseInt(promptCount.value) : 3;
-        const model = aiModel ? aiModel.value : 'openai/gpt-4o-mini';
+        // Get model from global sync (top nav selector)
+        const model = window.globalModelSync?.getCurrentModel()?.id || 'openai/gpt-4o-mini';
 
         // Disable button during generation
         generateBtn.disabled = true;
@@ -314,41 +315,44 @@ window.TemplateBuilder = {
             
             logger.debug('Generating prompts with AI:', { count, model });
             
-            // Call OpenRouter API via backend
-            const response = await fetch('/api/openrouter/generate', {
+            // Call the proper generate endpoint that saves to database
+            const response = await fetch('/api/prompts/generate', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${localStorage.getItem('token')}`
                 },
                 body: JSON.stringify({
-                    prompt: aiPrompt,
-                    model: model,
-                    temperature: 0.9,
-                    max_tokens: 2000
+                    promptText: aiPrompt,
+                    model: model
                 })
             });
 
             const data = await response.json();
 
-            if (!response.ok) {
+            if (!response.ok || !data.success) {
                 throw new Error(data.error || 'Failed to generate prompts');
             }
 
-            // Parse and display the generated prompts
-            const generatedText = data.response;
-            logger.debug('Generated text received:', generatedText.substring(0, 200) + '...');
+            // Use the prompts from the response (already saved to DB)
+            const prompts = data.prompts;
+            logger.debug('Generated and saved prompts:', prompts.length);
             
-            // Use Generator to parse and display
+            // Display using Generator
             if (window.Generator) {
-                window.Generator.generatePrompts(generatedText);
+                window.Generator.displayGeneratedPrompts(prompts);
                 
                 // Switch to Prompt Generation module to show results
                 if (window.app) {
                     window.app.switchModule('prompt-generation-module');
                 }
                 
-                window.Utils.showToast(`Generated ${count} prompts successfully!`, 'success');
+                window.Utils.showToast(`Generated and saved ${prompts.length} prompts!`, 'success');
+                
+                // Refresh credits if available
+                if (window.topNavModelSelector) {
+                    window.topNavModelSelector.refreshCreditsNow();
+                }
             } else {
                 logger.error('Generator module not available');
                 window.Utils.showToast('Generator module not available', 'error');

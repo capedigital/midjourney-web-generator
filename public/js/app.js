@@ -380,6 +380,23 @@ class App {
             if (headerUserEmail) headerUserEmail.textContent = this.currentUser.email;
         }
 
+        // Initialize Top Nav Model Selector (if not already initialized)
+        if (!window.topNavModelSelector && typeof TopNavModelSelector !== 'undefined') {
+            window.topNavModelSelector = new TopNavModelSelector({
+                containerId: 'top-nav-model-selector',
+                defaultSort: 'popular',
+                refreshInterval: 60000, // 1 minute for models
+                showCredits: true,
+                onModelChange: (model) => {
+                    console.log('🎯 Model changed globally:', model.id);
+                    // Trigger global model sync event
+                    if (window.globalModelSync) {
+                        window.globalModelSync.updateModel(model);
+                    }
+                }
+            });
+        }
+
         // Check if there's a module in the URL, otherwise show dashboard
         const urlParams = new URLSearchParams(window.location.search);
         const module = urlParams.get('module') || 'dashboard-module';
@@ -423,7 +440,7 @@ class App {
 
     async loadRecentPrompts() {
         try {
-            const response = await fetch('/api/prompts/recent?limit=10', {
+            const response = await fetch('/api/prompts/recent?limit=12', {
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('token')}`
                 }
@@ -448,28 +465,305 @@ class App {
             return;
         }
 
-        container.innerHTML = sessions.map(session => {
-            const date = new Date(session.created_at).toLocaleString();
-            let prompts = [];
+        const tableHtml = `
+            <table class="history-table">
+                <thead>
+                    <tr>
+                        <th class="date-col"><i class="fas fa-calendar"></i> Date</th>
+                        <th class="model-col"><i class="fas fa-robot"></i> Model</th>
+                        <th class="prompts-col"><i class="fas fa-list"></i> Prompts</th>
+                        <th class="count-col"><i class="fas fa-hashtag"></i> Count</th>
+                        <th class="actions-col"><i class="fas fa-tools"></i> Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${sessions.map(session => this.renderDashboardSessionRow(session)).join('')}
+                </tbody>
+            </table>
+        `;
+        
+        container.innerHTML = tableHtml;
+        
+        // Attach event listeners for expand/collapse and actions
+        this.attachDashboardHandlers();
+    }
+    
+    renderDashboardSessionRow(session) {
+        const date = new Date(session.created_at);
+        const formattedDate = date.toLocaleDateString();
+        const formattedTime = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        // Handle prompts whether it's already an array or a JSON string
+        let prompts = [];
+        if (Array.isArray(session.prompts)) {
+            prompts = session.prompts;
+        } else if (typeof session.prompts === 'string') {
             try {
                 prompts = JSON.parse(session.prompts);
             } catch (e) {
                 prompts = [];
             }
-            
-            const firstPrompt = prompts[0] || 'No prompts';
-            const preview = firstPrompt.substring(0, 100);
-            
-            return `
-                <div class="recent-prompt-card" onclick="app.loadSession(${session.id})">
-                    <div class="recent-prompt-preview">${preview}${firstPrompt.length > 100 ? '...' : ''}</div>
-                    <div class="recent-prompt-meta">
-                        <span class="recent-prompt-count">${prompts.length} prompts</span>
-                        <span class="recent-prompt-date">${date}</span>
+        }
+        
+        // Get model display name with icon
+        let modelDisplay = session.model || 'Unknown';
+        let modelIcon = 'fa-question-circle';
+        
+        if (modelDisplay.includes('ideogram')) {
+            modelIcon = 'fa-image';
+            modelDisplay = 'Ideogram';
+        } else if (modelDisplay.includes('midjourney')) {
+            modelIcon = 'fa-magic';
+            modelDisplay = 'Midjourney';
+        } else if (modelDisplay.includes('openai') || modelDisplay.includes('gpt')) {
+            modelIcon = 'fa-robot';
+            modelDisplay = 'OpenAI';
+        } else if (modelDisplay.includes('anthropic') || modelDisplay.includes('claude')) {
+            modelIcon = 'fa-brain';
+            modelDisplay = 'Claude';
+        } else if (modelDisplay.includes('google') || modelDisplay.includes('gemini')) {
+            modelIcon = 'fa-star';
+            modelDisplay = 'Gemini';
+        }
+        
+        // Create expandable prompts preview
+        const promptPreviews = prompts.slice(0, 3).map(p => {
+            const promptText = typeof p === 'string' ? p : JSON.stringify(p);
+            return this.truncateText(promptText, 60);
+        }).join('<br>');
+        
+        const hasMore = prompts.length > 3;
+        
+        return `
+            <tr class="history-row dashboard-row" data-session-id="${session.id}">
+                <td class="date-col">
+                    <div class="date-display">${formattedDate}</div>
+                    <div class="time-display">${formattedTime}</div>
+                </td>
+                <td class="model-col">
+                    <i class="fas ${modelIcon}"></i> ${modelDisplay}
+                </td>
+                <td class="prompts-col">
+                    <div class="prompts-preview">${promptPreviews}</div>
+                    ${hasMore ? `<div class="more-indicator">+${prompts.length - 3} more...</div>` : ''}
+                </td>
+                <td class="count-col">
+                    <span class="badge">${prompts.length}</span>
+                </td>
+                <td class="actions-col">
+                                            <div class="actions">
+                            <button class="expand-btn" data-session-id="${session.id}" title="Expand">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                            <button class="copy-all-btn" data-session-id="${session.id}" title="Copy All">
+                                <i class="fas fa-copy"></i> Copy All
+                            </button>
+                            <button class="send-to-gen-btn" data-session-id="${session.id}" title="Send to Prompt Generation">
+                                <i class="fas fa-arrow-right"></i> Import
+                            </button>
+                        </div>
+                </td>
+            </tr>
+            <tr class="expanded-row" id="dashboard-expanded-${session.id}" style="display: none;">
+                <td colspan="5">
+                    <div class="expanded-content">
+                        <div class="prompts-list">
+                            ${prompts.map((prompt, idx) => {
+                                const promptText = typeof prompt === 'string' ? prompt : JSON.stringify(prompt);
+                                return `
+                                    <div class="prompt-item" data-prompt="${this.escapeHtml(promptText)}">
+                                        <div class="prompt-number">#${idx + 1}</div>
+                                        <div class="prompt-text">${this.escapeHtml(promptText)}</div>
+                                        <div class="prompt-item-actions">
+                                            <button class="btn-sm btn-copy-single" title="Copy">
+                                                <i class="fas fa-copy"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
                     </div>
-                </div>
-            `;
-        }).join('');
+                </td>
+            </tr>
+        `;
+    }
+    
+    attachDashboardHandlers() {
+        // Row click to expand/collapse
+        document.querySelectorAll('.dashboard-row').forEach(row => {
+            row.addEventListener('click', (e) => {
+                // Don't trigger if clicking on action buttons
+                if (e.target.closest('.actions-col')) return;
+                
+                const sessionId = row.dataset.sessionId;
+                const expandedRow = document.getElementById(`dashboard-expanded-${sessionId}`);
+                const expandBtn = row.querySelector('.expand-btn i');
+                
+                if (expandedRow.style.display === 'none') {
+                    expandedRow.style.display = 'table-row';
+                    expandBtn.classList.remove('fa-chevron-down');
+                    expandBtn.classList.add('fa-chevron-up');
+                    row.classList.add('expanded');
+                } else {
+                    expandedRow.style.display = 'none';
+                    expandBtn.classList.remove('fa-chevron-up');
+                    expandBtn.classList.add('fa-chevron-down');
+                    row.classList.remove('expanded');
+                }
+            });
+        });
+        
+        // Expand/collapse buttons
+        document.querySelectorAll('.expand-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const sessionId = btn.dataset.sessionId;
+                const row = document.querySelector(`.dashboard-row[data-session-id="${sessionId}"]`);
+                row.click();
+            });
+        });
+        
+        // Copy all prompts buttons
+        document.querySelectorAll('.copy-all-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const sessionId = btn.dataset.sessionId;
+                const expandedRow = document.getElementById(`dashboard-expanded-${sessionId}`);
+                
+                // Get all prompts from the expanded section
+                const promptItems = expandedRow.querySelectorAll('.prompt-item');
+                const prompts = Array.from(promptItems).map(item => {
+                    const rawPrompt = item.dataset.prompt;
+                    return window.Utils.cleanPromptText(rawPrompt);
+                });
+                
+                if (prompts.length > 0) {
+                    const allPromptsText = prompts.join('\n\n---\n\n');
+                    try {
+                        await navigator.clipboard.writeText(allPromptsText);
+                        this.showToast(`Copied ${prompts.length} prompt${prompts.length !== 1 ? 's' : ''} to clipboard!`, 'success');
+                    } catch (err) {
+                        this.showToast('Failed to copy prompts', 'error');
+                    }
+                }
+            });
+        });
+        
+        // Copy single prompt buttons
+        document.querySelectorAll('.btn-copy-single').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const promptItem = e.target.closest('.prompt-item');
+                const rawPrompt = promptItem.dataset.prompt;
+                const cleanPrompt = window.Utils.cleanPromptText(rawPrompt);
+                
+                try {
+                    await navigator.clipboard.writeText(cleanPrompt);
+                    this.showToast('Copied to clipboard!', 'success');
+                } catch (err) {
+                    this.showToast('Failed to copy', 'error');
+                }
+            });
+        });
+        
+        // Send to Prompt Generation buttons
+        document.querySelectorAll('.send-to-gen-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const sessionId = btn.dataset.sessionId;
+                const expandedRow = document.getElementById(`dashboard-expanded-${sessionId}`);
+                
+                // Get all prompts from the expanded section and clean them
+                const promptItems = expandedRow.querySelectorAll('.prompt-item');
+                const cleanPrompts = Array.from(promptItems).map(item => {
+                    const rawPrompt = item.dataset.prompt;
+                    return window.Utils.cleanPromptText(rawPrompt);
+                });
+                
+                if (cleanPrompts.length > 0) {
+                    this.sendToPromptGeneration(cleanPrompts);
+                }
+            });
+        });
+    }
+    
+    truncateText(text, maxLength) {
+        if (text.length <= maxLength) return text;
+        return text.substring(0, maxLength) + '...';
+    }
+    
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    sendToPromptGeneration(prompts) {
+        if (!prompts || prompts.length === 0) {
+            this.showToast('No prompts to import', 'warning');
+            return;
+        }
+        
+        // Switch to generation module
+        this.switchModule('prompt-generation-module');
+        
+        // Use the same PromptImporter that AI Chat uses for consistent styling
+        if (!window.promptImporterInstance) {
+            window.promptImporterInstance = new PromptImporter();
+        }
+        
+        // Set prompts and import them using the standard importer
+        window.promptImporterInstance.parsedPrompts = prompts;
+        window.promptImporterInstance.importPrompts();
+        
+        this.showToast(`Imported ${prompts.length} prompts to Prompt Generation!`, 'success');
+    }
+    
+    async copyFirstPrompt(sessionId) {
+        try {
+            const response = await fetch(`/api/prompts/session/${sessionId}`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+            
+            const data = await response.json();
+            
+            if (data.success && data.session) {
+                let prompts = [];
+                if (Array.isArray(data.session.prompts)) {
+                    prompts = data.session.prompts;
+                } else if (typeof data.session.prompts === 'string') {
+                    prompts = JSON.parse(data.session.prompts);
+                }
+                
+                if (prompts.length > 0) {
+                    await navigator.clipboard.writeText(prompts[0]);
+                    this.showToast('Prompt copied to clipboard!', 'success');
+                }
+            }
+        } catch (error) {
+            console.error('Error copying prompt:', error);
+            this.showToast('Failed to copy prompt', 'error');
+        }
+    }
+    
+    showToast(message, type = 'info') {
+        // Simple toast notification
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.classList.add('show');
+        }, 10);
+        
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
     }
 
     displayRecentSessions(sessions) {

@@ -28,5 +28,25 @@ window.Utils = {
                 }
             });
         });
+    },
+
+    /**
+     * Clean prompt text by removing /imagine prefix and Midjourney parameters
+     * @param {string} promptText - The full prompt text with /imagine and parameters
+     * @returns {string} - Clean prompt text without command or parameters
+     */
+    cleanPromptText: function(promptText) {
+        if (!promptText || typeof promptText !== 'string') return '';
+        
+        let cleaned = promptText.trim();
+        
+        // Remove /imagine prefix
+        cleaned = cleaned.replace(/^\/imagine\s+/i, '');
+        
+        // Remove Midjourney parameters (everything starting with --)
+        // This regex matches all -- parameters at the end of the prompt
+        cleaned = cleaned.replace(/\s+--\w+(\s+[\w:,.\/\-]+)?(?=\s+--|$)/g, '');
+        
+        return cleaned.trim();
     }
 };

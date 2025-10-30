@@ -26,7 +26,7 @@ class MidjourneyBrowserService {
   /**
    * Initialize browser with persistent profile
    */
-  async initialize(headless = true) {
+  async initialize(headless = false) {
     if (this.browser && this.browser.isConnected()) {
       console.log('✅ Browser already running and connected');
       return;
@@ -61,14 +61,9 @@ class MidjourneyBrowserService {
         '--disable-setuid-sandbox',
         '--disable-blink-features=AutomationControlled',
         '--window-position=100,100',
-        '--disable-popup-blocking',
-        '--disable-background-mode',
-        '--disable-backgrounding-occluded-windows',
-        '--disable-features=TranslateUI',
-        '--disable-ipc-flooding-protection',
-        '--enable-features=NetworkService,NetworkServiceInProcess'
+        '--disable-infobars'
       ],
-      ignoreDefaultArgs: ['--enable-automation', '--enable-blink-features=IdleDetection'],
+      ignoreDefaultArgs: ['--enable-automation'],
       defaultViewport: null
     };
 
@@ -302,10 +297,9 @@ class MidjourneyBrowserService {
         throw new Error('Browser is not on Midjourney. Please click "Setup Login" in Settings first.');
       }
 
-      // Wait a moment for page to be ready
-      await new Promise(resolve => setTimeout(resolve, 300));
-
-      // Find the textarea
+      // Wait for textarea to be ready using DOM check instead of fixed delay
+      console.log('🔍 Waiting for prompt input field to be ready...');
+      
       const textareaSelectors = [
         'textarea[placeholder*="imagine"]',
         'textarea[placeholder*="Imagine"]',
@@ -313,20 +307,39 @@ class MidjourneyBrowserService {
         'div[contenteditable="true"]'
       ];
 
-      console.log('🔍 Looking for prompt input field...');
       let textarea = null;
-      for (const selector of textareaSelectors) {
-        try {
-          console.log(`   Trying selector: ${selector}`);
-          textarea = await this.page.$(selector);
-          if (textarea) {
-            console.log(`   ✅ Found textarea with selector: ${selector}`);
-            break;
+      try {
+        // Wait for textarea to exist and be ready (DOM-based waiting)
+        await this.page.waitForFunction(
+          (selectors) => {
+            for (const selector of selectors) {
+              const el = document.querySelector(selector);
+              if (el) return true;
+            }
+            return false;
+          },
+          { timeout: 5000 },
+          textareaSelectors
+        );
+        console.log('✅ Textarea detected in DOM');
+        
+        // Now find which selector worked
+        for (const selector of textareaSelectors) {
+          try {
+            console.log(`   Trying selector: ${selector}`);
+            textarea = await this.page.$(selector);
+            if (textarea) {
+              console.log(`   ✅ Found textarea with selector: ${selector}`);
+              break;
+            }
+          } catch (e) {
+            console.log(`   ❌ Failed with selector ${selector}:`, e.message);
+            // Continue to next selector
           }
-        } catch (e) {
-          console.log(`   ❌ Failed with selector ${selector}:`, e.message);
-          // Continue to next selector
         }
+      } catch (error) {
+        console.log('⚠️ Timeout waiting for textarea:', error.message);
+        // Continue with fallback logic
       }
 
       if (!textarea) {
@@ -338,7 +351,7 @@ class MidjourneyBrowserService {
       }
 
       await textarea.click();
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 30));
 
       // Strip /imagine prompt: prefix if present (not needed for web form)
       const cleanPrompt = prompt.replace(/^\/imagine\s+prompt:\s*/i, '').trim();
@@ -349,18 +362,18 @@ class MidjourneyBrowserService {
       await this.page.keyboard.up('Meta');
       await this.page.keyboard.press('Backspace');
       
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await new Promise(resolve => setTimeout(resolve, 50));
 
       // Click the textarea to focus it
       await textarea.click();
-      await new Promise(resolve => setTimeout(resolve, 200));
+      await new Promise(resolve => setTimeout(resolve, 30));
 
       // Clear any existing text
       await this.page.keyboard.down('Meta'); // Command key on Mac
       await this.page.keyboard.press('A');
       await this.page.keyboard.up('Meta');
       await this.page.keyboard.press('Backspace');
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 30));
 
       // Set value directly and trigger React events (INSTANT)
       console.log('⚡ Setting prompt value instantly...');
@@ -380,7 +393,25 @@ class MidjourneyBrowserService {
       }, cleanPrompt);
 
       console.log('✅ Prompt set in field');
-      await new Promise(resolve => setTimeout(resolve, 50));
+
+      // Wait for submit button to become enabled using DOM check (instead of fixed delay)
+      console.log('⏳ Waiting for submit button to be ready...');
+      try {
+        await this.page.waitForFunction(
+          () => {
+            const buttons = Array.from(document.querySelectorAll('button'));
+            const submitBtn = buttons.find(btn => {
+              const text = (btn.textContent?.trim() || btn.getAttribute('aria-label') || '').toLowerCase();
+              return text.includes('imagine') || text.includes('generate') || text.includes('submit') || text.includes('send');
+            });
+            return submitBtn && !submitBtn.disabled;
+          },
+          { timeout: 3000 }
+        );
+        console.log('✅ Submit button is ready');
+      } catch (error) {
+        console.log('⚠️ Timeout waiting for button to enable, proceeding anyway:', error.message);
+      }
 
       // Look for submit button (simplified)
       console.log('🔍 Looking for submit button...');
@@ -418,7 +449,7 @@ class MidjourneyBrowserService {
         
         // Try regular Enter first
         await this.page.keyboard.press('Enter');
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 30));
         
         // Then try Shift+Enter (this is what AppleScript uses for Midjourney!)
         await this.page.keyboard.down('Shift');
@@ -429,7 +460,7 @@ class MidjourneyBrowserService {
       console.log('✅ Prompt submitted');
 
       // Brief wait for submission to register
-      await new Promise(resolve => setTimeout(resolve, 200));
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       return {
         success: true,

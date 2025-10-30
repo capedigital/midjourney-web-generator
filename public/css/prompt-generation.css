@@ -231,9 +231,9 @@
 
 /* Title */
 #generatedPrompts .prompt-title {
-    font-size: 13px;
+    font-size: 35px;
     font-weight: 600;
-    color: var(--text-secondary, #94a3b8);
+    color: rgb(255 255 255 / 10%);
     white-space: nowrap;
     min-width: 80px;
     flex-shrink: 0;

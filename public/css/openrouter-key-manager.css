@@ -1,0 +1,48 @@
+/**
+ * OpenRouter Key Manager - Clean Styles
+ */
+
+#openrouter-api-key-input {
+  flex: 1;
+  padding: 10px;
+  background: var(--bg-input) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 4px !important;
+  color: var(--text-primary) !important;
+  font-family: 'Courier New', monospace !important;
+  font-size: 13px !important;
+}
+
+#openrouter-api-key-input:focus {
+  outline: none;
+  border-color: var(--primary) !important;
+}
+
+#openrouter-api-key-input::placeholder {
+  color: var(--text-muted) !important;
+  font-family: 'Courier New', monospace;
+}
+
+/* Status messages */
+#openrouter-key-status {
+  font-size: 13px !important;
+  padding: 8px !important;
+  margin-top: 8px !important;
+  border-radius: 4px !important;
+  min-height: 20px;
+}
+
+#openrouter-key-status.success {
+  color: #48bb78 !important;
+  background: rgba(72, 187, 120, 0.1);
+}
+
+#openrouter-key-status.error {
+  color: #f56565 !important;
+  background: rgba(245, 101, 101, 0.1);
+}
+
+#openrouter-key-status.info {
+  color: var(--text-muted) !important;
+  background: var(--bg-secondary);
+}

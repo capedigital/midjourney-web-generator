@@ -1,4 +1,5 @@
 const { getInstance: getIdeogramService } = require('../services/ideogramBrowserService');
+const promptsService = require('../services/promptsService');
 
 /**
  * Initialize Ideogram browser
@@ -48,21 +49,30 @@ async function checkLogin(req, res) {
   try {
     const service = getIdeogramService();
     
-    if (!service.isInitialized) {
-      await service.initialize();
+    // Don't auto-initialize - just check if already running
+    if (!service.isInitialized || !service.browser || !service.browser.isConnected()) {
+      return res.json({
+        success: true,
+        loggedIn: false,
+        browserRunning: false,
+        status: service.getStatus()
+      });
     }
     
     const loggedIn = await service.isLoggedIn();
     
     res.json({
       success: true,
-      loggedIn
+      loggedIn,
+      browserRunning: true,
+      status: service.getStatus()
     });
   } catch (error) {
     console.error('Error checking Ideogram login:', error);
     res.status(500).json({
       success: false,
-      error: error.message
+      error: error.message,
+      status: getIdeogramService().getStatus()
     });
   }
 }
@@ -117,6 +127,22 @@ async function submitPrompt(req, res) {
     const service = getIdeogramService();
     const result = await service.submitPrompt(prompt, options);
     
+    // Save to database if user is authenticated
+    if (req.user && req.user.id) {
+      try {
+        await promptsService.createSession({
+          userId: req.user.id,
+          inputText: prompt,
+          prompts: [prompt],
+          model: 'ideogram-browser'
+        });
+        console.log('✅ Saved prompt to database for user', req.user.id);
+      } catch (dbError) {
+        console.error('⚠️ Failed to save prompt to database:', dbError.message);
+        // Don't fail the request if database save fails
+      }
+    }
+    
     res.json(result);
   } catch (error) {
     console.error('Error submitting prompt to Ideogram:', error);
@@ -145,6 +171,22 @@ async function submitBatch(req, res) {
     const results = await service.submitBatch(prompts, delayMs);
     
     const successCount = results.filter(r => r.success).length;
+    
+    // Save batch to database if user is authenticated
+    if (req.user && req.user.id) {
+      try {
+        await promptsService.createSession({
+          userId: req.user.id,
+          inputText: `Batch of ${prompts.length} prompts`,
+          prompts: prompts,
+          model: 'ideogram-browser-batch'
+        });
+        console.log(`✅ Saved batch of ${prompts.length} prompts to database for user`, req.user.id);
+      } catch (dbError) {
+        console.error('⚠️ Failed to save batch to database:', dbError.message);
+        // Don't fail the request if database save fails
+      }
+    }
     
     res.json({
       success: true,
@@ -181,6 +223,36 @@ async function close(req, res) {
   }
 }
 
+/**
+ * Import cookies from regular browser
+ */
+async function importCookies(req, res) {
+  try {
+    const { cookies } = req.body;
+    
+    if (!cookies || !Array.isArray(cookies)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Cookies array is required'
+      });
+    }
+    
+    const service = getIdeogramService();
+    await service.importCookies(cookies);
+    
+    res.json({
+      success: true,
+      message: `Imported ${cookies.length} cookies successfully`
+    });
+  } catch (error) {
+    console.error('Error importing cookies:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+}
+
 module.exports = {
   initialize,
   setupAuth,
@@ -188,5 +260,6 @@ module.exports = {
   login,
   submitPrompt,
   submitBatch,
-  close
+  close,
+  importCookies
 };

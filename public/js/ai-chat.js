@@ -12,6 +12,9 @@ class AIChatAssistant {
         this.currentSessionId = null; // Track current session
         this.maxStoredChats = 250; // Limit stored chats
         
+        // Token tracking
+        this.sessionTokens = { input: 0, output: 0, total: 0, cost: 0 };
+        
         this.init();
     }
 
@@ -36,7 +39,6 @@ class AIChatAssistant {
         this.chatInput = document.getElementById('chat-input');
         this.sendBtn = document.getElementById('send-chat-btn');
         this.chatStatus = document.getElementById('chat-status');
-        this.modelSelector = document.getElementById('chat-ai-model');
         this.templateModeSelector = document.getElementById('chat-template-mode');
         this.clearChatBtn = document.getElementById('clear-chat-btn');
         this.fileUploadBtn = document.getElementById('file-upload-btn');
@@ -115,104 +117,32 @@ class AIChatAssistant {
     }
 
     initializeCurrentModel() {
-        // Initialize currentModel from saved preference or dropdown's selected value
-        const savedModel = localStorage.getItem('global-ai-model');
-        if (savedModel && this.modelSelector) {
-            // Check if saved model exists in current dropdown options
-            const option = this.modelSelector.querySelector(`option[value="${savedModel}"]`);
-            if (option) {
-                this.currentModel = savedModel;
-                this.modelSelector.value = savedModel;
-                logger.debug('AI Chat restored saved model:', this.currentModel);
-            } else {
-                // Fallback to dropdown default if saved model not available
-                this.currentModel = this.modelSelector.value;
-                logger.debug('AI Chat using dropdown default (saved model not available):', this.currentModel);
-            }
-        } else if (this.modelSelector) {
-            this.currentModel = this.modelSelector.value;
-            logger.debug('AI Chat initialized with dropdown default:', this.currentModel);
+        // Get model from global sync (which is tied to top nav selector)
+        if (window.globalModelSync) {
+            this.currentModel = window.globalModelSync.getCurrentModel()?.id || 'openai/gpt-4.1-nano';
+            logger.debug('AI Chat initialized with global model:', this.currentModel);
         } else {
-            // Fallback if selector not found
+            // Fallback
             this.currentModel = 'openai/gpt-4.1-nano';
-            console.warn('Model selector not found, using fallback:', this.currentModel);
+            console.warn('globalModelSync not found, using fallback:', this.currentModel);
         }
 
-        // Initialize global model sync
+        // Subscribe to model changes from top nav
         this.initializeGlobalModelSync();
     }
 
     initializeGlobalModelSync() {
-        // Create global model manager if it doesn't exist
-        if (!window.globalModelManager) {
-            window.globalModelManager = {
-                currentModel: this.currentModel,
-                subscribers: [],
-                
-                setModel(newModel) {
-                    this.currentModel = newModel;
-                    localStorage.setItem('global-ai-model', newModel);
-                    logger.debug('Global model changed to:', newModel);
-                    
-                    // Update all subscribers
-                    this.subscribers.forEach(callback => {
-                        try {
-                            callback(newModel);
-                        } catch (error) {
-                            console.error('Error updating model subscriber:', error);
-                        }
-                    });
-                },
-                
-                subscribe(callback) {
-                    this.subscribers.push(callback);
-                },
-                
-                unsubscribe(callback) {
-                    const index = this.subscribers.indexOf(callback);
-                    if (index > -1) {
-                        this.subscribers.splice(index, 1);
-                    }
+        // Subscribe to global model changes from top nav selector
+        if (window.globalModelSync) {
+            this.modelChangeCallback = (model) => {
+                if (model && model.id) {
+                    this.currentModel = model.id;
+                    logger.debug('AI Chat synced to new model from top nav:', this.currentModel);
                 }
             };
-        }
-
-        // Subscribe to global model changes
-        this.modelChangeCallback = (newModel) => {
-            if (this.currentModel !== newModel) {
-                this.currentModel = newModel;
-                if (this.modelSelector) {
-                    this.modelSelector.value = newModel;
-                }
-                logger.debug('AI Chat synced to global model:', newModel);
-            }
-        };
-        
-        window.globalModelManager.subscribe(this.modelChangeCallback);
-
-        // Also sync other dropdowns to our current model
-        this.syncOtherDropdowns(this.currentModel);
-    }
-
-    syncOtherDropdowns(model) {
-        // Sync Dashboard dropdown
-        const dashboardSelector = document.getElementById('ai-model-selector');
-        if (dashboardSelector && dashboardSelector.value !== model) {
-            const option = dashboardSelector.querySelector(`option[value="${model}"]`);
-            if (option) {
-                dashboardSelector.value = model;
-                logger.debug('Synced Dashboard dropdown to:', model);
-            }
-        }
-
-        // Sync Template Builder dropdown
-        const templateSelector = document.getElementById('template-ai-model');
-        if (templateSelector && templateSelector.value !== model) {
-            const option = templateSelector.querySelector(`option[value="${model}"]`);
-            if (option) {
-                templateSelector.value = model;
-                logger.debug('Synced Template Builder dropdown to:', model);
-            }
+            
+            window.globalModelSync.subscribe(this.modelChangeCallback);
+            logger.debug('AI Chat subscribed to global model sync');
         }
     }
 
@@ -269,20 +199,6 @@ class AIChatAssistant {
                 this.addStatusMessage('📁 File uploaded! Ready to analyze.', 'success');
                 this.handleFileUpload(file);
             }
-        });
-
-        // Model selection change
-        this.modelSelector?.addEventListener('change', (e) => {
-            const newModel = e.target.value;
-            this.currentModel = newModel;
-            logger.debug('AI Chat model changed to:', newModel);
-            
-            // Update global model (this will sync all other dropdowns)
-            if (window.globalModelManager) {
-                window.globalModelManager.setModel(newModel);
-            }
-            
-            this.addStatusMessage(`Switched to ${e.target.selectedOptions[0].text}`);
         });
 
         // Clear chat
@@ -723,6 +639,9 @@ class AIChatAssistant {
         setTimeout(() => {
             logger.debug('🔄 Importing prompts...');
             this.importPrompts(prompts);
+            
+            // Save to history
+            this.savePromptsToHistory(prompts, 'AI Chat');
         }, 100);
     }
 
@@ -926,12 +845,9 @@ class AIChatAssistant {
             // Restore messages to UI
             this.restoreMessagesToUI(session.messages);
             
-            // Update model if different
+            // Update model if different (just set current, top nav shows the active model)
             if (session.model && session.model !== this.currentModel) {
                 this.currentModel = session.model;
-                if (this.modelSelector) {
-                    this.modelSelector.value = session.model;
-                }
             }
             
             logger.debug('Loaded chat session:', sessionId);
@@ -1111,12 +1027,19 @@ class AIChatAssistant {
             // Create system prompt with context
             const systemPrompt = this.createSystemPrompt(context);
             
+            // SESSION ISOLATION: Only send recent messages to avoid token accumulation
+            // Limit to last 6 messages (3 exchanges) to keep costs low
+            // User can start "New Chat" to completely reset context
+            const recentMessages = this.messages.slice(-6);
+            
             // Prepare messages for API
             const apiMessages = [
                 { role: 'system', content: systemPrompt },
-                ...this.messages.slice(-10), // Keep last 10 messages for context
+                ...recentMessages, // Only recent context, not entire history
                 userMessage
             ];
+            
+            logger.debug('💬 Sending', recentMessages.length, 'previous messages for context (max 6)');
 
             // Debug logging for image messages
             if (this.currentFile && this.currentFile.type.startsWith('image/')) {
@@ -1140,6 +1063,11 @@ class AIChatAssistant {
             
             this.hideTypingIndicator();
             this.addMessage(response, 'assistant');
+            
+            // Refresh credits in top nav after API usage
+            if (window.topNavModelSelector) {
+                window.topNavModelSelector.refreshCreditsNow();
+            }
             
             // Check for prompts in response and offer to import
             this.detectAndOfferPrompts(response);
@@ -1446,6 +1374,7 @@ IMPORTANT: Only include the JSON prompt block when explicitly requested by the u
         let fullContent = '';
         let reasoning = '';
         let finalContent = '';
+        let usageData = null;
 
         // Handle streaming response
         if (requestBody.stream) {
@@ -1468,6 +1397,13 @@ IMPORTANT: Only include the JSON prompt block when explicitly requested by the u
 
                             try {
                                 const data = JSON.parse(jsonStr);
+                                
+                                // Capture usage data if available
+                                if (data.usage) {
+                                    usageData = data.usage;
+                                    logger.debug('📊 Token usage:', usageData);
+                                }
+                                
                                 if (data.choices && data.choices[0] && data.choices[0].delta) {
                                     const delta = data.choices[0].delta;
                                     
@@ -1516,6 +1452,12 @@ IMPORTANT: Only include the JSON prompt block when explicitly requested by the u
             
             const data = result.data;
             
+            // Capture usage data
+            if (data.usage) {
+                usageData = data.usage;
+                logger.debug('📊 Token usage:', usageData);
+            }
+            
             if (data.choices && data.choices[0]) {
                 const choice = data.choices[0];
                 
@@ -1528,6 +1470,11 @@ IMPORTANT: Only include the JSON prompt block when explicitly requested by the u
                     finalContent = choice.message.content;
                 }
             }
+        }
+        
+        // Update token tracking if usage data is available
+        if (usageData) {
+            await this.updateTokenTracking(usageData);
         }
 
         // Extract JSON from reasoning or return final content
@@ -1688,6 +1635,9 @@ IMPORTANT: Only include the JSON prompt block when explicitly requested by the u
 
         // Add to message history
         this.messages.push({ role, content });
+        
+        // Update session indicator with message count
+        this.updateSessionIndicator();
 
         // Create message element
         const messageDiv = document.createElement('div');
@@ -1753,6 +1703,7 @@ IMPORTANT: Only include the JSON prompt block when explicitly requested by the u
                 logger.debug('✅ Parsed JSON successfully:', jsonData);
                 if (jsonData.prompts && Array.isArray(jsonData.prompts)) {
                     detectedPrompts = jsonData.prompts
+                        .map(prompt => typeof prompt === 'string' ? prompt : prompt.text || '')
                         .map(prompt => prompt.trim())
                         .filter(prompt => prompt && prompt.length > 10); // Only basic length check
                     logger.debug('✅ Parsed marked JSON prompts:', detectedPrompts);
@@ -1785,6 +1736,7 @@ IMPORTANT: Only include the JSON prompt block when explicitly requested by the u
                     const jsonData = JSON.parse(cleanJson);
                     if (jsonData.prompts && Array.isArray(jsonData.prompts)) {
                         detectedPrompts = jsonData.prompts
+                            .map(prompt => typeof prompt === 'string' ? prompt : prompt.text || '')
                             .map(prompt => prompt.trim())
                             .filter(prompt => prompt && prompt.length > 10); // Only basic length check
                         logger.debug('Parsed cleaned JSON prompts:', detectedPrompts);
@@ -1796,7 +1748,31 @@ IMPORTANT: Only include the JSON prompt block when explicitly requested by the u
             }
         }
         
-        // Method 3: Try to extract any JSON-like structure containing prompts
+        // Method 3: Look for JSON in markdown code blocks
+        if (detectedPrompts.length === 0) {
+            logger.debug('Trying markdown code block detection...');
+            const codeBlockPattern = /```(?:json)?\s*(\{[\s\S]*?"prompts"[\s\S]*?\})\s*```/g;
+            const codeMatches = [...response.matchAll(codeBlockPattern)];
+            
+            for (const match of codeMatches) {
+                try {
+                    logger.debug('Found code block with JSON:', match[1]);
+                    const jsonData = JSON.parse(match[1]);
+                    if (jsonData.prompts && Array.isArray(jsonData.prompts)) {
+                        detectedPrompts = jsonData.prompts
+                            .map(prompt => typeof prompt === 'string' ? prompt : prompt.text || '')
+                            .map(prompt => prompt.trim())
+                            .filter(prompt => prompt && prompt.length > 10);
+                        logger.debug('Parsed code block JSON prompts:', detectedPrompts);
+                        break;
+                    }
+                } catch (error) {
+                    console.error('Error parsing code block JSON:', error);
+                }
+            }
+        }
+        
+        // Method 4: Try to extract any JSON-like structure containing prompts
         if (detectedPrompts.length === 0) {
             logger.debug('Trying flexible JSON detection...');
             const flexibleJsonPattern = /\{[^}]*"prompts"[^}]*\[[^\]]*\][^}]*\}/g;
@@ -1818,6 +1794,7 @@ IMPORTANT: Only include the JSON prompt block when explicitly requested by the u
                         const jsonData = JSON.parse(cleanJson);
                         if (jsonData.prompts && Array.isArray(jsonData.prompts)) {
                             detectedPrompts = jsonData.prompts
+                                .map(prompt => typeof prompt === 'string' ? prompt : prompt.text || '')
                                 .map(prompt => prompt.trim())
                                 .filter(prompt => prompt && prompt.length > 10); // Only basic length check
                             logger.debug('Parsed flexible JSON prompts:', detectedPrompts);
@@ -1830,14 +1807,15 @@ IMPORTANT: Only include the JSON prompt block when explicitly requested by the u
             }
         }
         
-        // Only show prompts if we found valid image prompts through JSON
+        // Show import button if we found prompts through JSON
+        // No need for strict validation since JSON format already indicates intent
         if (detectedPrompts.length > 0) {
             detectedPrompts = [...new Set(detectedPrompts)];
             logger.debug('🎯 FINAL DETECTED PROMPTS:', detectedPrompts);
             logger.debug('🎯 CALLING showPromptImportOption with', detectedPrompts.length, 'prompts');
             this.showPromptImportOption(detectedPrompts);
         } else {
-            logger.debug('❌ NO VALID IMAGE PROMPTS DETECTED IN RESPONSE');
+            logger.debug('❌ NO PROMPTS DETECTED IN JSON FORMAT');
             logger.debug('❌ Response was:', response.substring(0, 300) + '...');
         }
     }
@@ -2008,6 +1986,10 @@ IMPORTANT: Only include the JSON prompt block when explicitly requested by the u
     }
 
     showTypingIndicator() {
+        const estimatedCost = this.sessionTokens.cost > 0 
+            ? `<span class="session-cost">Session: ~$${this.sessionTokens.cost.toFixed(4)}</span>`
+            : '';
+        
         this.chatStatus.innerHTML = `
             <div class="typing-indicator">
                 <span>AI is thinking</span>
@@ -2016,6 +1998,7 @@ IMPORTANT: Only include the JSON prompt block when explicitly requested by the u
                     <div class="typing-dot"></div>
                     <div class="typing-dot"></div>
                 </div>
+                ${estimatedCost}
             </div>
         `;
     }
@@ -2300,12 +2283,18 @@ IMPORTANT: Only include the JSON prompt block when explicitly requested by the u
     }
 
     clearChat(startNewSession = true) {
-        if (startNewSession && this.messages.length > 0 && !confirm('Clear all chat messages?')) {
+        if (startNewSession && this.messages.length > 0 && !confirm('Start a new chat? This will clear the current conversation and avoid accumulating token costs.')) {
             return;
         }
 
+        // IMPORTANT: Reset messages array to start fresh session
+        // This prevents token accumulation - each new chat starts from 0 context
         this.messages = [];
-        this.currentSessionId = null; // Reset session
+        this.currentSessionId = null; // Reset session ID for new conversation
+        
+        // Reset token tracking
+        this.sessionTokens = { input: 0, output: 0, total: 0, cost: 0 };
+        logger.debug('💰 Token tracking reset for new session');
         
         this.chatMessages.innerHTML = `
             <div class="chat-message assistant-message welcome-message">
@@ -2323,7 +2312,7 @@ IMPORTANT: Only include the JSON prompt block when explicitly requested by the u
                         </ul>
                         I understand your current Midjourney parameters and style library!
                         <br><br>
-                        <small style="color: var(--text-secondary);">💡 Tip: Copy any image and paste it here for instant analysis!</small>
+                        <small style="color: var(--text-secondary);">💡 Tip: Click "New Chat" regularly to avoid accumulating token costs!</small>
                     </div>
                 </div>
             </div>
@@ -2331,6 +2320,180 @@ IMPORTANT: Only include the JSON prompt block when explicitly requested by the u
         
         if (startNewSession) {
             this.addStatusMessage('Chat cleared');
+        }
+        
+        // Update session indicator
+        this.updateSessionIndicator();
+    }
+    
+    /**
+     * Update token tracking with actual usage data from API
+     */
+    async updateTokenTracking(usageData) {
+        try {
+            // Update session totals
+            this.sessionTokens.input += usageData.prompt_tokens || 0;
+            this.sessionTokens.output += usageData.completion_tokens || 0;
+            this.sessionTokens.total = this.sessionTokens.input + this.sessionTokens.output;
+            
+            // Get current model pricing from OpenRouter
+            const pricing = await this.getModelPricing(this.currentModel);
+            
+            if (pricing) {
+                // Calculate cost: (tokens / 1M) * price_per_million
+                const inputCost = (this.sessionTokens.input / 1000000) * pricing.prompt;
+                const outputCost = (this.sessionTokens.output / 1000000) * pricing.completion;
+                this.sessionTokens.cost = inputCost + outputCost;
+                
+                logger.debug('💰 Token tracking updated:', {
+                    input: this.sessionTokens.input,
+                    output: this.sessionTokens.output,
+                    total: this.sessionTokens.total,
+                    cost: `$${this.sessionTokens.cost.toFixed(6)}`,
+                    model: this.currentModel
+                });
+                
+                // Update the status display
+                this.updateTokenDisplay(usageData, pricing);
+            }
+        } catch (error) {
+            logger.error('Error updating token tracking:', error);
+        }
+    }
+    
+    /**
+     * Get model pricing from OpenRouter API
+     */
+    async getModelPricing(modelId) {
+        try {
+            // Check if we have cached pricing from global model selector
+            if (window.topNavModelSelector && window.topNavModelSelector.models) {
+                const model = window.topNavModelSelector.models.find(m => m.id === modelId);
+                if (model && model.pricing) {
+                    return model.pricing;
+                }
+            }
+            
+            // Fallback: fetch from OpenRouter API
+            const response = await fetch(`https://openrouter.ai/api/v1/models/${encodeURIComponent(modelId)}`);
+            if (response.ok) {
+                const data = await response.json();
+                return data.data?.pricing;
+            }
+        } catch (error) {
+            logger.error('Error fetching model pricing:', error);
+        }
+        return null;
+    }
+    
+    /**
+     * Display token usage and cost after each API call
+     */
+    updateTokenDisplay(usageData, pricing) {
+        // Calculate this request's cost
+        const thisCostInput = (usageData.prompt_tokens / 1000000) * pricing.prompt;
+        const thisCostOutput = (usageData.completion_tokens / 1000000) * pricing.completion;
+        const thisCost = thisCostInput + thisCostOutput;
+        
+        // Create a small cost indicator that appears briefly
+        const costIndicator = document.createElement('div');
+        costIndicator.className = 'token-cost-indicator';
+        costIndicator.innerHTML = `
+            <div class="cost-breakdown">
+                <div class="cost-title">💰 API Usage</div>
+                <div class="cost-line">
+                    <span>Input:</span>
+                    <span>${usageData.prompt_tokens.toLocaleString()} tokens ($${thisCostInput.toFixed(6)})</span>
+                </div>
+                <div class="cost-line">
+                    <span>Output:</span>
+                    <span>${usageData.completion_tokens.toLocaleString()} tokens ($${thisCostOutput.toFixed(6)})</span>
+                </div>
+                <div class="cost-line total">
+                    <span>This request:</span>
+                    <span>$${thisCost.toFixed(6)}</span>
+                </div>
+                <div class="cost-line session-total">
+                    <span>Session total:</span>
+                    <span>${this.sessionTokens.total.toLocaleString()} tokens ($${this.sessionTokens.cost.toFixed(6)})</span>
+                </div>
+            </div>
+        `;
+        
+        this.chatStatus.innerHTML = '';
+        this.chatStatus.appendChild(costIndicator);
+        
+        // Show for 5 seconds then fade out
+        setTimeout(() => {
+            costIndicator.classList.add('fade-out');
+            setTimeout(() => {
+                if (this.chatStatus.contains(costIndicator)) {
+                    this.chatStatus.removeChild(costIndicator);
+                }
+            }, 500);
+        }, 5000);
+    }
+    
+    /**
+     * Update session indicator to show message count and estimated tokens
+     */
+    updateSessionIndicator() {
+        const statusEl = document.getElementById('chat-status');
+        if (!statusEl) return;
+        
+        const messageCount = this.messages.length;
+        
+        if (messageCount === 0) {
+            statusEl.innerHTML = '';
+            return;
+        }
+        
+        // Rough token estimation: ~4 chars per token
+        const totalChars = this.messages.reduce((sum, msg) => {
+            return sum + (typeof msg.content === 'string' ? msg.content.length : 500);
+        }, 0);
+        const estimatedTokens = Math.ceil(totalChars / 4);
+        
+        // Show warning if getting expensive
+        const warningClass = estimatedTokens > 5000 ? 'token-warning' : '';
+        const warningIcon = estimatedTokens > 5000 ? '⚠️ ' : '';
+        
+        statusEl.innerHTML = `
+            <small class="${warningClass}" style="color: var(--text-secondary); font-size: 11px;">
+                ${warningIcon}Session: ${messageCount} messages (~${estimatedTokens.toLocaleString()} tokens)
+                ${estimatedTokens > 5000 ? ' - <strong>Click "New Chat" to reduce costs</strong>' : ''}
+            </small>
+        `;
+    }
+
+    /**
+     * Save imported prompts to history database
+     */
+    async savePromptsToHistory(prompts, source = 'AI Chat') {
+        try {
+            logger.debug('💾 Saving AI Chat prompts to history...', prompts.length);
+            
+            const response = await fetch('/api/prompts/save-imported', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({
+                    prompts: prompts,
+                    source: source
+                })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                logger.debug('✅ AI Chat prompts saved to history:', data.sessionId);
+            } else {
+                logger.warn('⚠️  Failed to save AI Chat prompts to history:', response.status);
+            }
+        } catch (error) {
+            logger.error('❌ Error saving AI Chat prompts to history:', error);
+            // Don't throw - we don't want to interrupt the import flow
         }
     }
 }

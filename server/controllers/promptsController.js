@@ -30,6 +30,48 @@ class PromptsController {
     });
 
     /**
+     * Save imported prompts to history
+     */
+    saveImported = asyncHandler(async (req, res) => {
+        const { prompts, source } = req.body;
+
+        if (!prompts || !Array.isArray(prompts) || prompts.length === 0) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid prompts array'
+            });
+        }
+
+        // Clean prompts - remove Midjourney parameters
+        const cleanPrompts = prompts.map(p => {
+            let promptText = typeof p === 'string' ? p : p.text || p.prompt || String(p);
+            
+            // Remove /imagine prompt: prefix
+            promptText = promptText.replace(/^\/imagine\s+prompt:\s*/i, '').trim();
+            
+            // Remove all Midjourney parameters
+            promptText = promptText.replace(/\s+(--ar\s+[\d:]+|--stylize\s+\d+|--chaos\s+\d+|--c\s+\d+|--weird\s+\d+|--w\s+\d+|--style\s+\w+|--niji\s+\d+|--turbo|--fast|--relax|--v\s+[\d\.]+|--zoom\s+[\d\.]+|--draft|--standard|--mode\s+\w+|--sw\s+\d+|--no\s+[\w\s,]+|--p\s+\w+|--sref\s+[\w\-:/.]+|--q\s+[\d\.]+)/g, '');
+            
+            return promptText.trim();
+        });
+
+        // Save session to database
+        const session = await promptsService.createSession({
+            userId: req.user.id,
+            inputText: `Imported from ${source || 'unknown source'}`,
+            prompts: cleanPrompts,
+            model: 'imported'
+        });
+
+        res.json({
+            success: true,
+            sessionId: session.id,
+            count: cleanPrompts.length,
+            created_at: session.created_at
+        });
+    });
+
+    /**
      * Get session by ID (public for Claude MCP)
      */
     getSession = asyncHandler(async (req, res) => {

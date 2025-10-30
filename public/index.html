@@ -7,6 +7,10 @@
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/ai-chat.css">
     <link rel="stylesheet" href="/css/prompt-generation.css">
+    <link rel="stylesheet" href="/css/prompt-history.css">
+    <link rel="stylesheet" href="/css/global-ai-model.css">
+    <link rel="stylesheet" href="/css/top-nav-model-selector.css">
+    <link rel="stylesheet" href="/css/openrouter-key-manager.css">
     <link rel="stylesheet" href="/css/template-builder.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -65,6 +69,9 @@
                 <h1>PromptGen</h1>
             </div>
             <div class="header-right">
+                <!-- Top Nav Model Selector -->
+                <div id="top-nav-model-selector"></div>
+                
                 <div class="user-profile" id="header-user-profile" style="cursor: pointer;" title="View Profile & Settings">
                     <i class="fas fa-user-circle"></i>
                     <div>
@@ -72,9 +79,6 @@
                         <div id="header-user-email" style="font-size: 11px; color: var(--text-muted);"></div>
                     </div>
                 </div>
-                <button class="btn-logout" id="logout-btn-header">
-                    <i class="fas fa-sign-out-alt"></i> Logout
-                </button>
             </div>
         </header>
         
@@ -120,33 +124,50 @@
                         <h2>Dashboard</h2>
                     </div>
                     <div class="content-card">
-                        <h3>AI Model Selector</h3>
-                        <select id="ai-model-selector">
-                            <option value="openai/gpt-5-nano">GPT-5 Nano (OpenAI) - $0.225/M</option>
-                            <option value="openai/gpt-4.1-nano">GPT-4.1 Nano (OpenAI) - $0.25/M</option>
-                            <option value="meta-llama/llama-3.3-70b-instruct">Llama 3.3 70B (Meta) - $0.079/M</option>
-                            <option value="google/gemini-2.0-flash-001">Gemini 2.0 Flash (Google) - $0.25/M</option>
-                            <option value="openai/gpt-4o-mini">GPT-4o Mini (OpenAI) - $0.375/M</option>
-                            <option value="openai/gpt-4.1-mini">GPT-4.1 Mini (OpenAI) - $1.00/M</option>
-                            <option value="openai/chatgpt-4o-latest">ChatGPT 4o (OpenAI) - Premium</option>
-                            <option value="anthropic/claude-3.7-sonnet">Claude 3.7 Sonnet - Premium</option>
-                            <option value="google/gemma-3-27b-it">Gemma-3-27b-it (Google) - Variable</option>
-                            <option value="deepseek/deepseek-r1">Deepseek R1 - Variable</option>
-                        </select>
-                        <h3 style="margin-top: 20px;">Quick Navigation</h3>
+                        <h3>Quick Navigation</h3>
                         <div class="quick-navigation">
+                            <button class="action-button large-button" data-module="prompt-history-module"><i class="fas fa-history"></i>Prompt History</button>
                             <button class="action-button large-button" data-module="template-builder-module"><i class="fas fa-code"></i>Template Builder</button>
                             <button class="action-button large-button" data-module="prompt-importer-module"><i class="fas fa-download"></i>Prompt Importer</button>
                             <button class="action-button large-button" data-module="ai-chat-assistant-module"><i class="fas fa-comments"></i>AI Chat Assistant</button>
                             <button class="action-button large-button" data-module="prompt-generation-module"><i class="fas fa-tasks"></i>Prompt Generation</button>
                             <!-- <button class="action-button large-button" data-module="style-library-module"><i class="fas fa-palette"></i>Style Library</button> -->
-                            <button class="action-button large-button" data-module="settings-module"><i class="fas fa-cog"></i>Settings</button>
+                            <!-- <button class="action-button large-button" data-module="settings-module"><i class="fas fa-cog"></i>Settings</button> -->
                         </div>
                     </div>
                     <div class="content-card">
-                        <h3>Recent Prompts</h3>
-                        <div id="recent-prompts-list" class="recent-prompts-grid">
+                        <h3><i class="fas fa-history"></i> Recent Prompts</h3>
+                        <div id="recent-prompts-list" class="recent-prompts-container">
                             <div class="placeholder">Your recent prompts will appear here</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Prompt History module -->
+                <div id="prompt-history-module" class="module-content">
+                    <div class="module-header">
+                        <h2>Prompt History</h2>
+                        <p class="module-description">View, search, and reuse your previously submitted prompts</p>
+                    </div>
+                    <div class="content-card">
+                        <div class="history-controls">
+                            <input type="text" id="history-search" placeholder="Search prompts..." class="search-input">
+                            <select id="history-filter" class="filter-select">
+                                <option value="all">All Services</option>
+                                <option value="ideogram-browser">Ideogram</option>
+                                <option value="midjourney-browser">Midjourney</option>
+                                <option value="ideogram-browser-batch">Ideogram Batch</option>
+                                <option value="midjourney-browser-batch">Midjourney Batch</option>
+                            </select>
+                            <button id="refresh-history" class="action-button"><i class="fas fa-sync"></i> Refresh</button>
+                        </div>
+                        <div id="history-list" class="history-list">
+                            <div class="loading">Loading history...</div>
+                        </div>
+                        <div class="pagination-controls">
+                            <button id="prev-page" class="pagination-btn" disabled><i class="fas fa-chevron-left"></i> Previous</button>
+                            <span id="page-info">Page 1</span>
+                            <button id="next-page" class="pagination-btn" disabled>Next <i class="fas fa-chevron-right"></i></button>
                         </div>
                     </div>
                 </div>
@@ -229,21 +250,6 @@
                         </div>
                         <textarea id="outputPreview" class="preview-textarea" readonly placeholder="Generated prompt will appear here..."></textarea>
                         
-                        <div style="margin-bottom: 10px;">
-                            <label for="template-ai-model" style="font-weight: bold;">AI Model:</label>
-                            <select id="template-ai-model">
-                                <option value="openai/gpt-5-nano">GPT-5 Nano (OpenAI) - $0.225/M</option>
-                                <option value="openai/gpt-4.1-nano">GPT-4.1 Nano (OpenAI) - $0.25/M</option>
-                                <option value="meta-llama/llama-3.3-70b-instruct">Llama 3.3 70B (Meta) - $0.079/M</option>
-                                <option value="google/gemini-2.0-flash-001">Gemini 2.0 Flash (Google) - $0.25/M</option>
-                                <option value="openai/gpt-4o-mini">GPT-4o Mini (OpenAI) - $0.375/M</option>
-                                <option value="openai/gpt-4.1-mini">GPT-4.1 Mini (OpenAI) - $1.00/M</option>
-                                <option value="openai/chatgpt-4o-latest">ChatGPT 4o (OpenAI) - Premium</option>
-                                <option value="anthropic/claude-3.7-sonnet">Claude 3.7 Sonnet - Premium</option>
-                                <option value="google/gemma-3-27b-it">Gemma-3-27b-it (Google) - Variable</option>
-                                <option value="deepseek/deepseek-r1">Deepseek R1 - Variable</option>
-                            </select>
-                        </div>
                         <button id="generate-image-prompts" class="generate-prompts-button">
                             Generate Image Prompts...
                         </button>
@@ -301,19 +307,8 @@ Example ChatGPT output:
                 <!-- AI Chat Assistant module -->
                 <div id="ai-chat-assistant-module" class="module-content">
                     <div class="module-header">
-                        <h2>🤖 AI Chat Assistant</h2>
+                        <h2><i class="fas fa-robot"></i> AI Chat Assistant</h2>
                         <div class="chat-controls">
-                            <select id="chat-ai-model" class="model-selector">
-                                <option value="openai/gpt-5-nano">GPT-5 Nano (OpenAI) - $0.225/M</option>
-                                <option value="openai/gpt-4.1-nano">GPT-4.1 Nano (OpenAI) - $0.25/M</option>
-                                <option value="meta-llama/llama-3.3-70b-instruct">Llama 3.3 70B (Meta) - $0.079/M</option>
-                                <option value="google/gemini-2.0-flash-001">Gemini 2.0 Flash (Google) - $0.25/M</option>
-                                <option value="openai/gpt-4o-mini">GPT-4o Mini (OpenAI) - $0.375/M</option>
-                                <option value="openai/gpt-4.1-mini">GPT-4.1 Mini (OpenAI) - $1.00/M</option>
-                                <option value="openai/chatgpt-4o-latest">ChatGPT 4o (OpenAI) - Premium</option>
-                                <option value="anthropic/claude-3.7-sonnet">Claude 3.7 Sonnet - Premium</option>
-                                <option value="deepseek/deepseek-r1">Deepseek R1 - Variable</option>
-                            </select>
                             <select id="chat-template-mode" class="model-selector">
                                 <option value="freeform" selected>Freeform (No Template)</option>
                                 <option value="current-template">Use Current Template</option>
@@ -323,7 +318,7 @@ Example ChatGPT output:
                                 <option value="">Select Template...</option>
                             </select>
                             <button id="history-chat-btn" class="secondary-btn chat-history-btn"><i class="fas fa-history"></i> History</button>
-                            <button id="clear-chat-btn" class="secondary-btn"><i class="fas fa-trash"></i> Clear Chat</button>
+                            <button id="clear-chat-btn" class="primary-btn" style="background: var(--accent-color); color: white;" title="Start a fresh conversation to avoid accumulating token costs"><i class="fas fa-plus-circle"></i> New Chat</button>
                         </div>
                     </div>
                     
@@ -576,6 +571,54 @@ Example ChatGPT output:
                     </div>
                     
                     <div class="content-card">
+                        <h3>OpenRouter API Key</h3>
+                        <div class="setting-description" style="margin-bottom: 16px; color: #aaa; font-size: 14px;">
+                            Add your OpenRouter API key to enable AI chat features and view credit balance in real-time. 
+                            Get your key from <a href="https://openrouter.ai/keys" target="_blank" style="color: #667eea;">openrouter.ai/keys</a>
+                        </div>
+                        <div class="setting-group">
+                            <label class="setting-label">API Key</label>
+                            <div class="setting-control" style="display: flex; gap: 8px; align-items: center;">
+                                <input 
+                                    type="password" 
+                                    id="openrouter-api-key-input" 
+                                    placeholder="sk-or-v1-..." 
+                                    style="flex: 1; padding: 10px; background: #2a2f3f; border: 1px solid #3a3f4f; border-radius: 4px; color: #fff; font-family: 'Courier New', monospace; font-size: 13px;"
+                                />
+                                <button 
+                                    id="toggle-api-key-visibility" 
+                                    class="action-button" 
+                                    style="padding: 10px 14px; background: #2a2f3f;"
+                                    title="Show/Hide API Key"
+                                >
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button 
+                                    id="save-openrouter-api-key" 
+                                    class="action-button" 
+                                    style="padding: 10px 16px;"
+                                >
+                                    <i class="fas fa-save"></i> Save Key
+                                </button>
+                            </div>
+                            <div id="openrouter-key-status" class="status-message" style="font-size: 13px; color: #888; margin-top: 8px;">
+                                <!-- Status messages will appear here -->
+                            </div>
+                        </div>
+                        <div class="setting-group" style="margin-top: 16px;">
+                            <div style="background: #2a2f3f; padding: 12px; border-radius: 6px; border-left: 3px solid #667eea;">
+                                <div style="font-size: 13px; color: #aaa; line-height: 1.6;">
+                                    <strong style="color: #fff;">🔒 Privacy & Security:</strong><br>
+                                    • Your API key is encrypted and stored securely in the database<br>
+                                    • Only you can access your key - it's never shared with other users<br>
+                                    • The key is used server-side for OpenRouter API calls<br>
+                                    • You can remove your key anytime by clearing the field and saving
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="content-card">
                         <h3>Generator Authentication</h3>
                         <div class="setting-description" style="margin-bottom: 24px; color: #aaa; font-size: 14px;">
                             Set up browser automation for Midjourney and Ideogram. You'll need to log in once manually, then your session will be saved for future use.
@@ -729,6 +772,12 @@ Example ChatGPT output:
     <!-- Load Logger first (secure environment-aware logging) -->
     <script src="/js/logger.js"></script>
     
+    <!-- Load Global AI Model Selector (must be early for other modules) -->
+    <script src="/js/global-ai-model.js"></script>
+    
+    <!-- Load Top Nav Model Selector -->
+    <script src="/js/components/top-nav-model-selector.js"></script>
+    
     <!-- Load HAL 9000 Messages for auth screen -->
     <script src="/js/hal-messages.js"></script>
     
@@ -756,9 +805,11 @@ Example ChatGPT output:
     <!-- Load feature modules -->
     <script src="/js/template-suggestions.js"></script>
     <script src="/js/prompt-importer.js"></script>
+    <script src="/js/prompt-history.js"></script>
     <script src="/js/ai-chat.js"></script>
     <script src="/js/auth-manager.js"></script>
     <script src="/js/template-builder.js"></script>
     <script src="/js/generator-settings.js"></script>
+    <script src="/js/openrouter-key-manager.js"></script>
 </body>
 </html>

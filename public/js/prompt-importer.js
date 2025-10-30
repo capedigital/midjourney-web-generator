@@ -52,8 +52,27 @@ class PromptImporter {
             // Not JSON, continue with other methods
         }
 
+        // Handle code blocks (```json, ```, etc.)
+        let cleanedText = text;
+        if (text.includes('```')) {
+            // Remove code fence markers
+            cleanedText = text.replace(/```json\s*/g, '')
+                             .replace(/```\s*/g, '')
+                             .trim();
+            
+            // Try parsing as JSON again after removing code fences
+            try {
+                const jsonData = JSON.parse(cleanedText);
+                if (jsonData.prompts && Array.isArray(jsonData.prompts)) {
+                    return jsonData.prompts.map(p => this.cleanPrompt(p)).filter(p => p);
+                }
+            } catch (e) {
+                // Still not JSON, continue with line parsing
+            }
+        }
+
         // Split by lines and extract prompts
-        const lines = text.split(/\r?\n/);
+        const lines = cleanedText.split(/\r?\n/);
         
         for (let line of lines) {
             line = line.trim();
@@ -74,6 +93,7 @@ class PromptImporter {
         const skipPatterns = [
             /^here are \d+/i,
             /^here's/i,
+            /^here is/i,
             /^\d+\.\s*$/,  // Numbered lists without content
             /^-\s*$/,  // Empty bullet points
             /^prompt \d+:\s*$/i,
@@ -81,9 +101,23 @@ class PromptImporter {
             /^based on/i,
             /^these prompts/i,
             /^i've created/i,
+            /^i've generated/i,
+            /^i created/i,
             /^each prompt/i,
             /^sure!/i,
-            /^of course/i
+            /^sure,/i,
+            /^of course/i,
+            /^absolutely/i,
+            /^certainly/i,
+            /^let me/i,
+            /^i'll/i,
+            /^```/,  // Code fence markers
+            /^\{/,   // Lone JSON brackets
+            /^\}/,
+            /^\[/,
+            /^\]/,
+            /^"prompts":/i,
+            /^prompts:/i,
         ];
         
         return skipPatterns.some(pattern => pattern.test(line)) || line.length < 10;
@@ -94,10 +128,20 @@ class PromptImporter {
         
         // Remove common prefixes
         line = line.replace(/^\d+\.\s*/, '')  // "1. "
+                  .replace(/^\d+\)\s*/, '')   // "1) "
                   .replace(/^-\s*/, '')       // "- "
                   .replace(/^\*\s*/, '')      // "* "
+                  .replace(/^•\s*/, '')       // "• "
                   .replace(/^prompt \d+:\s*/i, '') // "Prompt 1: "
+                  .replace(/^"\s*/, '')       // Leading quote from JSON
+                  .replace(/\s*"$/, '')       // Trailing quote from JSON
+                  .replace(/\s*,\s*$/, '')    // Trailing comma from JSON
                   .trim();
+        
+        // Skip if line is empty after cleaning
+        if (!line || line.length < 10) {
+            return prompts;
+        }
         
         // Split by multiple prompts in one line (separated by " | " or similar)
         const splitPrompts = line.split(/\s*\|\s*/);
@@ -115,16 +159,12 @@ class PromptImporter {
     cleanPrompt(prompt) {
         if (!prompt) return '';
         
-        // Clean up the prompt
+        // Clean up the prompt - return ONLY the base prompt text
+        // Do NOT add /imagine prefix - that's added by the display layer
         prompt = prompt.trim()
             .replace(/^["']|["']$/g, '')  // Remove surrounding quotes
             .replace(/^\/imagine\s+prompt:\s*/i, '')  // Remove /imagine prompt: prefix
             .trim();
-            
-        // Add /imagine prompt: if not present and prompt is substantial
-        if (prompt && !prompt.toLowerCase().startsWith('/imagine')) {
-            prompt = `/imagine prompt: ${prompt}`;
-        }
         
         return prompt;
     }
@@ -154,8 +194,11 @@ class PromptImporter {
         // Switch to Prompt Generation module
         this.switchToPromptGeneration();
         
-        // Process prompts with parameters using existing system
+        // Process prompts WITHOUT adding parameters - just display them
         this.processPromptsWithParameters();
+        
+        // DO NOT save to database - imports are temporary for editing/sending
+        // this.saveToHistory(this.parsedPrompts);
         
         // Clear the importer
         this.clearImport();
@@ -201,28 +244,23 @@ class PromptImporter {
         const originalAutoApply = localStorage.getItem('mj-auto-apply');
         localStorage.setItem('mj-auto-apply', 'false');
 
-        // Use the existing system to process prompts with parameters
-        // Force manual processing to avoid prompt concatenation issues
+        // Process each prompt - add to display WITHOUT parameters
+        // Parameters should NOT be automatically applied to imports
         logger.debug('PromptImporter: Processing', this.parsedPrompts.length, 'individual prompts');
         this.parsedPrompts.forEach((prompt, index) => {
             logger.debug(`PromptImporter: Adding prompt ${index + 1}:`, prompt.substring(0, 50) + '...');
             this.addPromptWithParameters(prompt, generatedPromptsDiv);
         });
         
-        // After importing, apply current parameters to all prompts (like Template Builder does)
-        setTimeout(() => {
-            if (window.MidjourneyHandler && window.MidjourneyHandler.applyParametersToAll) {
-                logger.debug('PromptImporter: Applying current parameters to imported prompts');
-                window.MidjourneyHandler.applyParametersToAll();
-            }
-            
-            // Restore original auto-apply setting
-            if (originalAutoApply !== null) {
-                localStorage.setItem('mj-auto-apply', originalAutoApply);
-            } else {
-                localStorage.removeItem('mj-auto-apply');
-            }
-        }, 500); // Increased delay to ensure proper timing
+        // DO NOT apply parameters automatically - imports should be clean base prompts
+        // User can manually apply parameters if needed using the parameter UI
+        
+        // Restore original auto-apply setting
+        if (originalAutoApply !== null) {
+            localStorage.setItem('mj-auto-apply', originalAutoApply);
+        } else {
+            localStorage.removeItem('mj-auto-apply');
+        }
     }
 
     addPromptWithParameters(prompt, container) {
@@ -350,17 +388,33 @@ class PromptImporter {
 
         // Ideogram button
         const ideogramBtn = promptDiv.querySelector('.send-ideogram');
-        ideogramBtn.addEventListener('click', () => {
+        ideogramBtn.addEventListener('click', async () => {
+            console.log('🟣 IDEOGRAM BUTTON CLICKED');
+            logger.debug('🟣 [IMPORTER] Ideogram button clicked!');
+            
             ideogramBtn.disabled = true;
             ideogramBtn.textContent = 'Sending...';
             
-            let ideogramPrompt = textarea.value.replace(/^\/imagine prompt:\s+/i, '');
-            ideogramPrompt = ideogramPrompt.replace(/\s+(--ar\s+[\d:]+|--stylize\s+\d+|--chaos\s+\d+|--c\s+\d+|--weird\s+\d+|--style\s+\w+|--niji\s+\d+|--turbo|--fast|--relax|--v\s+[\d\.]+|--zoom\s+[\d\.]+|--draft|--standard|--mode\s+\w+|--sw\s+\d+|--no\s+[\w\s,]+|--p\s+\w+|--sref\s+[\w\-:/.]+)/g, '');
+            // Use the clean basePrompt stored in dataset - NO parameters
+            const cleanPrompt = textarea.dataset.basePrompt || textarea.value.replace(/^\/imagine prompt:\s+/i, '').replace(/\s+--[\w-]+(?:\s+[\w:,.\/\-]+)?/g, '').trim();
+            
+            logger.debug('🟣 [IMPORTER] Clean basePrompt for Ideogram:', cleanPrompt.substring(0, 100) + '...');
             
             if (window.sendPromptWithGlobalSetting) {
-                window.sendPromptWithGlobalSetting(ideogramPrompt.trim(), 'ideogram');
-                this.showNotification('Sending prompt to Ideogram...', 'info');
+                logger.debug('✅ [IMPORTER] Calling sendPromptWithGlobalSetting');
+                try {
+                    const result = await window.sendPromptWithGlobalSetting(cleanPrompt, 'ideogram');
+                    if (result && result.success) {
+                        logger.debug('✅ [IMPORTER] Ideogram send successful');
+                    } else {
+                        logger.error('❌ [IMPORTER] Ideogram send failed:', result);
+                    }
+                } catch (error) {
+                    logger.error('❌ [IMPORTER] Ideogram send error:', error);
+                    this.showNotification('Failed to send to Ideogram', 'error');
+                }
             } else {
+                logger.error('❌ [IMPORTER] sendPromptWithGlobalSetting not available');
                 this.showNotification('Ideogram integration not available', 'error');
             }
             
@@ -485,6 +539,37 @@ class PromptImporter {
             notification.style.transform = 'translateY(-100%)';
             notification.style.opacity = '0';
         }, 3000);
+    }
+
+    /**
+     * Save imported prompts to history database
+     */
+    async saveToHistory(prompts) {
+        try {
+            logger.debug('💾 Saving imported prompts to history...', prompts.length);
+            
+            const response = await fetch('/api/prompts/save-imported', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({
+                    prompts: prompts,
+                    source: 'imported'
+                })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                logger.debug('✅ Prompts saved to history:', data.sessionId);
+            } else {
+                logger.warn('⚠️  Failed to save prompts to history:', response.status);
+            }
+        } catch (error) {
+            logger.error('❌ Error saving prompts to history:', error);
+            // Don't throw - we don't want to interrupt the import flow
+        }
     }
 }
 

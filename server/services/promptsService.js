@@ -6,16 +6,36 @@ class PromptsService {
      * Create a new prompt session
      */
     async createSession({ userId, inputText, prompts, model }) {
+        // Note: pg library automatically converts JS objects/arrays to JSONB
+        // and JSONB back to JS objects/arrays - no need for JSON.stringify/parse
+        
+        console.log('🔍 DEBUG createSession called with:', {
+            userId,
+            inputText,
+            prompts: prompts,
+            promptsType: typeof prompts,
+            isArray: Array.isArray(prompts),
+            promptsLength: prompts?.length,
+            firstPrompt: prompts?.[0],
+            model
+        });
+        
+        // Convert prompts array to JSON string for JSONB column
+        const promptsJson = JSON.stringify(prompts);
+        
         const result = await pool.query(
             `INSERT INTO prompt_sessions (user_id, input_text, prompts, model, created_at) 
-             VALUES ($1, $2, $3, $4, NOW()) 
+             VALUES ($1, $2, $3::jsonb, $4, NOW()) 
              RETURNING id, user_id, input_text, prompts, model, created_at`,
-            [userId, inputText, JSON.stringify(prompts), model || 'openai/gpt-4.1-mini']
+            [userId, inputText, promptsJson, model || 'openai/gpt-4.1-mini']
         );
 
         const session = result.rows[0];
-        // Parse prompts back to array
-        session.prompts = JSON.parse(session.prompts);
+        // prompts is already a JS array (pg auto-parses JSONB)
+        // But ensure it's an array just in case
+        if (!Array.isArray(session.prompts)) {
+            session.prompts = [];
+        }
         
         return session;
     }
@@ -37,18 +57,10 @@ class PromptsService {
 
         const session = result.rows[0];
         
-        // Parse prompts from JSON with error handling
-        try {
-            session.prompts = typeof session.prompts === 'string' 
-                ? JSON.parse(session.prompts)
-                : session.prompts;
-            
-            // Ensure it's an array
-            if (!Array.isArray(session.prompts)) {
-                session.prompts = [];
-            }
-        } catch (err) {
-            console.warn(`⚠️  Failed to parse prompts for session ${sessionId}, returning empty array`);
+        // pg library automatically parses JSONB to JS array
+        // Just ensure it's an array for safety
+        if (!Array.isArray(session.prompts)) {
+            console.warn(`⚠️  Prompts for session ${sessionId} is not an array, converting to empty array`);
             session.prompts = [];
         }
         
@@ -85,23 +97,30 @@ class PromptsService {
 
         // Parse prompts for each session with error handling
         return result.rows.map(session => {
-            try {
-                // Handle both JSON string and already parsed arrays
-                const prompts = typeof session.prompts === 'string' 
-                    ? JSON.parse(session.prompts)
-                    : session.prompts;
-                
-                return {
-                    ...session,
-                    prompts: Array.isArray(prompts) ? prompts : []
-                };
-            } catch (err) {
-                console.warn(`⚠️  Failed to parse prompts for session ${session.id}, returning empty array`);
-                return {
-                    ...session,
-                    prompts: []
-                };
+            // The prompts column is JSONB, pg library should auto-parse it
+            // But we're saving as JSON string, so it might come back as string
+            let prompts = session.prompts;
+            
+            // If it's a string, parse it
+            if (typeof prompts === 'string') {
+                try {
+                    prompts = JSON.parse(prompts);
+                } catch (e) {
+                    console.error(`⚠️  Failed to parse prompts for session ${session.id}:`, e.message);
+                    prompts = [];
+                }
             }
+            
+            // Ensure it's an array
+            if (!Array.isArray(prompts)) {
+                console.warn(`⚠️  Prompts for session ${session.id} is not an array, converting to empty array`);
+                prompts = [];
+            }
+            
+            return {
+                ...session,
+                prompts
+            };
         });
     }
 
@@ -137,22 +156,16 @@ class PromptsService {
         );
 
         return result.rows.map(session => {
-            try {
-                const prompts = typeof session.prompts === 'string' 
-                    ? JSON.parse(session.prompts)
-                    : session.prompts;
-                
-                return {
-                    ...session,
-                    prompts: Array.isArray(prompts) ? prompts : []
-                };
-            } catch (err) {
-                console.warn(`⚠️  Failed to parse prompts for session ${session.id}`);
+            // pg library automatically parses JSONB to JS array
+            // Just ensure it's an array for safety
+            if (!Array.isArray(session.prompts)) {
+                console.warn(`⚠️  Prompts for session ${session.id} is not an array`);
                 return {
                     ...session,
                     prompts: []
                 };
             }
+            return session;
         });
     }
 
@@ -177,8 +190,7 @@ class PromptsService {
      */
     async getRecentSessions(userId, limit = 10) {
         const result = await pool.query(
-            `SELECT id, input_text, model, created_at,
-                    (SELECT COUNT(*) FROM jsonb_array_elements_text(prompts::jsonb)) as prompt_count
+            `SELECT id, input_text, prompts, model, created_at
              FROM prompt_sessions 
              WHERE user_id = $1 
              ORDER BY created_at DESC 
@@ -186,7 +198,31 @@ class PromptsService {
             [userId, limit]
         );
 
-        return result.rows;
+        // Parse JSONB prompts for each session
+        return result.rows.map(session => {
+            // The prompts column is JSONB, but we save as JSON string
+            let prompts = session.prompts;
+            
+            // If it's a string, parse it
+            if (typeof prompts === 'string') {
+                try {
+                    prompts = JSON.parse(prompts);
+                } catch (e) {
+                    console.error(`⚠️  Failed to parse prompts for session ${session.id}:`, e.message);
+                    prompts = [];
+                }
+            }
+            
+            // Ensure it's an array
+            if (!Array.isArray(prompts)) {
+                prompts = [];
+            }
+            
+            return {
+                ...session,
+                prompts
+            };
+        });
     }
 
     /**

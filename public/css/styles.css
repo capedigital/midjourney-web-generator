@@ -8,6 +8,7 @@
     --warning: #f59e0b;
     --info: #3b82f6;
     --accent-color: #4d552a;
+    --font-mono: input-mono, 'Courier New', monospace;
 
     
     --bg-main: #1f1f1f;
@@ -43,11 +44,11 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: input-mono, 'Courier New', monospace;
+    font-family: var(--font-mono);
 }
 
 body {
-    font-family: input-mono, 'Courier New', monospace;
+    font-family: var(--font-mono);
     background: var(--bg-main);
     color: var(--text-primary);
     line-height: 1.6;
@@ -191,7 +192,7 @@ body {
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     color: var(--text-primary);
-    font-family: input-mono, 'Courier New', monospace;
+    font-family: var(--font-mono);
     font-size: 1rem;
     transition: var(--transition);
 }
@@ -208,7 +209,7 @@ body {
     color: white;
     border: none;
     border-radius: var(--radius-sm);
-    font-family: input-mono, 'Courier New', monospace;
+    font-family: var(--font-mono);
     font-size: 1rem;
     font-weight: 400;
     cursor: pointer;
@@ -235,10 +236,15 @@ body {
     border-left: 3px solid var(--danger);
 }
 
+.fa, .fa-brands, .fa-classic, .fa-regular, .fa-sharp, .fa-solid, .fab, .far, .fas {
+  line-height: 1.5 !important;
+}
+
+
 /* HAL 9000 Streaming Messages */
 .hal-message {
     color: #c9ff00 !important;
-    font-family: input-mono, 'Courier New', monospace;
+    font-family: var(--font-mono);
     font-style: italic;
     font-size: 14px !important;
     min-height: 40px;
@@ -348,7 +354,7 @@ body {
 
 /* Sidebar */
 .sidebar {
-    width: 338px;
+    width: 250px;
     background: var(--bg-sidebar);
     border-right: 1px solid var(--border);
     display: flex;
@@ -681,7 +687,7 @@ textarea {
     border: 1px solid var(--border);
     border-radius: 4px;
     color: var(--text-primary);
-    font-family: input-mono, 'Courier New', monospace;
+    font-family: var(--font-mono);
     font-size: 1rem;
     resize: vertical;
     transition: var(--transition);
@@ -726,7 +732,7 @@ select {
     border-radius: 4px;
     color: var(--text-primary);
     font-size: 1rem;
-    font-family: input-mono, 'Courier New', monospace;
+    font-family: var(--font-mono);
     cursor: pointer;
     transition: var(--transition);
     line-height: 1.5;
@@ -755,7 +761,7 @@ input::placeholder, textarea::placeholder {
 /* Buttons */
 button,
 .btn {
-    font-family: input-mono, 'Courier New', monospace;
+    font-family: var(--font-mono);
     font-size: .8rem;
     padding: 10px 20px;
     border-radius: 4px;
@@ -926,6 +932,240 @@ button,
     display: flex;
     flex-direction: column;
     gap: 12px;
+}
+
+/* History Table - Modern Admin Style */
+.history-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: var(--bg-dark);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.history-table thead {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+}
+
+.history-table thead th {
+    padding: 16px 20px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #91e700;
+    border-bottom: 2px solid #91e700;
+    white-space: nowrap;
+}
+
+.history-table thead th i {
+    margin-right: 6px;
+    opacity: 0.8;
+}
+
+.history-table tbody .history-row {
+    transition: all 0.2s ease;
+    border-bottom: 1px solid var(--border-color);
+    cursor: pointer;
+}
+
+.history-table tbody .history-row:hover {
+    background: rgba(145, 231, 0, 0.05);
+}
+
+.history-table tbody .history-row.expanded {
+    background: rgba(145, 231, 0, 0.08);
+    border-bottom-color: #91e700;
+}
+
+.history-table tbody .history-row td {
+    padding: 16px 20px;
+    color: var(--text-primary);
+    font-size: 14px;
+    vertical-align: middle;
+}
+
+/* Expanded Row */
+.expanded-row {
+    background: rgba(145, 231, 0, 0.02);
+}
+
+.expanded-row td {
+    padding: 0 !important;
+}
+
+.expanded-content {
+    padding: 20px;
+    border-top: 1px solid var(--border-color);
+}
+
+.prompts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.prompt-item {
+    display: grid;
+    grid-template-columns: 40px 1fr auto;
+    gap: 15px;
+    align-items: center;
+    background: var(--bg-dark);
+    padding: 15px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    transition: all 0.2s ease;
+}
+
+.prompt-item:hover {
+    border-color: #91e700;
+    box-shadow: 0 2px 6px rgba(145, 231, 0, 0.1);
+}
+
+.prompt-number {
+    font-weight: 700;
+    color: #91e700;
+    font-size: 13px;
+    text-align: center;
+}
+
+.prompt-text {
+    color: var(--text-primary);
+    line-height: 1.6;
+    word-break: break-word;
+}
+
+.prompt-item-actions {
+    display: flex;
+    gap: 8px;
+}
+
+/* History Table Column Styles */
+.history-table .date-col {
+    width: 140px;
+    white-space: nowrap;
+}
+
+.history-table .model-col {
+    width: 150px;
+    white-space: nowrap;
+}
+
+.history-table .model-col i {
+    margin-right: 8px;
+    color: #91e700;
+}
+
+.history-table .prompts-col {
+    max-width: 500px;
+}
+
+.prompts-preview {
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text-secondary);
+}
+
+.more-indicator {
+    margin-top: 8px;
+    font-size: 12px;
+    color: #91e700;
+    font-style: italic;
+}
+
+.history-table .count-col {
+    width: 100px;
+    text-align: center;
+}
+
+.history-table .actions-col {
+    width: 120px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+/* Small Action Buttons */
+.btn-sm {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    padding: 6px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-sm:hover {
+    background: rgba(145, 231, 0, 0.1);
+    border-color: #91e700;
+    color: #91e700;
+}
+
+.btn-sm i {
+    font-size: 11px;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-secondary);
+}
+
+.empty-state i {
+    font-size: 48px;
+    color: var(--text-muted);
+    margin-bottom: 20px;
+    opacity: 0.5;
+}
+
+.empty-state h3 {
+    margin: 0 0 10px 0;
+    color: var(--text-primary);
+    font-size: 18px;
+}
+
+.empty-state p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+/* Responsive History Table */
+@media (max-width: 1200px) {
+    .history-table .prompts-col {
+        max-width: 350px;
+    }
+}
+
+@media (max-width: 900px) {
+    .history-table {
+        font-size: 13px;
+    }
+    
+    .history-table thead th,
+    .history-table tbody td {
+        padding: 12px 15px;
+    }
+    
+    .history-table .prompts-col {
+        max-width: 250px;
+    }
+    
+    .history-table .date-col {
+        width: 110px;
+    }
+    
+    .history-table .model-col {
+        width: 120px;
+    }
 }
 
 .history-item {
@@ -1687,6 +1927,231 @@ button.action-button.large-button i {
   margin-bottom: 10px;
 }
 
+/* Recent Prompts Table - Modern Admin Style */
+.recent-prompts-container {
+  margin-top: 15px;
+}
+
+.recent-prompts-container .placeholder {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.recent-prompts-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: var(--bg-dark);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.recent-prompts-table thead {
+  background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+}
+
+.recent-prompts-table thead th {
+  padding: 16px 20px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #91e700;
+  border-bottom: 2px solid #91e700;
+  white-space: nowrap;
+}
+
+.recent-prompts-table tbody tr {
+  transition: all 0.2s ease;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.recent-prompts-table tbody tr:hover {
+  background: rgba(145, 231, 0, 0.05);
+  transform: scale(1.01);
+}
+
+.recent-prompts-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.recent-prompts-table tbody td {
+  padding: 16px 20px;
+  color: var(--text-primary);
+  font-size: 14px;
+  vertical-align: middle;
+}
+
+/* Column Specific Styles */
+.prompt-col {
+  max-width: 400px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.count-col {
+  width: 80px;
+  text-align: center;
+}
+
+.count-col .badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #91e700 0%, #7bc700 100%);
+  color: #000;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 12px;
+  min-width: 30px;
+  text-align: center;
+}
+
+.model-col {
+  width: 140px;
+  white-space: nowrap;
+}
+
+.model-col i {
+  margin-right: 6px;
+  color: #91e700;
+}
+
+.date-col {
+  width: 120px;
+  white-space: nowrap;
+}
+
+.date-display {
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.time-display {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.actions-col {
+  width: 100px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* Action Buttons */
+.btn-icon {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 3px;
+}
+
+.btn-icon:hover {
+  background: rgba(145, 231, 0, 0.1);
+  border-color: #91e700;
+  color: #91e700;
+  transform: translateY(-2px);
+}
+
+.btn-icon i {
+  font-size: 13px;
+}
+
+/* Send to Generation button - distinctive styling */
+.send-to-gen-btn {
+  background: linear-gradient(135deg, rgba(145, 231, 0, 0.15), rgba(145, 231, 0, 0.05)) !important;
+  border-color: #91e700 !important;
+  color: #91e700 !important;
+}
+
+.send-to-gen-btn:hover {
+  background: linear-gradient(135deg, rgba(145, 231, 0, 0.25), rgba(145, 231, 0, 0.15)) !important;
+  border-color: #91e700 !important;
+  color: #fff !important;
+  box-shadow: 0 0 12px rgba(145, 231, 0, 0.3);
+}
+
+/* Toast Notifications */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: var(--bg-dark);
+  color: var(--text-primary);
+  padding: 16px 24px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.3s ease;
+  z-index: 10000;
+  min-width: 250px;
+  font-size: 14px;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.toast-success {
+  border-color: #91e700;
+  background: linear-gradient(135deg, rgba(145, 231, 0, 0.1) 0%, rgba(145, 231, 0, 0.05) 100%);
+}
+
+.toast-error {
+  border-color: #ff4444;
+  background: linear-gradient(135deg, rgba(255, 68, 68, 0.1) 0%, rgba(255, 68, 68, 0.05) 100%);
+}
+
+.toast-info {
+  border-color: #4444ff;
+  background: linear-gradient(135deg, rgba(68, 68, 255, 0.1) 0%, rgba(68, 68, 255, 0.05) 100%);
+}
+
+/* Responsive Table */
+@media (max-width: 1200px) {
+  .prompt-col {
+    max-width: 300px;
+  }
+}
+
+@media (max-width: 900px) {
+  .recent-prompts-table {
+    font-size: 13px;
+  }
+  
+  .recent-prompts-table thead th,
+  .recent-prompts-table tbody td {
+    padding: 12px 15px;
+  }
+  
+  .prompt-col {
+    max-width: 200px;
+  }
+  
+  .model-col {
+    width: 100px;
+  }
+  
+  .date-col {
+    width: 100px;
+  }
+}
 
 /* Fix checkbox overlay issue */
 #generatedPrompts .prompt-container {
@@ -1948,7 +2413,7 @@ button.action-button.large-button i {
   padding: 15px;
   min-height: 60px;
   margin-bottom: 10px;
-  font-family: Menlo, monospace;
+  font-family: input-mono, monospace;
   white-space: pre-wrap;
   word-break: break-word;
   color: #87c000;
@@ -2324,7 +2789,7 @@ details[open] summary {
   background-color: #2d2d2d;
   color: #e0e0e0;
   padding: 4px;
-  font-family: Menlo, monospace;
+  font-family: input-mono, monospace;
   font-size: 0.8rem;
 }
 

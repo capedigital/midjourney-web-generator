@@ -6,6 +6,7 @@ const { validateBody, validateParams, schemas } = require('../middleware/validat
 
 // Protected routes (require authentication)
 router.post('/generate', auth, validateBody(schemas.generatePrompts), promptsController.generate);
+router.post('/save-imported', auth, promptsController.saveImported);
 router.get('/history', auth, promptsController.getHistory);
 router.get('/recent', auth, promptsController.getRecent);
 router.get('/search', auth, promptsController.search);

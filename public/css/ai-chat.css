@@ -466,7 +466,19 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    min-height: 12px;
+    min-height: 20px;
+    padding: 4px 8px;
+}
+
+.chat-status .token-warning {
+    color: #ff9800 !important;
+    font-weight: 600;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
 }
 
 .typing-indicator {
@@ -474,6 +486,98 @@
     align-items: center;
     gap: 8px;
     color: var(--accent-color);
+}
+
+.typing-indicator .session-cost {
+    margin-left: auto;
+    font-size: 11px;
+    color: #91e700;
+    font-weight: 600;
+}
+
+/* Token Cost Indicator */
+.token-cost-indicator {
+    animation: slideIn 0.3s ease-out;
+    margin-top: 10px;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.token-cost-indicator.fade-out {
+    animation: fadeOut 0.5s ease-out;
+    opacity: 0;
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+}
+
+.cost-breakdown {
+    background: linear-gradient(135deg, rgba(145, 231, 0, 0.1) 0%, rgba(145, 231, 0, 0.05) 100%);
+    border: 1px solid rgba(145, 231, 0, 0.3);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 12px;
+}
+
+.cost-title {
+    font-weight: 600;
+    color: #91e700;
+    margin-bottom: 8px;
+    font-size: 13px;
+}
+
+.cost-line {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    color: var(--text-secondary);
+}
+
+.cost-line span:first-child {
+    color: var(--text-muted);
+}
+
+.cost-line span:last-child {
+    font-family: 'Monaco', 'Menlo', monospace;
+    color: var(--text-primary);
+}
+
+.cost-line.total {
+    border-top: 1px solid var(--border-color);
+    margin-top: 4px;
+    padding-top: 8px;
+    font-weight: 600;
+}
+
+.cost-line.total span {
+    color: #91e700;
+}
+
+.cost-line.session-total {
+    background: rgba(145, 231, 0, 0.08);
+    margin: 8px -8px -4px -8px;
+    padding: 8px 8px;
+    border-radius: 4px;
+    font-weight: 700;
+}
+
+.cost-line.session-total span {
+    color: #91e700;
 }
 
 /* Scrollbar styling for chat messages */

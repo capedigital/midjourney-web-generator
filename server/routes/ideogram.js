@@ -28,4 +28,7 @@ router.post('/batch', asyncHandler(ideogramController.submitBatch));
 // Close browser
 router.post('/close', asyncHandler(ideogramController.close));
 
+// Import cookies from regular browser
+router.post('/import-cookies', asyncHandler(ideogramController.importCookies));
+
 module.exports = router;

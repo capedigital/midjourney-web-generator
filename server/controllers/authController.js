@@ -161,6 +161,45 @@ class AuthController {
     });
 
     /**
+     * Update OpenRouter API Key
+     */
+    updateOpenRouterKey = asyncHandler(async (req, res) => {
+        const { apiKey } = req.body;
+
+        await userService.updateOpenRouterKey(req.user.id, apiKey);
+
+        res.json({
+            success: true,
+            message: apiKey ? 'API key saved successfully' : 'API key removed successfully',
+            hasKey: !!apiKey
+        });
+    });
+
+    /**
+     * Get OpenRouter API Key (masked for security)
+     */
+    getOpenRouterKey = asyncHandler(async (req, res) => {
+        const apiKey = await userService.getOpenRouterKey(req.user.id);
+
+        // If key exists, return masked version for display
+        let maskedKey = null;
+        if (apiKey) {
+            // Show first 10 chars and last 4 chars: "sk-or-v1-x...xyz"
+            const firstPart = apiKey.substring(0, 10);
+            const lastPart = apiKey.substring(apiKey.length - 4);
+            maskedKey = `${firstPart}...${lastPart}`;
+        }
+
+        res.json({
+            success: true,
+            hasKey: !!apiKey,
+            maskedKey: maskedKey,
+            // Send full key only if explicitly requested (for editing)
+            fullKey: req.query.full === 'true' ? apiKey : undefined
+        });
+    });
+
+    /**
      * Generate JWT token
      */
     generateToken(user) {
