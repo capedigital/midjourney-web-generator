@@ -2367,10 +2367,19 @@ IMPORTANT: Only include the JSON prompt block when explicitly requested by the u
     async getModelPricing(modelId) {
         try {
             // Check if we have cached pricing from global model selector
-            if (window.topNavModelSelector && window.topNavModelSelector.models) {
+            if (window.topNavModelSelector && 
+                window.topNavModelSelector.models && 
+                Array.isArray(window.topNavModelSelector.models)) {
                 const model = window.topNavModelSelector.models.find(m => m.id === modelId);
                 if (model && model.pricing) {
                     return model.pricing;
+                }
+                // Check for hardcoded pricing in curated models
+                if (model && model.promptPrice && model.completionPrice) {
+                    return {
+                        prompt: model.promptPrice / 1000000, // Convert to per-token pricing
+                        completion: model.completionPrice / 1000000
+                    };
                 }
             }
             
