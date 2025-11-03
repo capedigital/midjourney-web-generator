@@ -22,7 +22,8 @@ const MAX_CONNECTIONS = 5;
 const ALLOWED_ORIGINS = [
   'https://midjourney-web-production.up.railway.app',
   'http://localhost:3000', // For local development
-  'http://localhost:5000'
+  'http://localhost:5000',
+  'chrome-extension://' // Allow all Chrome extensions
 ];
 
 // Generate random auth token on startup

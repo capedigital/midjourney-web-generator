@@ -248,10 +248,108 @@ npm start</code></pre>
                 50% { opacity: 0.5; }
             }
             
+            .modal-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.7);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 10000;
+            }
+            
             .local-bridge-settings {
+                background: var(--bg-primary, #fff);
+                border-radius: 12px;
                 max-width: 600px;
                 max-height: 80vh;
                 overflow-y: auto;
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            }
+            
+            .modal-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 20px;
+                border-bottom: 1px solid var(--border-color, #ddd);
+            }
+            
+            .modal-header h2 {
+                margin: 0;
+                font-size: 20px;
+            }
+            
+            .close-btn {
+                background: none;
+                border: none;
+                font-size: 24px;
+                cursor: pointer;
+                color: var(--text-secondary, #666);
+                padding: 0;
+                width: 30px;
+                height: 30px;
+            }
+            
+            .close-btn:hover {
+                color: var(--text-primary, #000);
+            }
+            
+            .modal-body {
+                padding: 20px;
+            }
+            
+            .modal-footer {
+                display: flex;
+                gap: 12px;
+                justify-content: flex-end;
+                padding: 20px;
+                border-top: 1px solid var(--border-color, #ddd);
+            }
+            
+            .btn {
+                padding: 10px 20px;
+                border-radius: 6px;
+                border: none;
+                cursor: pointer;
+                font-size: 14px;
+                transition: all 0.2s;
+            }
+            
+            .btn-secondary {
+                background: var(--bg-secondary, #f5f5f5);
+                color: var(--text-primary, #000);
+            }
+            
+            .btn-secondary:hover {
+                background: var(--bg-hover, #e5e5e5);
+            }
+            
+            .btn-primary {
+                background: #4a6cf7;
+                color: white;
+            }
+            
+            .btn-primary:hover {
+                background: #3a5ce7;
+            }
+            
+            .btn-primary:disabled {
+                background: #ccc;
+                cursor: not-allowed;
+            }
+            
+            .form-input {
+                width: 100%;
+                padding: 10px;
+                border: 1px solid var(--border-color, #ddd);
+                border-radius: 6px;
+                font-size: 14px;
+                background: var(--bg-input, #fff);
+                color: var(--text-primary, #000);
             }
             
             .settings-section {

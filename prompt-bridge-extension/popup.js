@@ -10,8 +10,11 @@ const infoSection = document.getElementById('info');
 const infoStatus = document.getElementById('infoStatus');
 const infoAuth = document.getElementById('infoAuth');
 
+console.log('🔵 Popup script loaded');
+
 // Load saved token
 chrome.storage.local.get(['bridgeToken'], (result) => {
+  console.log('🔵 Storage loaded:', result);
   if (result.bridgeToken) {
     tokenInput.value = result.bridgeToken;
   }
@@ -75,9 +78,18 @@ disconnectBtn.addEventListener('click', () => {
 });
 
 function updateStatus() {
+  console.log('🔵 updateStatus() called');
+  
   chrome.runtime.sendMessage(
     { type: 'GET_STATUS' },
     (status) => {
+      if (chrome.runtime.lastError) {
+        console.error('❌ Error getting status:', chrome.runtime.lastError);
+        return;
+      }
+      
+      console.log('🔵 Status received:', status);
+      
       if (!status) return;
       
       if (status.connected && status.authenticated) {
