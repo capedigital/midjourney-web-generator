@@ -837,19 +837,13 @@ class App {
         try {
             this.addStatusMessage(`📋 Sending ${allPrompts.length} prompts to Midjourney`, 'info');
             
-            const response = await fetch('/api/midjourney/batch', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                },
-                body: JSON.stringify({ 
-                    prompts: allPrompts,
-                    delayMs: 500 
-                })
-            });
-
-            const data = await response.json();
+            // Check if local bridge is available
+            if (!window.localBridge || !window.localBridge.isReady()) {
+                throw new Error('Local bridge not connected. Please configure the local bridge extension.');
+            }
+            
+            // Use local bridge to send batch
+            const data = await window.localBridge.submitBatch(allPrompts, 5000); // 5 second delay between prompts
 
             if (data.success) {
                 const successful = data.results.filter(r => r.success).length;
