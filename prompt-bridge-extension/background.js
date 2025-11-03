@@ -10,6 +10,7 @@ let authToken = null;
 let reconnectAttempts = 0;
 const MAX_RECONNECT_ATTEMPTS = 10;
 const RECONNECT_DELAY = 3000;
+let keepAliveInterval = null;
 
 // Load saved token
 chrome.storage.local.get(['bridgeToken'], (result) => {
@@ -75,6 +76,14 @@ function connect() {
       // Update badge
       chrome.action.setBadgeText({ text: '...' });
       chrome.action.setBadgeBackgroundColor({ color: '#f39c12' });
+      
+      // Start keep-alive to prevent service worker from going idle
+      if (keepAliveInterval) clearInterval(keepAliveInterval);
+      keepAliveInterval = setInterval(() => {
+        if (connected && authenticated) {
+          send({ type: 'ping' });
+        }
+      }, 20000); // Ping every 20 seconds
     };
 
     ws.onmessage = (event) => {
@@ -90,6 +99,12 @@ function connect() {
       console.log('🔌 WebSocket closed:', event.code, event.reason);
       connected = false;
       authenticated = false;
+      
+      // Stop keep-alive
+      if (keepAliveInterval) {
+        clearInterval(keepAliveInterval);
+        keepAliveInterval = null;
+      }
       
       // Update badge
       chrome.action.setBadgeText({ text: '✗' });
