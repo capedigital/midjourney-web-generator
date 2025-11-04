@@ -119,31 +119,16 @@ class LocalBridgeUI {
                     </div>
                     
                     <div class="settings-section">
-                        <h3>Setup Instructions</h3>
+                        <h3>✨ Automatic Authentication</h3>
+                        <p>The bridge now uses your Railway login - no separate tokens needed!</p>
                         <ol class="setup-steps">
-                            <li>Start the local bridge server on your computer:
+                            <li>Make sure the local bridge server is running:
                                 <pre><code>cd web-app/local-bridge
-npm install
 npm start</code></pre>
                             </li>
-                            <li>Copy the auth token from the terminal</li>
-                            <li>Paste it below and click "Connect"</li>
-                            <li>Make sure your browser extension is running</li>
+                            <li>Install the Chrome extension</li>
+                            <li>That's it! The connection uses your login automatically</li>
                         </ol>
-                    </div>
-                    
-                    <div class="settings-section">
-                        <label for="bridge-token">
-                            <strong>Auth Token</strong>
-                            <small>From the bridge server terminal</small>
-                        </label>
-                        <input 
-                            type="text" 
-                            id="bridge-token" 
-                            class="form-input"
-                            placeholder="Paste auth token here..."
-                            value="${this.escapeHtml(currentToken)}"
-                        >
                     </div>
                     
                     <div class="settings-section">
@@ -163,9 +148,9 @@ npm start</code></pre>
                 </div>
                 
                 <div class="modal-footer">
-                    <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">Cancel</button>
+                    <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">Close</button>
                     <button class="btn btn-primary" id="bridge-connect-btn">
-                        ${status.connected ? 'Reconnect' : 'Connect'}
+                        ${status.connected ? 'Reconnect' : 'Connect Now'}
                     </button>
                 </div>
             </div>
@@ -175,17 +160,8 @@ npm start</code></pre>
         
         // Handle connect button
         const connectBtn = modal.querySelector('#bridge-connect-btn');
-        const tokenInput = modal.querySelector('#bridge-token');
         
         connectBtn.addEventListener('click', () => {
-            const token = tokenInput.value.trim();
-            
-            if (!token) {
-                alert('Please enter an auth token');
-                return;
-            }
-            
-            window.localBridge.setToken(token);
             window.localBridge.disconnect();
             window.localBridge.connect();
             

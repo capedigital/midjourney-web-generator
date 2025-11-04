@@ -12,7 +12,6 @@ class LocalBridgeClient {
         this.reconnectAttempts = 0;
         this.maxReconnectAttempts = 5;
         this.reconnectDelay = 2000;
-        this.token = null;
         this.callbacks = {
             onConnect: [],
             onDisconnect: [],
@@ -20,23 +19,22 @@ class LocalBridgeClient {
             onPromptResult: []
         };
         
-        // Try to load saved token
-        this.token = localStorage.getItem('local-bridge-token');
-        
-        // Auto-connect if token exists
-        if (this.token) {
+        // Auto-connect if user is logged in
+        const userToken = localStorage.getItem('token');
+        if (userToken) {
             this.connect();
         }
     }
 
-    setToken(token) {
-        this.token = token;
-        localStorage.setItem('local-bridge-token', token);
+    getAuthToken() {
+        // Use the user's JWT token from Railway login
+        return localStorage.getItem('token');
     }
 
     connect() {
-        if (!this.token) {
-            console.warn('⚠️ No bridge token set');
+        const token = this.getAuthToken();
+        if (!token) {
+            console.warn('⚠️ Not logged in - cannot connect to bridge');
             return;
         }
 
@@ -45,7 +43,7 @@ class LocalBridgeClient {
             return;
         }
 
-        console.log('🔌 Connecting to local bridge...');
+        console.log('🔌 Connecting to local bridge with JWT...');
 
         try {
             this.ws = new WebSocket('ws://127.0.0.1:3001');
@@ -55,10 +53,10 @@ class LocalBridgeClient {
                 this.connected = true;
                 this.reconnectAttempts = 0;
                 
-                // Authenticate
+                // Authenticate with JWT token
                 this.send({
                     type: 'auth',
-                    token: this.token,
+                    token: this.getAuthToken(),
                     clientType: 'webapp'
                 });
             };
@@ -80,7 +78,13 @@ class LocalBridgeClient {
                 
                 this.trigger('onDisconnect');
                 
-                // Auto-reconnect
+                // Don't auto-reconnect on auth failures (code 4002)
+                if (event.code === 4002) {
+                    console.error('❌ Authentication failed. Please update the bridge token in settings.');
+                    return;
+                }
+                
+                // Auto-reconnect for other errors
                 if (this.reconnectAttempts < this.maxReconnectAttempts) {
                     this.reconnectAttempts++;
                     console.log(`🔄 Reconnecting... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`);

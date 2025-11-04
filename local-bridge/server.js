@@ -14,6 +14,7 @@
 const WebSocket = require('ws');
 const http = require('http');
 const crypto = require('crypto');
+const fetch = require('node-fetch');
 
 // Configuration
 const PORT = 3001;
@@ -27,26 +28,49 @@ const ALLOWED_ORIGINS = [
   'chrome-extension://' // Allow all Chrome extensions
 ];
 
-// Generate random auth token on startup
-const AUTH_TOKEN = crypto.randomBytes(32).toString('hex');
+// Railway API endpoint for token validation
+const RAILWAY_API = process.env.RAILWAY_API || 'https://promptgen.joeltd.com';
 
 console.log('🔐 Local Bridge Server Starting...');
-console.log('📋 Auth Token:', AUTH_TOKEN);
-console.log('💡 Add this to your web app connection settings');
+console.log('🔗 Using JWT authentication from Railway app');
+console.log('💡 No separate tokens needed - just login to the web app!');
 console.log('');
+
+// Validate JWT token by calling Railway API
+async function validateJWT(token) {
+  if (!token) return false;
+  
+  try {
+    const response = await fetch(`${RAILWAY_API}/api/auth/verify`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      return data.valid === true;
+    }
+    
+    return false;
+  } catch (error) {
+    console.error('❌ JWT validation error:', error.message);
+    return false;
+  }
+}
 
 // Create HTTP server for health checks
 const server = http.createServer((req, res) => {
   if (req.url === '/health') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ 
-      status: 'ok', 
-      connections: wss.clients.size,
+      status: 'ok',
+      authMethod: 'JWT',
+      connections: wss.clients ? wss.clients.size : 0,
       authenticated: authenticatedClients.size
     }));
-  } else if (req.url === '/token') {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ token: AUTH_TOKEN }));
   } else {
     res.writeHead(404);
     res.end('Not Found');
@@ -103,13 +127,16 @@ wss.on('connection', (ws, req) => {
     }
   }, 5000);
 
-  ws.on('message', (data) => {
+  ws.on('message', async (data) => {
     try {
       const message = JSON.parse(data);
 
       // Handle authentication
       if (message.type === 'auth') {
-        if (message.token === AUTH_TOKEN) {
+        // Validate JWT token by calling Railway API
+        const isValid = await validateJWT(message.token);
+        
+        if (isValid) {
           isAuthenticated = true;
           clientType = message.clientType || 'unknown';
           authenticatedClients.add(ws);
