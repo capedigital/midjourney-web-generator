@@ -91,10 +91,10 @@ if (config.isDevelopment) {
     app.use(performanceMonitor);
 }
 
-// Rate limiting for API routes
+// Rate limiting for API routes (more generous limits for development)
 app.use('/api/', rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    maxRequests: 100,
+    maxRequests: 500, // Increased from 100 to 500
     message: 'Too many requests from this IP, please try again later'
 }));
 

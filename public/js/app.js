@@ -264,10 +264,18 @@ class App {
                 window.loginHAL.showSuccess('... access granted', () => {
                     this.showMainScreen();
                     this.showToast('Welcome back!', 'success');
+                    // Connect to local bridge after login
+                    if (window.localBridge) {
+                        window.localBridge.connect();
+                    }
                 });
             } else {
                 this.showMainScreen();
                 this.showToast('Welcome back!', 'success');
+                // Connect to local bridge after login
+                if (window.localBridge) {
+                    window.localBridge.connect();
+                }
             }
         } catch (error) {
             // Stop HAL messages and show error
