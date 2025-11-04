@@ -257,7 +257,8 @@ async function handleSubmitBatch(message) {
     }
     
     // Send batch result
-    send({
+    console.log('✅ Batch complete, sending result...');
+    const sent = send({
       type: 'batch_result',
       messageId: message.messageId,
       success: true,
@@ -265,16 +266,18 @@ async function handleSubmitBatch(message) {
       successCount: results.filter(r => r.success).length,
       failCount: results.filter(r => !r.success).length
     });
+    console.log('📤 Batch result sent:', sent);
     
   } catch (error) {
     console.error('❌ Error submitting batch:', error);
-    send({
+    const sent = send({
       type: 'batch_result',
       messageId: message.messageId,
       success: false,
       error: error.message,
       results
     });
+    console.log('📤 Error result sent:', sent);
   }
 }
 
@@ -315,26 +318,43 @@ async function findOrCreateMidjourneyTab() {
  */
 function submitPromptToMidjourney(prompt) {
   try {
-    // Find the prompt input textarea
-    const textarea = document.querySelector('textarea[placeholder*="prompt"], textarea[data-testid="prompt-input"], .prompt-input textarea');
+    console.log('🔍 Looking for prompt input on Midjourney...');
+    
+    // Find the prompt input textarea - try multiple selectors
+    let textarea = document.querySelector('textarea[placeholder*="prompt"]');
+    if (!textarea) textarea = document.querySelector('textarea[data-testid="prompt-input"]');
+    if (!textarea) textarea = document.querySelector('.prompt-input textarea');
+    if (!textarea) textarea = document.querySelector('textarea');
+    
+    console.log('🔍 Found textarea:', textarea);
     
     if (!textarea) {
-      return { success: false, error: 'Prompt input not found. Are you logged in to Midjourney?' };
+      const allTextareas = document.querySelectorAll('textarea');
+      console.log('❌ No textarea found. Total textareas on page:', allTextareas.length);
+      return { success: false, error: `Prompt input not found. Found ${allTextareas.length} textareas total.` };
     }
     
     // Set the prompt value
+    console.log('✏️ Setting prompt value...');
     textarea.value = prompt;
     textarea.dispatchEvent(new Event('input', { bubbles: true }));
     textarea.dispatchEvent(new Event('change', { bubbles: true }));
+    console.log('✅ Prompt set to:', prompt.substring(0, 50) + '...');
     
     // Find and click submit button
-    const submitButton = document.querySelector('button[type="submit"], button[aria-label*="Submit"], .submit-button');
+    let submitButton = document.querySelector('button[type="submit"]');
+    if (!submitButton) submitButton = document.querySelector('button[aria-label*="Submit"]');
+    if (!submitButton) submitButton = document.querySelector('.submit-button');
+    
+    console.log('🔍 Found submit button:', submitButton);
     
     if (submitButton) {
+      console.log('🖱️ Clicking submit button...');
       submitButton.click();
       return { success: true };
     } else {
       // Fallback: Try Enter key
+      console.log('⌨️ No button found, trying Enter key...');
       const enterEvent = new KeyboardEvent('keydown', {
         key: 'Enter',
         code: 'Enter',
