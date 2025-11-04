@@ -34,28 +34,22 @@ class LocalBridgeClient {
     connect() {
         const token = this.getAuthToken();
         if (!token) {
-            console.warn('⚠️ Not logged in - cannot connect to bridge');
             return;
         }
 
         if (this.ws && (this.ws.readyState === WebSocket.CONNECTING || this.ws.readyState === WebSocket.OPEN)) {
-            console.log('Already connected or connecting');
             return;
         }
-
-        console.log('🔌 Connecting to local bridge with JWT...');
 
         try {
             this.ws = new WebSocket('ws://127.0.0.1:3001');
 
             this.ws.onopen = () => {
-                console.log('✅ WebSocket connected');
                 this.connected = true;
                 this.reconnectAttempts = 0;
                 
                 // Authenticate with JWT token
                 const authToken = this.getAuthToken();
-                console.log('🔑 Sending auth with token:', authToken ? authToken.substring(0, 20) + '...' : 'NONE');
                 this.send({
                     type: 'auth',
                     token: authToken,
@@ -73,7 +67,6 @@ class LocalBridgeClient {
             };
 
             this.ws.onclose = (event) => {
-                console.log('🔌 WebSocket closed:', event.code, event.reason);
                 this.connected = false;
                 this.authenticated = false;
                 this.extensionAvailable = false;
@@ -82,14 +75,13 @@ class LocalBridgeClient {
                 
                 // Don't auto-reconnect on auth failures (code 4002)
                 if (event.code === 4002) {
-                    console.error('❌ Authentication failed. Please update the bridge token in settings.');
+                    console.error('Bridge authentication failed');
                     return;
                 }
                 
                 // Auto-reconnect for other errors
                 if (this.reconnectAttempts < this.maxReconnectAttempts) {
                     this.reconnectAttempts++;
-                    console.log(`🔄 Reconnecting... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
                     setTimeout(() => this.connect(), this.reconnectDelay);
                 }
             };
@@ -114,29 +106,24 @@ class LocalBridgeClient {
     }
 
     handleMessage(message) {
-        console.log('📥 Received:', message.type);
-
         switch (message.type) {
             case 'auth_success':
                 this.authenticated = true;
-                console.log('✅ Authenticated as:', message.clientType);
                 this.trigger('onConnect');
                 break;
 
             case 'extension_status':
                 this.extensionAvailable = message.available;
-                console.log('🔌 Extension available:', message.available);
                 this.trigger('onExtensionStatus', message.available);
                 break;
 
             case 'prompt_result':
             case 'batch_result':
-                console.log('✅ Result received:', message);
                 this.trigger('onPromptResult', message);
                 break;
 
             case 'error':
-                console.error('❌ Server error:', message.message);
+                console.error('Bridge error:', message.message);
                 break;
 
             case 'pong':
@@ -144,13 +131,12 @@ class LocalBridgeClient {
                 break;
 
             default:
-                console.warn('⚠️ Unknown message type:', message.type);
+                console.warn('Unknown bridge message:', message.type);
         }
     }
 
     send(message) {
         if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
-            console.error('❌ WebSocket not connected');
             return false;
         }
 
@@ -158,7 +144,7 @@ class LocalBridgeClient {
             this.ws.send(JSON.stringify(message));
             return true;
         } catch (error) {
-            console.error('❌ Failed to send message:', error);
+            console.error('Failed to send bridge message:', error);
             return false;
         }
     }
@@ -280,24 +266,3 @@ class LocalBridgeClient {
 
 // Create global instance
 window.localBridge = new LocalBridgeClient();
-
-// Debug helpers
-window.localBridge.debug = {
-    status: () => {
-        console.log('Local Bridge Status:', window.localBridge.getStatus());
-    },
-    connect: () => {
-        window.localBridge.connect();
-    },
-    disconnect: () => {
-        window.localBridge.disconnect();
-    },
-    testPrompt: () => {
-        window.localBridge.submitPrompt('/imagine prompt: a beautiful sunset --ar 16:9')
-            .then(result => console.log('✅ Success:', result))
-            .catch(error => console.error('❌ Error:', error));
-    }
-};
-
-console.log('🌉 Local Bridge Client loaded');
-console.log('💡 Use window.localBridge.debug.status() to check connection');

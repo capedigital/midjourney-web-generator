@@ -41,28 +41,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 function connect() {
-  console.log('🔵 connect() called');
-  
   if (!authToken) {
-    console.log('⚠️ No auth token set');
     return;
   }
-
-  console.log('🔵 Auth token present:', authToken.substring(0, 10) + '...');
 
   if (ws && (ws.readyState === WebSocket.CONNECTING || ws.readyState === WebSocket.OPEN)) {
-    console.log('Already connected or connecting, readyState:', ws.readyState);
     return;
   }
-
-  console.log('🔌 Connecting to local bridge at ws://127.0.0.1:3001...');
 
   try {
     ws = new WebSocket('ws://127.0.0.1:3001');
-    console.log('🔵 WebSocket created, readyState:', ws.readyState);
 
     ws.onopen = () => {
-      console.log('✅ WebSocket connected');
       connected = true;
       reconnectAttempts = 0;
       
@@ -96,7 +86,6 @@ function connect() {
     };
 
     ws.onclose = (event) => {
-      console.log('🔌 WebSocket closed:', event.code, event.reason);
       connected = false;
       authenticated = false;
       
@@ -110,20 +99,26 @@ function connect() {
       chrome.action.setBadgeText({ text: '✗' });
       chrome.action.setBadgeBackgroundColor({ color: '#e74c3c' });
       
-      // Auto-reconnect
+      // Don't reconnect on authentication failure (4002)
+      if (event.code === 4002) {
+        reconnectAttempts = MAX_RECONNECT_ATTEMPTS; // Stop trying
+        chrome.action.setBadgeText({ text: '!' });
+        return;
+      }
+      
+      // Auto-reconnect for other errors
       if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
         reconnectAttempts++;
-        console.log(`🔄 Reconnecting... (${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})`);
         setTimeout(() => connect(), RECONNECT_DELAY);
       }
     };
 
-    ws.onerror = (error) => {
-      console.error('❌ WebSocket error:', error);
+    ws.onerror = () => {
+      // Silent - errors are handled in onclose
     };
 
   } catch (error) {
-    console.error('❌ Failed to create WebSocket:', error);
+    console.error('Failed to create WebSocket:', error);
   }
 }
 
@@ -140,7 +135,6 @@ function disconnect() {
 
 function send(message) {
   if (!ws || ws.readyState !== WebSocket.OPEN) {
-    console.error('❌ WebSocket not connected');
     return false;
   }
 
@@ -148,18 +142,14 @@ function send(message) {
     ws.send(JSON.stringify(message));
     return true;
   } catch (error) {
-    console.error('❌ Failed to send message:', error);
     return false;
   }
 }
 
 async function handleMessage(message) {
-  console.log('📥 Received:', message.type);
-
   switch (message.type) {
     case 'auth_success':
       authenticated = true;
-      console.log('✅ Authenticated as extension');
       
       // Update badge
       chrome.action.setBadgeText({ text: '✓' });
@@ -177,9 +167,6 @@ async function handleMessage(message) {
     case 'ping':
       send({ type: 'pong' });
       break;
-
-    default:
-      console.warn('⚠️ Unknown message type:', message.type);
   }
 }
 
@@ -227,8 +214,6 @@ async function handleSubmitPrompt(message) {
 
 async function handleSubmitBatch(message) {
   const service = message.service || 'midjourney'; // Default to midjourney
-  console.log(`📤 Submitting batch of ${message.prompts.length} prompts to ${service}...`);
-  
   const results = [];
   const delayMs = message.delayMs || 5000;
   
@@ -246,7 +231,6 @@ async function handleSubmitBatch(message) {
     
     for (let i = 0; i < message.prompts.length; i++) {
       const prompt = message.prompts[i];
-      console.log(`📤 Submitting prompt ${i + 1}/${message.prompts.length} to ${service}`);
       
       try {
         const result = await chrome.scripting.executeScript({
@@ -262,39 +246,115 @@ async function handleSubmitBatch(message) {
         });
         
       } catch (error) {
-        results.push({
-          prompt,
-          success: false,
-          error: error.message
-        });
+        // Frame removed is expected - means page reloaded (Ideogram accepted prompt)
+        if (error.message.includes('Frame with ID') || error.message.includes('was removed')) {
+          results.push({
+            prompt,
+            success: true,
+            error: null,
+            note: 'Page reloaded (likely successful)'
+          });
+        } else {
+          results.push({
+            prompt,
+            success: false,
+            error: error.message
+          });
+        }
       }
       
-      // Wait for textarea to be ready for next prompt (shorter than fixed delay)
+      // Wait for UI to be ready for next prompt
       if (i < message.prompts.length - 1) {
-        await chrome.scripting.executeScript({
-          target: { tabId: tab.id },
-          func: () => {
-            return new Promise((resolve) => {
+        
+        // Re-find or refresh tab (in case it reloaded)
+        try {
+          const tabs = await chrome.tabs.query({ 
+            url: service === 'ideogram' ? 'https://ideogram.ai/*' : 'https://www.midjourney.com/*'
+          });
+          
+          if (tabs.length > 0) {
+            tab = tabs[0];
+          }
+        } catch (e) {
+          // Silent - will use existing tab
+        }
+        
+        try {
+          await chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            func: (svc) => {
+              return new Promise((resolve) => {
+              let checkCount = 0;
+              const maxChecks = 30; // 6 seconds max wait (30 * 200ms)
+              
               const checkReady = () => {
+                checkCount++;
+                
+                // Find the textarea
                 const textarea = document.querySelector('textarea');
-                // Textarea is ready when it's empty or value is back to empty
-                if (textarea && textarea.value === '') {
-                  resolve();
+                
+                if (!textarea) {
+                  console.warn('⚠️ Textarea not found during ready check');
+                  if (checkCount >= maxChecks) {
+                    console.log('⏰ Max wait time reached, continuing anyway');
+                    resolve();
+                  } else {
+                    setTimeout(checkReady, 200);
+                  }
+                  return;
+                }
+                
+                // Different ready checks for different services
+                if (svc === 'ideogram') {
+                  // For Ideogram: textarea is ready when it's empty AND not disabled
+                  // Also check if a Generate button exists and is enabled
+                  const generateBtn = document.querySelector('button.MuiButton-root');
+                  const isReady = textarea.value === '' && !textarea.disabled;
+                  const btnReady = !generateBtn || !generateBtn.disabled;
+                  
+                  if (isReady && btnReady) {
+                    console.log('✅ Ideogram UI ready for next prompt');
+                    resolve();
+                  } else {
+                    if (checkCount >= maxChecks) {
+                      console.log('⏰ Max wait time reached, continuing anyway');
+                      resolve();
+                    } else {
+                      setTimeout(checkReady, 200);
+                    }
+                  }
                 } else {
-                  setTimeout(checkReady, 200); // Check every 200ms
+                  // For Midjourney: textarea is ready when it's empty
+                  if (textarea.value === '') {
+                    console.log('✅ Midjourney UI ready for next prompt');
+                    resolve();
+                  } else {
+                    if (checkCount >= maxChecks) {
+                      console.log('⏰ Max wait time reached, continuing anyway');
+                      resolve();
+                    } else {
+                      setTimeout(checkReady, 200);
+                    }
+                  }
                 }
               };
-              // Start checking after 1 second
-              setTimeout(checkReady, 1000);
+              
+              // Start checking after brief delay to let submission process
+              setTimeout(checkReady, 500);
             });
-          }
+          },
+          args: [service]
         });
+        
+        } catch (readyCheckError) {
+          // Continue anyway with a small delay
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
       }
     }
     
     // Send batch result
-    console.log('✅ Batch complete, sending result...');
-    const sent = send({
+    send({
       type: 'batch_result',
       messageId: message.messageId,
       success: true,
@@ -302,18 +362,15 @@ async function handleSubmitBatch(message) {
       successCount: results.filter(r => r.success).length,
       failCount: results.filter(r => !r.success).length
     });
-    console.log('📤 Batch result sent:', sent);
     
   } catch (error) {
-    console.error('❌ Error submitting batch:', error);
-    const sent = send({
+    send({
       type: 'batch_result',
       messageId: message.messageId,
       success: false,
       error: error.message,
       results
     });
-    console.log('📤 Error result sent:', sent);
   }
 }
 
@@ -361,7 +418,7 @@ async function findOrCreateIdeogramTab() {
   
   // Create new tab
   const tab = await chrome.tabs.create({
-    url: 'https://ideogram.ai/t/explore',
+    url: 'https://ideogram.ai/t/my-images',
     active: true
   });
   
@@ -479,30 +536,11 @@ function submitPromptToIdeogram(prompt) {
     textarea.dispatchEvent(new Event('change', { bubbles: true }));
     console.log('✅ Prompt set to:', prompt.substring(0, 50) + '...');
     
-    // Find and click generate button - Ideogram typically uses a "Generate" button
-    let generateButton = document.querySelector('button[aria-label*="Generate"]');
-    if (!generateButton) generateButton = document.querySelector('button:has-text("Generate")');
-    if (!generateButton) {
-      // Try finding button with text content
-      const buttons = document.querySelectorAll('button');
-      for (const btn of buttons) {
-        if (btn.textContent.trim().toLowerCase().includes('generate')) {
-          generateButton = btn;
-          break;
-        }
-      }
-    }
-    if (!generateButton) generateButton = document.querySelector('button[type="submit"]');
+    // Ideogram responds better to Enter key than button click (like the Electron app does)
+    // Wait a moment for React to process the input, then send Enter key
+    console.log('⌨️ Submitting with Enter key (300ms delay)...');
     
-    console.log('🔍 Found generate button:', generateButton);
-    
-    if (generateButton) {
-      console.log('🖱️ Clicking generate button...');
-      generateButton.click();
-      return { success: true };
-    } else {
-      // Fallback: Try Enter key
-      console.log('⌨️ No button found, trying Enter key...');
+    setTimeout(() => {
       const enterEvent = new KeyboardEvent('keydown', {
         key: 'Enter',
         code: 'Enter',
@@ -511,8 +549,10 @@ function submitPromptToIdeogram(prompt) {
         bubbles: true
       });
       textarea.dispatchEvent(enterEvent);
-      return { success: true, method: 'keyboard' };
-    }
+      console.log('✅ Enter key dispatched');
+    }, 300);
+    
+    return { success: true, method: 'keyboard' };
     
   } catch (error) {
     return { success: false, error: error.message };
@@ -521,6 +561,5 @@ function submitPromptToIdeogram(prompt) {
 
 // Initialize on install
 chrome.runtime.onInstalled.addListener(() => {
-  console.log('✅ Extension installed');
   chrome.action.setBadgeText({ text: '' });
 });

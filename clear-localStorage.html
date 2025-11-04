@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clear localStorage</title>
+</head>
+<body>
+    <h1>Clearing corrupted data...</h1>
+    <pre id="output"></pre>
+    <script>
+        const output = document.getElementById('output');
+        
+        // Clear all corrupted data
+        output.textContent += 'Clearing ai-chat-history...\n';
+        localStorage.removeItem('ai-chat-history');
+        
+        output.textContent += 'Clearing selected-ai-model...\n';
+        localStorage.removeItem('selected-ai-model');
+        
+        output.textContent += 'Clearing topnav-selected-model...\n';
+        localStorage.removeItem('topnav-selected-model');
+        
+        output.textContent += '\n✅ All corrupted data cleared!\n\n';
+        output.textContent += 'Close this tab and hard refresh your app (Cmd+Shift+R)\n';
+    </script>
+</body>
+</html>

@@ -54,38 +54,6 @@ const PromptSplitPane = {
                 }
             });
         }
-
-        // Wire up Close Midjourney Browser button
-        const closeMidjourneyBtn = document.getElementById('close-midjourney-browser-btn');
-        if (closeMidjourneyBtn) {
-            closeMidjourneyBtn.addEventListener('click', async (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                
-                if (window.closeMidjourneyBrowser) {
-                    await window.closeMidjourneyBrowser();
-                } else {
-                    console.error('closeMidjourneyBrowser function not found');
-                    this.showNotification('Error: Close function not available', 'error');
-                }
-            });
-        }
-
-        // Wire up Close Ideogram Browser button
-        const closeIdeogramBtn = document.getElementById('close-ideogram-browser-btn');
-        if (closeIdeogramBtn) {
-            closeIdeogramBtn.addEventListener('click', async (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                
-                if (window.closeIdeogramBrowser) {
-                    await window.closeIdeogramBrowser();
-                } else {
-                    console.error('closeIdeogramBrowser function not found');
-                    this.showNotification('Error: Close function not available', 'error');
-                }
-            });
-        }
     },
 
     /**

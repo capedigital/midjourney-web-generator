@@ -373,20 +373,19 @@ class PromptImporter {
         }
         
         const self = this;
-        midjourneyBtn.addEventListener('click', function(e) {
-            console.log('🔵 MIDJOURNEY BUTTON CLICKED');
-            logger.debug('🔵 [IMPORTER] Midjourney button clicked!');
-            
+        midjourneyBtn.addEventListener('click', async function(e) {
             midjourneyBtn.disabled = true;
             midjourneyBtn.textContent = 'Sending...';
             
-            if (window.sendPromptWithGlobalSetting) {
-                logger.debug('✅ [IMPORTER] Calling sendPromptWithGlobalSetting');
-                window.sendPromptWithGlobalSetting(textarea.value, 'midjourney');
-                self.showNotification('Sending prompt to Midjourney...', 'info');
-            } else {
-                logger.error('❌ [IMPORTER] sendPromptWithGlobalSetting not available');
-                self.showNotification('Midjourney integration not available', 'error');
+            try {
+                if (!window.localBridge || !window.localBridge.isReady()) {
+                    throw new Error('Extension bridge not connected');
+                }
+                
+                await window.localBridge.submitPrompt(textarea.value, 'midjourney');
+                self.showNotification('✅ Sent to Midjourney!', 'success');
+            } catch (error) {
+                self.showNotification('❌ ' + error.message, 'error');
             }
             
             setTimeout(() => {
@@ -398,33 +397,21 @@ class PromptImporter {
         // Ideogram button
         const ideogramBtn = promptDiv.querySelector('.send-ideogram');
         ideogramBtn.addEventListener('click', async () => {
-            console.log('🟣 IDEOGRAM BUTTON CLICKED');
-            logger.debug('🟣 [IMPORTER] Ideogram button clicked!');
-            
             ideogramBtn.disabled = true;
             ideogramBtn.textContent = 'Sending...';
             
-            // Use the clean basePrompt stored in dataset - NO parameters
+            // Use the clean basePrompt (without Midjourney formatting)
             const cleanPrompt = textarea.dataset.basePrompt || textarea.value.replace(/^\/imagine prompt:\s+/i, '').replace(/\s+--[\w-]+(?:\s+[\w:,.\/\-]+)?/g, '').trim();
             
-            logger.debug('🟣 [IMPORTER] Clean basePrompt for Ideogram:', cleanPrompt.substring(0, 100) + '...');
-            
-            if (window.sendPromptWithGlobalSetting) {
-                logger.debug('✅ [IMPORTER] Calling sendPromptWithGlobalSetting');
-                try {
-                    const result = await window.sendPromptWithGlobalSetting(cleanPrompt, 'ideogram');
-                    if (result && result.success) {
-                        logger.debug('✅ [IMPORTER] Ideogram send successful');
-                    } else {
-                        logger.error('❌ [IMPORTER] Ideogram send failed:', result);
-                    }
-                } catch (error) {
-                    logger.error('❌ [IMPORTER] Ideogram send error:', error);
-                    this.showNotification('Failed to send to Ideogram', 'error');
+            try {
+                if (!window.localBridge || !window.localBridge.isReady()) {
+                    throw new Error('Extension bridge not connected');
                 }
-            } else {
-                logger.error('❌ [IMPORTER] sendPromptWithGlobalSetting not available');
-                this.showNotification('Ideogram integration not available', 'error');
+                
+                await window.localBridge.submitPrompt(cleanPrompt, 'ideogram');
+                this.showNotification('✅ Sent to Ideogram!', 'success');
+            } catch (error) {
+                this.showNotification('❌ ' + error.message, 'error');
             }
             
             setTimeout(() => {

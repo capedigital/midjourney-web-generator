@@ -190,42 +190,34 @@ window.Generator = {
         });
 
         document.querySelectorAll('.ideogram-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
+            btn.addEventListener('click', async (e) => {
                 const promptDiv = e.target.closest('.prompt-item');
                 if (!promptDiv) return;
                 const textarea = promptDiv.querySelector('.prompt-text');
-                if (textarea) {
-                    btn.disabled = true;
-                    let browserMode = 'external';
-                    if (window.getCurrentBrowserMode) {
-                        browserMode = window.getCurrentBrowserMode();
+                if (!textarea) return;
+                
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+                
+                // Get the clean basePrompt (without Midjourney formatting)
+                const cleanPrompt = textarea.dataset.basePrompt || textarea.value;
+                
+                try {
+                    if (!window.localBridge || !window.localBridge.isReady()) {
+                        throw new Error('Extension bridge not connected. Please connect the extension.');
                     }
                     
-                    // Use consistent loading state
-                    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
-                    
-                    // Get the clean basePrompt instead of the full textarea value
-                    const cleanPrompt = textarea.dataset.basePrompt || textarea.value;
-                    logger.debug('🎨 Using clean basePrompt for Ideogram:', cleanPrompt);
-                    // Always use global browser setting for Ideogram
-                    window.sendPromptWithGlobalSetting(cleanPrompt, 'ideogram');
-                    // Re-enable button after delay
-                    setTimeout(() => {
-                        btn.disabled = false;
-                        let browserMode = 'external';
-                        if (window.getCurrentBrowserMode) {
-                            browserMode = window.getCurrentBrowserMode();
-                        }
-                        
-                        // Restore consistent styling
-                        const isInternal = browserMode === 'internal';
-                        const modeTooltip = isInternal ? 'Opens in app webview' : 'Opens in external browser';
-                        
-                        btn.className = `ideogram-btn ${isInternal ? 'send-btn-internal' : 'send-btn-external'}`;
-                        btn.innerHTML = `${isInternal ? '<i class="fas fa-desktop"></i>' : '<i class="fas fa-external-link-alt"></i>'} Ideogram ${isInternal ? '(Internal)' : '(External)'}`;
-                        btn.title = modeTooltip;
-                    }, 3000);
+                    await window.localBridge.submitPrompt(cleanPrompt, 'ideogram');
+                    window.Utils.showToast('✅ Sent to Ideogram!', 'success');
+                } catch (error) {
+                    window.Utils.showToast('❌ ' + error.message, 'error');
                 }
+                
+                // Re-enable button after delay
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-image"></i> Ideogram';
+                }, 3000);
             });
         });
 
@@ -234,59 +226,32 @@ window.Generator = {
                 e.preventDefault();
                 e.stopPropagation();
                 
-                logger.debug('🔵 Midjourney button clicked!');
-                
                 const promptDiv = e.target.closest('.prompt-item');
-                if (!promptDiv) {
-                    logger.error('Could not find prompt-item parent');
-                    return;
-                }
+                if (!promptDiv) return;
                 
                 const textarea = promptDiv.querySelector('.prompt-text');
-                if (!textarea) {
-                    logger.error('Could not find prompt-text textarea');
-                    return;
-                }
+                if (!textarea) return;
                 
-                logger.debug('📝 Sending prompt:', textarea.value.substring(0, 100) + '...');
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
                 
-                if (textarea) {
-                    btn.disabled = true;
-                    
-                    let browserMode = 'external';
-                    if (window.getCurrentBrowserMode) {
-                        browserMode = window.getCurrentBrowserMode();
+                try {
+                    if (!window.localBridge || !window.localBridge.isReady()) {
+                        throw new Error('Extension bridge not connected. Please connect the extension.');
                     }
                     
-                    // Use consistent loading state
-                    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
-                    
-                    // Always use global browser setting for Midjourney
-                    try {
-                        await window.sendPromptWithGlobalSetting(textarea.value, 'midjourney');
-                        logger.debug('✅ Send completed successfully');
-                    } catch (error) {
-                        logger.error('❌ Send failed:', error);
-                    }
-                    
-                    // Re-enable button after delay
-                    setTimeout(() => {
-                        btn.disabled = false;
-                        
-                        let browserMode = 'external';
-                        if (window.getCurrentBrowserMode) {
-                            browserMode = window.getCurrentBrowserMode();
-                        }
-                        
-                        // Restore consistent styling
-                        const isInternal = browserMode === 'internal';
-                        const modeTooltip = isInternal ? 'Opens in app webview' : 'Opens in external browser';
-                        
-                        btn.className = `midjourney-btn ${isInternal ? 'send-btn-internal' : 'send-btn-external'}`;
-                        btn.innerHTML = `${isInternal ? '<i class="fas fa-desktop"></i>' : '<i class="fas fa-external-link-alt"></i>'} Midjourney ${isInternal ? '(Internal)' : '(External)'}`;
-                        btn.title = modeTooltip;
-                    }, 3000);
+                    // Send full Midjourney formatted prompt
+                    await window.localBridge.submitPrompt(textarea.value, 'midjourney');
+                    window.Utils.showToast('✅ Sent to Midjourney!', 'success');
+                } catch (error) {
+                    window.Utils.showToast('❌ ' + error.message, 'error');
                 }
+                
+                // Re-enable button after delay
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-robot"></i> Midjourney';
+                }, 3000);
             });
         });
 

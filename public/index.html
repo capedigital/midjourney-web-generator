@@ -521,12 +521,6 @@ Example ChatGPT output:
                         </div>
                         <div class="batch-actions" style="margin-top: 20px;">
                             <div class="batch-send-label">Batch Send All Prompts:</div>
-                            <button id="close-midjourney-browser-btn" class="action-button" style="background-color: #555;">
-                                <i class="fas fa-times-circle"></i> Close MJ Browser
-                            </button>
-                            <button id="close-ideogram-browser-btn" class="action-button" style="background-color: #555;">
-                                <i class="fas fa-times-circle"></i> Close IG Browser
-                            </button>
                             <button id="send-all-ideogram-btn" class="action-button ideogram-btn">
                                 <i class="fas fa-image"></i> Send All to Ideogram
                             </button>
@@ -736,15 +730,15 @@ Example ChatGPT output:
     <!-- Load IPC Adapter (converts Electron IPC to browser APIs) -->
     <script src="/js/ipc-adapter.js"></script>
     
-    <!-- Load Browser Send Shim (provides send functions for web app) -->
-    <script src="/js/browser-send-shim.js"></script>
-    
     <!-- Load core dependencies -->
     <script src="/js/config.js"></script>
     <script src="/js/utils.js"></script>
     
     <!-- Load API layer for authentication -->
     <script src="/js/api.js"></script>
+    
+    <!-- Load services -->
+    <script src="/js/services/history-service.js"></script>
     
     <!-- Load app modules -->
     <script src="/js/local-bridge-client.js"></script>
@@ -763,8 +757,9 @@ Example ChatGPT output:
     <script src="/js/ai-chat.js"></script>
     <script src="/js/auth-manager.js"></script>
     <script src="/js/template-builder.js"></script>
-    <!-- Deprecated: Old Puppeteer-based auth - now using local bridge extension -->
-    <!-- <script src="/js/generator-settings.js"></script> -->
     <script src="/js/openrouter-key-manager.js"></script>
+    
+    <!-- Extension Status Indicator -->
+    <script src="/js/extension-status-indicator.js"></script>
 </body>
 </html>

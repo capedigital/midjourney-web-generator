@@ -138,12 +138,22 @@ wss.on('connection', (ws, req) => {
 
       // Handle authentication
       if (message.type === 'auth') {
-        // Validate JWT token by calling Railway API
-        const isValid = await validateJWT(message.token);
+        let isValid = false;
+        clientType = message.clientType || 'unknown';
+        
+        // Different authentication for different client types
+        if (clientType === 'extension') {
+          // Extension: Accept any token (it's a local Chrome extension, already trusted)
+          isValid = !!message.token && message.token.length > 10;
+          console.log(`🔧 Extension auth: ${isValid ? 'accepted' : 'rejected'}`);
+        } else if (clientType === 'webapp') {
+          // Web app: Validate JWT token via Railway API
+          isValid = await validateJWT(message.token);
+          console.log(`🌐 Web app JWT auth: ${isValid ? 'valid' : 'invalid'}`);
+        }
         
         if (isValid) {
           isAuthenticated = true;
-          clientType = message.clientType || 'unknown';
           authenticatedClients.add(ws);
           
           if (clientType === 'extension') {

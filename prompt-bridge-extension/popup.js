@@ -6,15 +6,11 @@ const statusEl = document.getElementById('status');
 const tokenInput = document.getElementById('token');
 const connectBtn = document.getElementById('connectBtn');
 const disconnectBtn = document.getElementById('disconnectBtn');
-const infoSection = document.getElementById('info');
-const infoStatus = document.getElementById('infoStatus');
-const infoAuth = document.getElementById('infoAuth');
-
-console.log('🔵 Popup script loaded');
+const connectedInfo = document.getElementById('connectedInfo');
+const disconnectedInfo = document.getElementById('disconnectedInfo');
 
 // Load saved token
 chrome.storage.local.get(['bridgeToken'], (result) => {
-  console.log('🔵 Storage loaded:', result);
   if (result.bridgeToken) {
     tokenInput.value = result.bridgeToken;
   }
@@ -29,23 +25,16 @@ setInterval(updateStatus, 2000);
 connectBtn.addEventListener('click', () => {
   const token = tokenInput.value.trim();
   
-  console.log('🔵 Connect button clicked');
-  
   if (!token) {
     alert('Please enter an auth token');
     return;
   }
   
-  console.log('🔵 Sending SET_TOKEN message with token:', token.substring(0, 10) + '...');
-  
   // Send token to background script
   chrome.runtime.sendMessage(
     { type: 'SET_TOKEN', token },
     (response) => {
-      console.log('🔵 Response from background:', response);
-      
       if (chrome.runtime.lastError) {
-        console.error('❌ Runtime error:', chrome.runtime.lastError);
         alert('Error connecting: ' + chrome.runtime.lastError.message);
         return;
       }
@@ -78,17 +67,12 @@ disconnectBtn.addEventListener('click', () => {
 });
 
 function updateStatus() {
-  console.log('🔵 updateStatus() called');
-  
   chrome.runtime.sendMessage(
     { type: 'GET_STATUS' },
     (status) => {
       if (chrome.runtime.lastError) {
-        console.error('❌ Error getting status:', chrome.runtime.lastError);
         return;
       }
-      
-      console.log('🔵 Status received:', status);
       
       if (!status) return;
       

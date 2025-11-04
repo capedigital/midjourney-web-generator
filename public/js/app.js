@@ -857,6 +857,11 @@ class App {
                 const successful = data.results.filter(r => r.success).length;
                 const failed = data.results.length - successful;
                 
+                // Save to history using centralized service
+                if (window.HistoryService) {
+                    await window.HistoryService.saveBatch('midjourney', allPrompts);
+                }
+                
                 if (statusProgress) statusProgress.textContent = `${successful}/${allPrompts.length}`;
                 
                 if (failed === 0) {
@@ -913,11 +918,12 @@ class App {
     }
 
     async sendAllToIdeogram() {
-        // Get ALL prompts (no selection needed)
+        // Get ALL prompts - use clean basePrompt (no Midjourney parameters)
         const allPrompts = [];
         document.querySelectorAll('.prompt-text').forEach(textarea => {
-            if (textarea && textarea.value) {
-                allPrompts.push(textarea.value);
+            if (textarea && textarea.dataset.basePrompt) {
+                // Use the clean basePrompt stored in dataset (no /imagine prefix, no parameters)
+                allPrompts.push(textarea.dataset.basePrompt);
             }
         });
 
@@ -947,6 +953,11 @@ class App {
             if (data.success) {
                 const successful = data.results.filter(r => r.success).length;
                 const failed = data.results.length - successful;
+                
+                // Save to history using centralized service
+                if (window.HistoryService) {
+                    await window.HistoryService.saveBatch('ideogram', allPrompts);
+                }
                 
                 if (failed === 0) {
                     window.Utils.showToast(`✅ All ${successful} prompts sent to Ideogram!`, 'success');

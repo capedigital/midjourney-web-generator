@@ -119,11 +119,25 @@ class AIChatAssistant {
     initializeCurrentModel() {
         // Get model from global sync (which is tied to top nav selector)
         if (window.globalModelSync) {
-            this.currentModel = window.globalModelSync.getCurrentModel()?.id || 'openai/gpt-4.1-nano';
-            logger.debug('AI Chat initialized with global model:', this.currentModel);
+            const model = window.globalModelSync.getCurrentModel();
+            console.log('🔍 Raw model from globalModelSync:', model);
+            console.log('🔍 Model type:', typeof model);
+            console.log('🔍 Model.id:', model?.id);
+            
+            // ALWAYS extract just the ID string
+            if (typeof model === 'object' && model !== null && model.id) {
+                this.currentModel = model.id;
+            } else if (typeof model === 'string') {
+                this.currentModel = model;
+            } else {
+                this.currentModel = 'openai/gpt-4o-mini';
+            }
+            
+            console.log('✅ Set this.currentModel to:', this.currentModel);
+            console.log('✅ Type check:', typeof this.currentModel);
         } else {
             // Fallback
-            this.currentModel = 'openai/gpt-4.1-nano';
+            this.currentModel = 'openai/gpt-4o-mini';
             console.warn('globalModelSync not found, using fallback:', this.currentModel);
         }
 
@@ -135,8 +149,10 @@ class AIChatAssistant {
         // Subscribe to global model changes from top nav selector
         if (window.globalModelSync) {
             this.modelChangeCallback = (model) => {
-                if (model && model.id) {
-                    this.currentModel = model.id;
+                // Handle both string (ID) and object {id, name} formats
+                const modelId = typeof model === 'string' ? model : model?.id;
+                if (modelId) {
+                    this.currentModel = modelId;
                     logger.debug('AI Chat synced to new model from top nav:', this.currentModel);
                 }
             };
@@ -770,6 +786,9 @@ class AIChatAssistant {
     }
 
     saveCurrentSession() {
+        // DISABLED: No longer saving to localStorage
+        return;
+        
         if (!this.currentSessionId || this.messages.length === 0) return;
 
         const sessionData = {
@@ -847,9 +866,24 @@ class AIChatAssistant {
             
             // Update model if different (just set current, top nav shows the active model)
             if (session.model) {
-                // Ensure we're using the model ID string, not an object
-                const modelId = typeof session.model === 'object' ? session.model.id : session.model;
-                if (modelId && modelId !== this.currentModel) {
+                let modelId = session.model;
+                
+                // Handle case where model was stored as stringified JSON object
+                if (typeof modelId === 'string' && modelId.startsWith('{')) {
+                    try {
+                        const parsed = JSON.parse(modelId);
+                        modelId = parsed.id;
+                    } catch (e) {
+                        console.warn('Failed to parse model JSON:', e);
+                    }
+                }
+                // Handle case where model is a JavaScript object
+                else if (typeof modelId === 'object' && modelId !== null) {
+                    modelId = modelId.id;
+                }
+                
+                // Only update if we got a valid string ID
+                if (modelId && typeof modelId === 'string' && modelId !== this.currentModel) {
                     this.currentModel = modelId;
                 }
             }
@@ -1335,6 +1369,19 @@ IMPORTANT: Only include the JSON prompt block when explicitly requested by the u
     async callAI(messages) {
         logger.debug('Making API call with model:', this.currentModel);
         
+        // CRITICAL: Handle case where this.currentModel is a stringified JSON object
+        if (typeof this.currentModel === 'string' && this.currentModel.startsWith('{')) {
+            console.warn('⚠️ Model was a JSON string, parsing:', this.currentModel.substring(0, 50) + '...');
+            try {
+                const parsed = JSON.parse(this.currentModel);
+                this.currentModel = parsed.id || 'openai/gpt-4o-mini';
+                console.log('✅ Extracted model ID:', this.currentModel);
+            } catch (e) {
+                console.error('❌ Failed to parse model JSON:', e);
+                this.currentModel = 'openai/gpt-4o-mini';
+            }
+        }
+        
         // Validate model is set and is a string (not an object)
         if (!this.currentModel || typeof this.currentModel !== 'string') {
             console.error('❌ Invalid model (not a string):', this.currentModel);
@@ -1348,7 +1395,7 @@ IMPORTANT: Only include the JSON prompt block when explicitly requested by the u
             }
         }
         
-        // Extra safety: if it's still an object, extract the id
+        // Extra safety: if it's STILL an object, extract the id
         if (typeof this.currentModel === 'object' && this.currentModel !== null) {
             console.warn('⚠️ Model was an object, extracting id:', this.currentModel);
             this.currentModel = this.currentModel.id || 'openai/gpt-4o-mini';
@@ -1377,9 +1424,14 @@ IMPORTANT: Only include the JSON prompt block when explicitly requested by the u
         // Log what we're about to send
         console.log('📤 Sending API request:', {
             model: requestBody.model,
+            modelType: typeof requestBody.model,
             messagesCount: messages.length,
             hasImageContent
         });
+        
+        // Debug: check if model is still an object somehow
+        console.log('🔍 this.currentModel type:', typeof this.currentModel);
+        console.log('🔍 this.currentModel value:', this.currentModel);
         
         // Only add streaming for non-vision requests
         if (!hasImageContent) {

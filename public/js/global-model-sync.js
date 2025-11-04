@@ -11,7 +11,7 @@ window.globalModelSync = {
     subscribers: [],
     
     getCurrentModel() {
-        // Try to get from TopNavModelSelector first
+        // ONLY get from TopNavModelSelector - NO localStorage
         if (window.topNavModelSelector && window.topNavModelSelector.currentModel) {
             return {
                 id: window.topNavModelSelector.currentModel.id,
@@ -19,21 +19,12 @@ window.globalModelSync = {
             };
         }
         
-        // Fallback to saved model
-        const savedModel = localStorage.getItem('selected-ai-model');
-        if (savedModel) {
-            return { id: savedModel, name: savedModel };
-        }
-        
-        // Final fallback
+        // Final fallback if top nav not initialized yet
         return { id: DEFAULT_AI_MODEL, name: DEFAULT_AI_MODEL };
     },
     
     updateModel(modelId) {
-        // Update localStorage
-        localStorage.setItem('selected-ai-model', modelId);
-        
-        // Notify all subscribers
+        // Just notify subscribers - NO localStorage
         this.notifySubscribers(modelId);
     },
     
