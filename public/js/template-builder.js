@@ -282,8 +282,8 @@ window.TemplateBuilder = {
         // Get model from global sync (top nav selector)
         const model = window.globalModelSync?.getCurrentModel()?.id || 'openai/gpt-4o-mini';
 
-        // Build AI prompt with enhancers
-        const aiPrompt = window.Config.updateAIPromptWithEnhancers();
+        // Build AI prompt from selected template
+        const aiPrompt = window.Config.getDefaultAIPrompt(count, selectedTemplate);
         
         outputPreview.value = `AI Model: ${model}\nPrompts to generate: ${count}\n\n${aiPrompt}`;
     },
@@ -310,10 +310,15 @@ window.TemplateBuilder = {
         generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
 
         try {
-            // Build the AI prompt with current enhancers
-            const aiPrompt = window.Config.updateAIPromptWithEnhancers();
+            // Build the AI prompt using the selected template
+            const selectedTemplate = templateSelect.value;
+            const aiPrompt = window.Config.getDefaultAIPrompt(count, selectedTemplate);
             
-            logger.debug('Generating prompts with AI:', { count, model });
+            if (!aiPrompt || aiPrompt.trim() === '') {
+                throw new Error('Failed to build prompt from template');
+            }
+            
+            logger.debug('Generating prompts with AI:', { count, model, template: selectedTemplate });
             
             // Call the proper generate endpoint that saves to database
             const response = await fetch('/api/prompts/generate', {
@@ -324,6 +329,7 @@ window.TemplateBuilder = {
                 },
                 body: JSON.stringify({
                     promptText: aiPrompt,
+                    count: count,
                     model: model
                 })
             });
