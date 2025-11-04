@@ -250,9 +250,26 @@ async function handleSubmitBatch(message) {
         });
       }
       
-      // Delay between prompts
+      // Wait for textarea to be ready for next prompt (shorter than fixed delay)
       if (i < message.prompts.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, delayMs));
+        await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          func: () => {
+            return new Promise((resolve) => {
+              const checkReady = () => {
+                const textarea = document.querySelector('textarea');
+                // Textarea is ready when it's empty or value is back to empty
+                if (textarea && textarea.value === '') {
+                  resolve();
+                } else {
+                  setTimeout(checkReady, 200); // Check every 200ms
+                }
+              };
+              // Start checking after 1 second
+              setTimeout(checkReady, 1000);
+            });
+          }
+        });
       }
     }
     
@@ -320,6 +337,10 @@ function submitPromptToMidjourney(prompt) {
   try {
     console.log('🔍 Looking for prompt input on Midjourney...');
     
+    // Clean the prompt - remove /imagine prompt: prefix (not needed for web UI)
+    let cleanPrompt = prompt.replace(/^\/imagine\s+prompt:\s*/i, '').trim();
+    console.log('🧹 Cleaned prompt:', cleanPrompt.substring(0, 50) + '...');
+    
     // Find the prompt input textarea - try multiple selectors
     let textarea = document.querySelector('textarea[placeholder*="prompt"]');
     if (!textarea) textarea = document.querySelector('textarea[data-testid="prompt-input"]');
@@ -336,7 +357,7 @@ function submitPromptToMidjourney(prompt) {
     
     // Set the prompt value
     console.log('✏️ Setting prompt value...');
-    textarea.value = prompt;
+    textarea.value = cleanPrompt;
     textarea.dispatchEvent(new Event('input', { bubbles: true }));
     textarea.dispatchEvent(new Event('change', { bubbles: true }));
     console.log('✅ Prompt set to:', prompt.substring(0, 50) + '...');
