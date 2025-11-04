@@ -54,9 +54,11 @@ class LocalBridgeClient {
                 this.reconnectAttempts = 0;
                 
                 // Authenticate with JWT token
+                const authToken = this.getAuthToken();
+                console.log('🔑 Sending auth with token:', authToken ? authToken.substring(0, 20) + '...' : 'NONE');
                 this.send({
                     type: 'auth',
-                    token: this.getAuthToken(),
+                    token: authToken,
                     clientType: 'webapp'
                 });
             };

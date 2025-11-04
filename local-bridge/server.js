@@ -38,22 +38,27 @@ console.log('');
 
 // Validate JWT token by calling Railway API
 async function validateJWT(token) {
-  if (!token) return false;
+  if (!token) {
+    console.log('❌ No token provided');
+    return false;
+  }
   
   try {
+    console.log('🔍 Validating JWT token...');
     const response = await fetch(`${RAILWAY_API}/api/auth/verify`, {
-      method: 'POST',
+      method: 'GET',
       headers: {
-        'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       }
     });
     
     if (response.ok) {
       const data = await response.json();
+      console.log('✅ JWT validation successful:', data.valid);
       return data.valid === true;
     }
     
+    console.log('❌ JWT validation failed:', response.status, response.statusText);
     return false;
   } catch (error) {
     console.error('❌ JWT validation error:', error.message);
