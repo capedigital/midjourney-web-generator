@@ -846,8 +846,12 @@ class AIChatAssistant {
             this.restoreMessagesToUI(session.messages);
             
             // Update model if different (just set current, top nav shows the active model)
-            if (session.model && session.model !== this.currentModel) {
-                this.currentModel = session.model;
+            if (session.model) {
+                // Ensure we're using the model ID string, not an object
+                const modelId = typeof session.model === 'object' ? session.model.id : session.model;
+                if (modelId && modelId !== this.currentModel) {
+                    this.currentModel = modelId;
+                }
             }
             
             logger.debug('Loaded chat session:', sessionId);
@@ -1331,9 +1335,9 @@ IMPORTANT: Only include the JSON prompt block when explicitly requested by the u
     async callAI(messages) {
         logger.debug('Making API call with model:', this.currentModel);
         
-        // Validate model is set
-        if (!this.currentModel) {
-            console.error('❌ No model selected! Attempting to get from globalModelSync...');
+        // Validate model is set and is a string (not an object)
+        if (!this.currentModel || typeof this.currentModel !== 'string') {
+            console.error('❌ Invalid model (not a string):', this.currentModel);
             if (window.globalModelSync) {
                 const model = window.globalModelSync.getCurrentModel();
                 this.currentModel = model?.id || 'openai/gpt-4o-mini';
@@ -1342,6 +1346,12 @@ IMPORTANT: Only include the JSON prompt block when explicitly requested by the u
                 this.currentModel = 'openai/gpt-4o-mini';
                 console.warn('⚠️ Using fallback model:', this.currentModel);
             }
+        }
+        
+        // Extra safety: if it's still an object, extract the id
+        if (typeof this.currentModel === 'object' && this.currentModel !== null) {
+            console.warn('⚠️ Model was an object, extracting id:', this.currentModel);
+            this.currentModel = this.currentModel.id || 'openai/gpt-4o-mini';
         }
         
         // Check if this is a vision request

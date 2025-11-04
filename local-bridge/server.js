@@ -21,6 +21,7 @@ const HOST = '127.0.0.1'; // Localhost only - NOT exposed to network
 const MAX_CONNECTIONS = 5;
 const ALLOWED_ORIGINS = [
   'https://midjourney-web-production.up.railway.app',
+  'https://promptgen.joeltd.com', // Custom domain
   'http://localhost:3000', // For local development
   'http://localhost:5000',
   'chrome-extension://' // Allow all Chrome extensions
