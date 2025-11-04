@@ -1331,6 +1331,19 @@ IMPORTANT: Only include the JSON prompt block when explicitly requested by the u
     async callAI(messages) {
         logger.debug('Making API call with model:', this.currentModel);
         
+        // Validate model is set
+        if (!this.currentModel) {
+            console.error('❌ No model selected! Attempting to get from globalModelSync...');
+            if (window.globalModelSync) {
+                const model = window.globalModelSync.getCurrentModel();
+                this.currentModel = model?.id || 'openai/gpt-4o-mini';
+                console.log('✅ Retrieved model from globalModelSync:', this.currentModel);
+            } else {
+                this.currentModel = 'openai/gpt-4o-mini';
+                console.warn('⚠️ Using fallback model:', this.currentModel);
+            }
+        }
+        
         // Check if this is a vision request
         const hasImageContent = messages.some(msg => 
             Array.isArray(msg.content) && 
@@ -1351,12 +1364,19 @@ IMPORTANT: Only include the JSON prompt block when explicitly requested by the u
             max_tokens: 8000
         };
         
+        // Log what we're about to send
+        console.log('📤 Sending API request:', {
+            model: requestBody.model,
+            messagesCount: messages.length,
+            hasImageContent
+        });
+        
         // Only add streaming for non-vision requests
         if (!hasImageContent) {
             requestBody.stream = true;
         }
         
-        logger.debug('🖼️ Request body:', JSON.stringify(requestBody, null, 2));
+        logger.debug('🖼️ Full request body:', JSON.stringify(requestBody, null, 2));
         
         // Use backend proxy API (supports streaming!)
         const response = await fetch('/api/ai/generate', {
