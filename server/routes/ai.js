@@ -8,10 +8,21 @@ const fetch = require('node-fetch');
 router.post('/generate', asyncHandler(async (req, res) => {
     const { model, messages, stream, temperature, max_tokens } = req.body;
     
+    // Debug logging
+    console.log('📥 AI Generate request received:', {
+        model: model || 'MISSING',
+        messagesCount: messages?.length || 0,
+        stream,
+        hasBody: !!req.body,
+        bodyKeys: Object.keys(req.body || {})
+    });
+    
     if (!model || !messages) {
+        console.error('❌ Validation failed - model:', model, 'messages:', messages?.length);
         return res.status(400).json({
             success: false,
-            error: 'Missing required fields: model and messages'
+            error: 'Missing required fields: model and messages',
+            received: { model: model || 'undefined', messagesCount: messages?.length || 0 }
         });
     }
     
