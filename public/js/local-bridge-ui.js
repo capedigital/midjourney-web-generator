@@ -147,9 +147,18 @@ npm start</code></pre>
                     </div>
                     
                     <div class="settings-section">
-                        <h3>Quick Test</h3>
-                        <p>Once connected, you can test with:</p>
-                        <pre><code>window.localBridge.debug.testPrompt()</code></pre>
+                        <h3>Quick Reference</h3>
+                        <p><strong>Get current token:</strong></p>
+                        <pre><code>curl -s http://127.0.0.1:3001/token</code></pre>
+                        
+                        <p><strong>Check server status:</strong></p>
+                        <pre><code>lsof -i:3001</code></pre>
+                        
+                        <p><strong>View logs:</strong></p>
+                        <pre><code>tail -f ~/Library/Logs/local-bridge.log</code></pre>
+                        
+                        <p><strong>Test connection:</strong></p>
+                        <pre><code>window.localBridge.debug.status()</code></pre>
                     </div>
                 </div>
                 

@@ -619,54 +619,6 @@ Example ChatGPT output:
                     </div>
                     
                     <div class="content-card">
-                        <h3>Generator Authentication</h3>
-                        <div class="setting-description" style="margin-bottom: 24px; color: #aaa; font-size: 14px;">
-                            Set up browser automation for Midjourney and Ideogram. You'll need to log in once manually, then your session will be saved for future use.
-                        </div>
-                        
-                        <!-- Midjourney Authentication -->
-                        <div class="setting-group" style="border-bottom: 1px solid #2a2f3f; padding-bottom: 20px; margin-bottom: 20px;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                                <div style="display: flex; align-items: center; gap: 12px;">
-                                    <label class="setting-label" style="margin: 0;">Midjourney</label>
-                                    <span id="mj-auth-indicator" class="auth-indicator not-authenticated" style="font-size: 20px; line-height: 1;">●</span>
-                                </div>
-                                <div style="display: flex; gap: 8px;">
-                                    <button id="mj-setup-btn" class="action-button" style="padding: 6px 12px; font-size: 13px;">
-                                        <i class="fas fa-key"></i> Setup Login
-                                    </button>
-                                    <button id="mj-status-btn" class="action-button" style="padding: 6px 12px; font-size: 13px; background: #2a2f3f;">
-                                        <i class="fas fa-sync"></i> Check Status
-                                    </button>
-                                </div>
-                            </div>
-                            <div id="mj-auth-status" class="status-message" style="font-size: 13px; color: #888;">
-                                Click "Setup Login" to authenticate with Midjourney
-                            </div>
-                        </div>
-                        
-                        <!-- Ideogram Authentication -->
-                        <div class="setting-group">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                                <div style="display: flex; align-items: center; gap: 12px;">
-                                    <label class="setting-label" style="margin: 0;">Ideogram</label>
-                                    <span id="ideogram-auth-indicator" class="auth-indicator not-authenticated" style="font-size: 20px; line-height: 1;">●</span>
-                                </div>
-                                <div style="display: flex; gap: 8px;">
-                                    <button id="ideogram-setup-btn" class="action-button" style="padding: 6px 12px; font-size: 13px;">
-                                        <i class="fas fa-key"></i> Setup Login
-                                    </button>
-                                    <button id="ideogram-status-btn" class="action-button" style="padding: 6px 12px; font-size: 13px; background: #2a2f3f;">
-                                        <i class="fas fa-sync"></i> Check Status
-                                    </button>
-                                </div>
-                            </div>
-                            <div id="ideogram-auth-status" class="status-message" style="font-size: 13px; color: #888;">
-                                Click "Setup Login" to authenticate with Ideogram
-                            </div>
-                        </div>
-                    </div>
-                    <div class="content-card">
                         <h3>Preferences</h3>
                         <div class="setting-group">
                             <!-- <label class="setting-label">
@@ -811,7 +763,8 @@ Example ChatGPT output:
     <script src="/js/ai-chat.js"></script>
     <script src="/js/auth-manager.js"></script>
     <script src="/js/template-builder.js"></script>
-    <script src="/js/generator-settings.js"></script>
+    <!-- Deprecated: Old Puppeteer-based auth - now using local bridge extension -->
+    <!-- <script src="/js/generator-settings.js"></script> -->
     <script src="/js/openrouter-key-manager.js"></script>
 </body>
 </html>
