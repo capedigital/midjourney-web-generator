@@ -157,7 +157,7 @@ class LocalBridgeClient {
         }
     }
 
-    submitPrompt(prompt) {
+    submitPrompt(prompt, service = 'midjourney') {
         if (!this.authenticated || !this.extensionAvailable) {
             return Promise.reject(new Error('Extension not available'));
         }
@@ -183,7 +183,8 @@ class LocalBridgeClient {
             this.send({
                 type: 'submit_prompt',
                 messageId: messageId,
-                prompt: prompt
+                prompt: prompt,
+                service: service
             });
             
             // Timeout after 30 seconds
@@ -194,7 +195,7 @@ class LocalBridgeClient {
         });
     }
 
-    submitBatch(prompts, delayMs = 5000) {
+    submitBatch(prompts, delayMs = 5000, service = 'midjourney') {
         if (!this.authenticated || !this.extensionAvailable) {
             return Promise.reject(new Error('Extension not available'));
         }
@@ -221,7 +222,8 @@ class LocalBridgeClient {
                 type: 'submit_batch',
                 messageId: messageId,
                 prompts: prompts,
-                delayMs: delayMs
+                delayMs: delayMs,
+                service: service
             });
             
             // Timeout after 5 minutes (long batches)

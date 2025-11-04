@@ -184,16 +184,25 @@ async function handleMessage(message) {
 }
 
 async function handleSubmitPrompt(message) {
-  console.log('📤 Submitting prompt to Midjourney...');
+  const service = message.service || 'midjourney'; // Default to midjourney
+  console.log(`📤 Submitting prompt to ${service}...`);
   
   try {
-    // Find or create Midjourney tab
-    const tab = await findOrCreateMidjourneyTab();
+    let tab, submitFunc;
+    
+    // Determine which service to use
+    if (service === 'ideogram') {
+      tab = await findOrCreateIdeogramTab();
+      submitFunc = submitPromptToIdeogram;
+    } else {
+      tab = await findOrCreateMidjourneyTab();
+      submitFunc = submitPromptToMidjourney;
+    }
     
     // Inject and execute prompt submission
     const result = await chrome.scripting.executeScript({
       target: { tabId: tab.id },
-      func: submitPromptToMidjourney,
+      func: submitFunc,
       args: [message.prompt]
     });
     
@@ -217,22 +226,32 @@ async function handleSubmitPrompt(message) {
 }
 
 async function handleSubmitBatch(message) {
-  console.log('📤 Submitting batch of', message.prompts.length, 'prompts...');
+  const service = message.service || 'midjourney'; // Default to midjourney
+  console.log(`📤 Submitting batch of ${message.prompts.length} prompts to ${service}...`);
   
   const results = [];
   const delayMs = message.delayMs || 5000;
   
   try {
-    const tab = await findOrCreateMidjourneyTab();
+    let tab, submitFunc;
+    
+    // Determine which service to use
+    if (service === 'ideogram') {
+      tab = await findOrCreateIdeogramTab();
+      submitFunc = submitPromptToIdeogram;
+    } else {
+      tab = await findOrCreateMidjourneyTab();
+      submitFunc = submitPromptToMidjourney;
+    }
     
     for (let i = 0; i < message.prompts.length; i++) {
       const prompt = message.prompts[i];
-      console.log(`📤 Submitting prompt ${i + 1}/${message.prompts.length}`);
+      console.log(`📤 Submitting prompt ${i + 1}/${message.prompts.length} to ${service}`);
       
       try {
         const result = await chrome.scripting.executeScript({
           target: { tabId: tab.id },
-          func: submitPromptToMidjourney,
+          func: submitFunc,
           args: [prompt]
         });
         
@@ -329,6 +348,37 @@ async function findOrCreateMidjourneyTab() {
   return tab;
 }
 
+async function findOrCreateIdeogramTab() {
+  // Try to find existing Ideogram tab
+  const tabs = await chrome.tabs.query({ url: 'https://ideogram.ai/*' });
+  
+  if (tabs.length > 0) {
+    // Activate existing tab
+    await chrome.tabs.update(tabs[0].id, { active: true });
+    await chrome.windows.update(tabs[0].windowId, { focused: true });
+    return tabs[0];
+  }
+  
+  // Create new tab
+  const tab = await chrome.tabs.create({
+    url: 'https://ideogram.ai/t/explore',
+    active: true
+  });
+  
+  // Wait for page to load
+  await new Promise(resolve => {
+    const listener = (tabId, info) => {
+      if (tabId === tab.id && info.status === 'complete') {
+        chrome.tabs.onUpdated.removeListener(listener);
+        resolve();
+      }
+    };
+    chrome.tabs.onUpdated.addListener(listener);
+  });
+  
+  return tab;
+}
+
 /**
  * This function runs IN the Midjourney page context
  * Note: This is injected code, not background script
@@ -372,6 +422,83 @@ function submitPromptToMidjourney(prompt) {
     if (submitButton) {
       console.log('🖱️ Clicking submit button...');
       submitButton.click();
+      return { success: true };
+    } else {
+      // Fallback: Try Enter key
+      console.log('⌨️ No button found, trying Enter key...');
+      const enterEvent = new KeyboardEvent('keydown', {
+        key: 'Enter',
+        code: 'Enter',
+        keyCode: 13,
+        which: 13,
+        bubbles: true
+      });
+      textarea.dispatchEvent(enterEvent);
+      return { success: true, method: 'keyboard' };
+    }
+    
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * This function runs IN the Ideogram page context
+ * Note: This is injected code, not background script
+ */
+function submitPromptToIdeogram(prompt) {
+  try {
+    console.log('🎨 Looking for prompt input on Ideogram...');
+    
+    // Ideogram uses textarea in their generation interface
+    // Find the prompt input - try multiple selectors specific to Ideogram
+    let textarea = document.querySelector('textarea[placeholder*="Describe"]');
+    if (!textarea) textarea = document.querySelector('textarea[placeholder*="describe"]');
+    if (!textarea) textarea = document.querySelector('textarea[placeholder*="prompt"]');
+    if (!textarea) textarea = document.querySelector('textarea[name="prompt"]');
+    if (!textarea) textarea = document.querySelector('#prompt-input');
+    if (!textarea) textarea = document.querySelector('textarea');
+    
+    console.log('🔍 Found textarea:', textarea);
+    
+    if (!textarea) {
+      const allTextareas = document.querySelectorAll('textarea');
+      console.log('❌ No textarea found. Total textareas on page:', allTextareas.length);
+      return { success: false, error: `Prompt input not found on Ideogram. Found ${allTextareas.length} textareas total.` };
+    }
+    
+    // Set the prompt value
+    console.log('✏️ Setting prompt value...');
+    textarea.value = prompt;
+    
+    // Trigger React's onChange if it exists
+    const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value').set;
+    nativeInputValueSetter.call(textarea, prompt);
+    
+    textarea.dispatchEvent(new Event('input', { bubbles: true }));
+    textarea.dispatchEvent(new Event('change', { bubbles: true }));
+    console.log('✅ Prompt set to:', prompt.substring(0, 50) + '...');
+    
+    // Find and click generate button - Ideogram typically uses a "Generate" button
+    let generateButton = document.querySelector('button[aria-label*="Generate"]');
+    if (!generateButton) generateButton = document.querySelector('button:has-text("Generate")');
+    if (!generateButton) {
+      // Try finding button with text content
+      const buttons = document.querySelectorAll('button');
+      for (const btn of buttons) {
+        if (btn.textContent.trim().toLowerCase().includes('generate')) {
+          generateButton = btn;
+          break;
+        }
+      }
+    }
+    if (!generateButton) generateButton = document.querySelector('button[type="submit"]');
+    
+    console.log('🔍 Found generate button:', generateButton);
+    
+    if (generateButton) {
+      console.log('🖱️ Clicking generate button...');
+      generateButton.click();
       return { success: true };
     } else {
       // Fallback: Try Enter key

@@ -925,19 +925,16 @@ class App {
         btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Sending to Ideogram...`;
 
         try {
-            const response = await fetch('/api/ideogram/batch', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                },
-                body: JSON.stringify({ 
-                    prompts: allPrompts,
-                    delayMs: 500 
-                })
-            });
+            // Check if local bridge is available
+            if (!window.localBridge || !window.localBridge.isReady()) {
+                window.Utils.showToast('❌ Local bridge extension not connected. Click status indicator to connect.', 'error');
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fas fa-rocket"></i> Send All to Ideogram`;
+                return;
+            }
 
-            const data = await response.json();
+            // Use local bridge to submit prompts to Ideogram
+            const data = await window.localBridge.submitBatch(allPrompts, 5000, 'ideogram'); // 5 second delay, ideogram service
 
             if (data.success) {
                 const successful = data.results.filter(r => r.success).length;
