@@ -24,11 +24,10 @@ const config = getConfig();
 // Initialize Express app
 const app = express();
 
-// Auto-run database migration on startup
+// Auto-run database migration on startup (only if needed)
 async function runMigrations() {
     if (!config.databaseUrl) {
-        console.log('⚠️  No DATABASE_URL found, skipping migrations');
-        return;
+        return; // Silent skip in dev
     }
 
     const { Pool } = require('pg');
@@ -39,8 +38,21 @@ async function runMigrations() {
 
     let client;
     try {
-        console.log('🔄 Running database migrations...');
         client = await migrationPool.connect();
+        
+        // Check if migrations are needed by testing for a key table
+        const checkResult = await client.query(`
+            SELECT EXISTS (
+                SELECT FROM information_schema.tables 
+                WHERE table_schema = 'public' 
+                AND table_name = 'users'
+            );
+        `);
+        
+        if (checkResult.rows[0].exists) {
+            // Tables exist, skip migrations
+            return;
+        }
         
         // Run main schema first
         const schema = fs.readFileSync(path.join(__dirname, '../schema.sql'), 'utf8');
@@ -51,22 +63,21 @@ async function runMigrations() {
         if (fs.existsSync(migrationsDir)) {
             const migrationFiles = fs.readdirSync(migrationsDir)
                 .filter(f => f.endsWith('.sql'))
-                .sort(); // Run in order
+                .sort();
             
             for (const file of migrationFiles) {
-                console.log(`🔄 Running migration: ${file}`);
                 const migration = fs.readFileSync(path.join(migrationsDir, file), 'utf8');
                 await client.query(migration);
-                console.log(`✅ Completed migration: ${file}`);
             }
         }
         
-        console.log('✅ Database migrations completed successfully!');
+        if (config.isDevelopment) {
+            console.log('✅ Database initialized');
+        }
     } catch (err) {
-        if (err.message && err.message.includes('already exists')) {
-            console.log('✅ Database tables already exist');
-        } else {
-            console.error('⚠️  Migration error:', err.message || err);
+        // Silent fail - tables likely exist
+        if (config.isDevelopment && !err.message?.includes('already exists')) {
+            console.error('Migration error:', err.message);
         }
     } finally {
         if (client) client.release();
@@ -149,34 +160,22 @@ app.use(errorHandler);
 // Start server
 async function startServer() {
     try {
-        if (config.isDevelopment) {
-            console.log('\n🚀 Starting Midjourney Generator Web App...\n');
-        }
-        
-        // Test database connection
+        // Test database connection and run migrations if needed
         if (config.databaseUrl) {
             await testConnection();
-            
-            // Run migrations
             await runMigrations();
-        } else {
-            console.warn('⚠️  Running without database connection');
         }
         
         // Start Express server
         app.listen(config.port, () => {
             if (config.isProduction) {
-                console.log(`✅ Server running on port ${config.port} (${config.nodeEnv})`);
+                console.log(`Server running (${config.nodeEnv})`);
             } else {
-                console.log('\n✅ Server started successfully!');
-                console.log(`📡 Server running on port ${config.port}`);
-                console.log(`📊 Environment: ${config.nodeEnv}`);
-                console.log(`🌐 API: http://localhost:${config.port}/api`);
-                console.log(`💚 Health: http://localhost:${config.port}/health\n`);
+                console.log(`\n✅ http://localhost:${config.port}\n`);
             }
         });
     } catch (err) {
-        console.error('❌ Failed to start server:', err);
+        console.error('Failed to start:', err.message);
         process.exit(1);
     }
 }

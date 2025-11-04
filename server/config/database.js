@@ -21,31 +21,12 @@ const config = {
 // Create pool
 const pool = new Pool(config);
 
-// Connection event handlers
-pool.on('connect', (client) => {
-    if (process.env.NODE_ENV === 'development') {
-        console.log('✅ New database client connected');
-    }
-});
-
-pool.on('acquire', (client) => {
-    // Client is checked out from the pool
-});
-
-pool.on('remove', (client) => {
-    if (process.env.NODE_ENV === 'development') {
-        console.log('🔌 Database client removed from pool');
-    }
-});
-
+// Connection event handlers (silent unless error)
 pool.on('error', (err, client) => {
-    console.error('❌ Unexpected database pool error:', {
-        message: err.message,
-        code: err.code,
-        stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
-    });
-    
-    // Don't exit process, let error handler deal with it
+    // Only log critical errors
+    if (err.code !== 'ECONNRESET' && err.code !== 'ETIMEDOUT') {
+        console.error('Database error:', err.message);
+    }
 });
 
 // Graceful shutdown
@@ -68,12 +49,11 @@ process.on('SIGINT', async () => {
 async function testConnection() {
     try {
         const client = await pool.connect();
-        const result = await client.query('SELECT NOW()');
+        await client.query('SELECT NOW()');
         client.release();
-        console.log('✅ Database connection verified at', result.rows[0].now);
         return true;
     } catch (err) {
-        console.error('❌ Database connection failed:', err.message);
+        console.error('Database connection failed:', err.message);
         return false;
     }
 }
