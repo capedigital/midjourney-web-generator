@@ -542,7 +542,6 @@ class App {
         const hasMore = prompts.length > 3;
         
         return `
-            return `
             <tr class="history-row dashboard-row" data-session-id="${session.id}">
                 <td class="date-col">
                     <div class="date-display">${formattedDate}</div>
@@ -556,18 +555,18 @@ class App {
                     <span class="badge">${prompts.length}</span>
                 </td>
                 <td class="actions-col">
-                                            <div class="actions">
-                            <button class="expand-btn" data-session-id="${session.id}" title="Expand">
-                                <i class="fas fa-chevron-down"></i>
-                            </button>
-                            <button class="copy-all-btn" data-session-id="${session.id}" title="Copy All">
-                                <i class="fas fa-copy"></i> Copy All
-                            </button>
-                            <button class="send-to-gen-btn" data-session-id="${session.id}" title="Send to Prompt Generation">
-                                <i class="fas fa-arrow-right"></i> Import
-                            </button>
-                        </div>
-</td>
+                    <div class="actions">
+                        <button class="expand-btn" data-session-id="${session.id}" title="Expand">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <button class="copy-all-btn" data-session-id="${session.id}" title="Copy All">
+                            <i class="fas fa-copy"></i> Copy All
+                        </button>
+                        <button class="send-to-gen-btn" data-session-id="${session.id}" title="Send to Prompt Generation">
+                            <i class="fas fa-arrow-right"></i> Import
+                        </button>
+                    </div>
+                </td>
             </tr>
             <tr class="expanded-row" id="dashboard-expanded-${session.id}" style="display: none;">
                 <td colspan="4">
