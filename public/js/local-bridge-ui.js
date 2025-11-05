@@ -70,7 +70,7 @@ class LocalBridgeUI {
             'disconnected': 'Disconnected',
             'connecting': 'Connecting...',
             'connected': 'Connected',
-            'ready': '🟢 Extension Ready'
+            'ready': 'Extension Ready'
         };
         
         const text = this.statusIndicator.querySelector('.status-text');
