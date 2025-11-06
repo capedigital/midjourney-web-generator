@@ -313,6 +313,7 @@ window.TemplateBuilder = {
 
     /**
      * Generate prompts using selected template and enhancers
+     * Now uses the same import flow as AI Chat for consistent display!
      */
     async generatePrompts() {
         const templateSelect = document.getElementById('templateSelect');
@@ -346,7 +347,7 @@ window.TemplateBuilder = {
                 throw new Error('Failed to build prompt from template');
             }
             
-            logger.debug('Generating prompts with AI:', { 
+            logger.debug('🎨 Template Builder generating prompts:', { 
                 count, 
                 aiModel, 
                 template: selectedTemplate,
@@ -354,58 +355,94 @@ window.TemplateBuilder = {
                 hasUserContent: !!userContent
             });
             
-            // Call the proper generate endpoint that saves to database
-            const response = await fetch('/api/prompts/generate', {
+            // Call OpenRouter AI directly (like AI Chat does)
+            const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    'Authorization': `Bearer ${window.Config.openRouterKey}`
                 },
                 body: JSON.stringify({
-                    promptText: aiPrompt,
-                    count: count,
                     model: aiModel,
-                    targetPlatform: targetModelValue  // Send target model to backend
+                    messages: [{
+                        role: 'user',
+                        content: aiPrompt
+                    }]
                 })
             });
 
-            const data = await response.json();
-
-            if (!response.ok || !data.success) {
-                throw new Error(data.error || 'Failed to generate prompts');
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(`AI API error: ${response.status} - ${errorData.error?.message || 'Unknown error'}`);
             }
 
-            // Use the prompts from the response (already saved to DB)
-            const prompts = data.prompts;
-            logger.debug('Generated and saved prompts:', prompts.length);
+            const data = await response.json();
+            const generatedText = data.choices[0].message.content;
             
-            // Display using Generator
-            if (window.Generator) {
-                window.Generator.displayGeneratedPrompts(prompts);
-                
-                // Switch to Prompt Generation module to show results
-                if (window.app) {
-                    window.app.switchModule('prompt-generation-module');
-                }
-                
-                window.Utils.showToast(`Generated and saved ${prompts.length} prompts!`, 'success');
-                
-                // Refresh credits if available
-                if (window.topNavModelSelector) {
-                    window.topNavModelSelector.refreshCreditsNow();
-                }
-            } else {
-                logger.error('Generator module not available');
-                window.Utils.showToast('Generator module not available', 'error');
+            logger.debug('📝 AI Response:', generatedText);
+            
+            // Parse the prompts (clean them up)
+            const prompts = this.parseGeneratedPrompts(generatedText);
+            
+            if (!prompts || prompts.length === 0) {
+                throw new Error('No valid prompts were generated');
+            }
+            
+            logger.debug('✅ Parsed prompts:', prompts.length);
+            
+            // Use the PromptImporter to import them (same as AI Chat!)
+            // This ensures consistent display format
+            if (!window.promptImporterInstance) {
+                window.promptImporterInstance = new PromptImporter();
+            }
+            
+            window.promptImporterInstance.parsedPrompts = prompts;
+            window.promptImporterInstance.importPrompts();
+            
+            // Switch to Prompt Generation module to show results
+            if (window.app) {
+                window.app.switchModule('prompt-generation-module');
+            }
+            
+            window.Utils.showToast(`✅ Generated ${prompts.length} prompts from ${selectedTemplate} template!`, 'success');
+            
+            // Refresh credits if available
+            if (window.topNavModelSelector) {
+                window.topNavModelSelector.refreshCreditsNow();
             }
 
         } catch (error) {
-            logger.error('Generate prompts error:', error);
+            logger.error('❌ Generate prompts error:', error);
             window.Utils.showToast('Error: ' + error.message, 'error');
         } finally {
             generateBtn.disabled = false;
             generateBtn.innerHTML = 'Generate Image Prompts...';
         }
+    },
+
+    /**
+     * Parse generated prompts from AI response
+     * Strips quotes, prefixes, and parameters - returns ONLY clean base text
+     */
+    parseGeneratedPrompts(text) {
+        return text.split('\n')
+            .map(line => line.trim())
+            .filter(line => line && !line.startsWith("Here are") && !line.startsWith("Sure,"))
+            .map(prompt => {
+                // Strip EVERYTHING - only return base text
+                let clean = prompt
+                    .replace(/^\/imagine\s+prompt:\s*/i, '')  // Remove /imagine prefix
+                    .replace(/^prompt:\s*/i, '')  // Remove standalone "prompt:" prefix
+                    .replace(/^["']|["']$/g, '')  // Remove surrounding quotes
+                    .replace(/\s+--[\w-]+(?:\s+[\w:,.\/\-]+)?/g, '')  // Remove ALL parameters
+                    .trim();
+                
+                // Remove quotes again in case parameters were inside quotes
+                clean = clean.replace(/^["']|["']$/g, '').trim();
+                
+                return clean;
+            })
+            .filter(prompt => prompt.length > 0);  // Remove empty prompts
     }
 };
 
