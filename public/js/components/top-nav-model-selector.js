@@ -228,8 +228,9 @@ class TopNavModelSelector {
             <button class="close-btn" id="close-dropdown">✕</button>
           </div>
 
-          <!-- Two Column Layout: Current Model + Credits -->
+          <!-- Two Column Layout -->
           <div class="invoice-summary">
+            <!-- LEFT COLUMN: OpenRouter Models -->
             <div class="invoice-left">
               <div class="section-label">Current Model</div>
               <div class="current-model-info" id="current-model-info">
@@ -249,76 +250,74 @@ class TopNavModelSelector {
                   </div>
                 </div>
               </div>
-            </div>
-            
-            ${this.options.showCredits ? `
-              <div class="invoice-right">
-                <div class="section-label">OpenRouter Credits</div>
-                <div class="credits-info" id="credits-display">
-                  <div class="credits-loading">
-                    <span class="spinner">⏳</span> Loading...
+              
+              ${this.options.showCredits ? `
+                <div style="margin-top: 16px;">
+                  <div class="section-label">OpenRouter Credits</div>
+                  <div class="credits-info" id="credits-display">
+                    <div class="credits-loading">
+                      <span class="spinner">⏳</span> Loading...
+                    </div>
                   </div>
                 </div>
+              ` : ''}
+              
+              <div style="margin-top: 16px;">
+                <div class="section-label">Browse Models</div>
+                <div class="sort-tabs">
+                  <button class="sort-tab active" data-sort="price">
+                    💰 By Price
+                  </button>
+                  <button class="sort-tab" data-sort="performance">
+                    ⚡ By Performance
+                  </button>
+                </div>
               </div>
-            ` : ''}
-            
-            <!-- Sort Tabs moved into left column -->
-            <div style="margin-top: 16px;">
-              <div class="section-label">Browse Models</div>
-              <div class="sort-tabs">
-                <button class="sort-tab active" data-sort="price">
-                  💰 By Price
-                </button>
-                <button class="sort-tab" data-sort="performance">
-                  ⚡ By Performance
-                </button>
+              
+              <div class="model-list" id="model-list">
+                <div class="loading">Loading models...</div>
               </div>
             </div>
             
-            <!-- Model List in left column -->
-            <div class="model-list" id="model-list">
-              <div class="loading">Loading models...</div>
-            </div>
-          </div>
-          
-          <!-- RIGHT COLUMN: Target Image Platform -->
-          <div class="invoice-right">
-            <div class="section-label">Target Image Platform</div>
-            <div class="target-platform-list" id="target-platform-list">
-              <div class="platform-item selected" data-platform="midjourney">
-                <div class="platform-icon">🎨</div>
-                <div class="platform-info">
-                  <div class="platform-name">Midjourney</div>
-                  <div class="platform-desc">Artistic, creative imagery</div>
+            <!-- RIGHT COLUMN: Target Image Platform -->
+            <div class="invoice-right">
+              <div class="section-label">Target Image Platform</div>
+              <div class="target-platform-list" id="target-platform-list">
+                <div class="platform-item selected" data-platform="midjourney">
+                  <div class="platform-icon">🎨</div>
+                  <div class="platform-info">
+                    <div class="platform-name">Midjourney</div>
+                    <div class="platform-desc">Artistic, creative imagery</div>
+                  </div>
+                  <div class="platform-check"><i class="fas fa-check-circle"></i></div>
                 </div>
-                <div class="platform-check"><i class="fas fa-check-circle"></i></div>
-              </div>
-              
-              <div class="platform-item" data-platform="ideogram">
-                <div class="platform-icon">📝</div>
-                <div class="platform-info">
-                  <div class="platform-name">Ideogram</div>
-                  <div class="platform-desc">Text rendering expert</div>
+                
+                <div class="platform-item" data-platform="ideogram">
+                  <div class="platform-icon">📝</div>
+                  <div class="platform-info">
+                    <div class="platform-name">Ideogram</div>
+                    <div class="platform-desc">Text rendering expert</div>
+                  </div>
+                  <div class="platform-check"><i class="fas fa-check-circle"></i></div>
                 </div>
-                <div class="platform-check"><i class="fas fa-check-circle"></i></div>
-              </div>
-              
-              <div class="platform-item" data-platform="firefly">
-                <div class="platform-icon">🔥</div>
-                <div class="platform-info">
-                  <div class="platform-name">Adobe Firefly</div>
-                  <div class="platform-desc">Commercial-safe prompts</div>
+                
+                <div class="platform-item" data-platform="firefly">
+                  <div class="platform-icon">🔥</div>
+                  <div class="platform-info">
+                    <div class="platform-name">Adobe Firefly</div>
+                    <div class="platform-desc">Commercial-safe prompts</div>
+                  </div>
+                  <div class="platform-check"><i class="fas fa-check-circle"></i></div>
                 </div>
-                <div class="platform-check"><i class="fas fa-check-circle"></i></div>
-              </div>
-              
-              <div class="platform-item" data-platform="generic">
-                <div class="platform-icon">✨</div>
-                <div class="platform-info">
-                  <div class="platform-name">Other / Generic</div>
-                  <div class="platform-desc">Grok, Nano Banana, etc.</div>
+                
+                <div class="platform-item" data-platform="generic">
+                  <div class="platform-icon">✨</div>
+                  <div class="platform-info">
+                    <div class="platform-name">Other / Generic</div>
+                    <div class="platform-desc">Grok, Nano Banana, etc.</div>
+                  </div>
+                  <div class="platform-check"><i class="fas fa-check-circle"></i></div>
                 </div>
-                <div class="platform-check"><i class="fas fa-check-circle"></i></div>
               </div>
             </div>
           </div>
