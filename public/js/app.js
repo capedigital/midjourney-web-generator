@@ -1,4 +1,4 @@
-// Main application logic
+// Main application logic v1.1 (cache bust)
 class App {
     constructor() {
         logger.debug('App initializing...');
