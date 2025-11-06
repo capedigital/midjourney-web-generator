@@ -249,6 +249,20 @@ window.TemplateBuilder = {
                 }
             });
         }
+        
+        // Listen for global AI Config changes
+        window.addEventListener('target-platform-changed', () => {
+            logger.debug('Target platform changed - updating template preview');
+            this.updateOutputPreview();
+        });
+        
+        // Listen for AI model changes from globalModelSync
+        if (window.globalModelSync) {
+            window.globalModelSync.subscribe((modelId) => {
+                logger.debug('AI model changed - updating template preview');
+                this.updateOutputPreview();
+            });
+        }
     },
 
     /**

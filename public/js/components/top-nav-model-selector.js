@@ -150,6 +150,11 @@ class TopNavModelSelector {
           // Set target platform
           this.currentPlatform = data.preferences.targetPlatform || 'midjourney';
           
+          // Update platform UI to match loaded preference
+          document.querySelectorAll('.platform-item').forEach(item => {
+            item.classList.toggle('selected', item.dataset.platform === this.currentPlatform);
+          });
+          
           console.log('📥 Loaded preferences from database:', data.preferences);
           return;
         }
@@ -160,10 +165,20 @@ class TopNavModelSelector {
       this.loadSavedModel(); // Use old method as fallback
       this.currentPlatform = 'midjourney';
       
+      // Update platform UI
+      document.querySelectorAll('.platform-item').forEach(item => {
+        item.classList.toggle('selected', item.dataset.platform === 'midjourney');
+      });
+      
     } catch (error) {
       console.error('Error loading preferences:', error);
       this.loadSavedModel();
       this.currentPlatform = 'midjourney';
+      
+      // Update platform UI
+      document.querySelectorAll('.platform-item').forEach(item => {
+        item.classList.toggle('selected', item.dataset.platform === 'midjourney');
+      });
     }
   }
 
@@ -653,6 +668,11 @@ class TopNavModelSelector {
     // Update UI
     this.updateHeaderDisplay();
     this.renderModelList(); // Re-render to show selected state
+
+    // Notify subscribers of model change
+    if (window.globalModelSync) {
+      window.globalModelSync.updateModel(model.id);
+    }
 
     // Callback
     if (this.options.onModelChange && typeof this.options.onModelChange === 'function') {
