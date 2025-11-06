@@ -283,7 +283,6 @@ window.TemplateBuilder = {
         const templateSelect = document.getElementById('templateSelect');
         const outputPreview = document.getElementById('outputPreview');
         const promptCount = document.getElementById('prompt-count');
-        const targetModel = document.getElementById('target-model');
         const copywriterBrief = document.getElementById('copywriterBrief');
         
         if (!templateSelect || !outputPreview) return;
@@ -295,11 +294,17 @@ window.TemplateBuilder = {
         }
 
         const count = promptCount ? parseInt(promptCount.value) : 3;
-        const targetModelValue = targetModel ? targetModel.value : 'midjourney';
+        
+        // Get target platform from AI Config Manager
+        const targetModelValue = window.AIConfigManager ? 
+            window.AIConfigManager.getCurrentPlatform() : 'midjourney';
+        
         const userContent = copywriterBrief ? copywriterBrief.value.trim() : '';
         
-        // Get AI model from global sync (top nav selector)
-        const aiModel = window.globalModelSync?.getCurrentModel()?.id || 'openai/gpt-4o-mini';
+        // Get AI model from AI Config Manager
+        const aiModel = window.AIConfigManager ? 
+            window.AIConfigManager.getCurrentAIModel() : 
+            (window.globalModelSync?.getCurrentModel()?.id || 'openai/gpt-4o-mini');
 
         // Build AI prompt from selected template, target model, and user content
         const aiPrompt = window.Config.getDefaultAIPrompt(count, selectedTemplate, targetModelValue, userContent);
@@ -319,7 +324,6 @@ window.TemplateBuilder = {
         const templateSelect = document.getElementById('templateSelect');
         const generateBtn = document.getElementById('generate-image-prompts');
         const promptCount = document.getElementById('prompt-count');
-        const targetModel = document.getElementById('target-model');
         const copywriterBrief = document.getElementById('copywriterBrief');
         
         if (!templateSelect || !templateSelect.value) {
@@ -328,11 +332,17 @@ window.TemplateBuilder = {
         }
 
         const count = promptCount ? parseInt(promptCount.value) : 3;
-        const targetModelValue = targetModel ? targetModel.value : 'midjourney';
+        
+        // Get target platform from AI Config Manager
+        const targetModelValue = window.AIConfigManager ? 
+            window.AIConfigManager.getCurrentPlatform() : 'midjourney';
+        
         const userContent = copywriterBrief ? copywriterBrief.value.trim() : '';
         
-        // Get AI model from global sync (top nav selector)
-        const aiModel = window.globalModelSync?.getCurrentModel()?.id || 'openai/gpt-4o-mini';
+        // Get AI model from AI Config Manager (falls back to global sync)
+        const aiModel = window.AIConfigManager ? 
+            window.AIConfigManager.getCurrentAIModel() : 
+            (window.globalModelSync?.getCurrentModel()?.id || 'openai/gpt-4o-mini');
 
         // Disable button during generation
         generateBtn.disabled = true;
