@@ -182,7 +182,6 @@ class PromptHistory {
                 <thead>
                     <tr>
                         <th class="date-col"><i class="fas fa-calendar"></i> Date</th>
-                        <th class="model-col"><i class="fas fa-robot"></i> Model</th>
                         <th class="prompts-col"><i class="fas fa-list"></i> Prompts</th>
                         <th class="count-col"><i class="fas fa-hashtag"></i> Count</th>
                         <th class="actions-col"><i class="fas fa-tools"></i> Actions</th>
@@ -252,9 +251,6 @@ class PromptHistory {
                     <div class="date-display">${formattedDate}</div>
                     <div class="time-display">${formattedTime}</div>
                 </td>
-                <td class="model-col">
-                    <i class="fas ${modelIcon}"></i> ${modelDisplay}
-                </td>
                 <td class="prompts-col">
                     <div class="prompts-preview">${promptPreviews}</div>
                     ${hasMore ? `<div class="more-indicator">+${prompts.length - 3} more...</div>` : ''}
@@ -275,7 +271,7 @@ class PromptHistory {
                 </td>
             </tr>
             <tr class="expanded-row" id="expanded-${session.id}" style="display: none;">
-                <td colspan="5">
+                <td colspan="4">
                     <div class="expanded-content">
                         <div class="prompts-list">
                             ${prompts.map((prompt, idx) => {
