@@ -97,8 +97,8 @@ class TopNavModelSelector {
     // Build UI
     this.render();
 
-    // Load saved model or set default
-    this.loadSavedModel();
+    // Load user preferences from database
+    await this.loadUserPreferences();
 
     // Render curated model list
     this.renderModelList();
@@ -117,6 +117,53 @@ class TopNavModelSelector {
     console.log('🎯 Top Nav Model Selector initialized with', this.models.price.length, 'curated models');
     if (this.currentModel) {
       console.log('✅ Default model selected:', this.currentModel.id);
+    }
+    console.log('🎨 Target platform:', this.currentPlatform);
+  }
+  
+  /**
+   * Load user preferences from database
+   */
+  async loadUserPreferences() {
+    try {
+      const response = await fetch('/api/preferences', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.preferences) {
+          // Set AI model
+          const aiModel = data.preferences.aiModel;
+          const model = this.models.price.find(m => m.id === aiModel);
+          if (model) {
+            this.currentModel = model;
+            this.updateDisplay();
+            // Sync with global model sync
+            if (window.globalModelSync) {
+              window.globalModelSync.setModel(aiModel);
+            }
+          }
+          
+          // Set target platform
+          this.currentPlatform = data.preferences.targetPlatform || 'midjourney';
+          
+          console.log('📥 Loaded preferences from database:', data.preferences);
+          return;
+        }
+      }
+      
+      // Fallback to defaults if API fails
+      console.warn('Could not load preferences, using defaults');
+      this.loadSavedModel(); // Use old method as fallback
+      this.currentPlatform = 'midjourney';
+      
+    } catch (error) {
+      console.error('Error loading preferences:', error);
+      this.loadSavedModel();
+      this.currentPlatform = 'midjourney';
     }
   }
 
@@ -171,12 +218,13 @@ class TopNavModelSelector {
         <!-- Collapsed View: Just the robot icon -->
         <div class="model-selector-header" id="model-header">
           <span class="model-icon"><i class="fas fa-robot"></i></span>
+          <span class="model-label">AI Config</span>
         </div>
 
         <!-- Expanded View: Invoice-like layout -->
         <div class="model-selector-dropdown" id="model-dropdown" style="display: none;">
           <div class="dropdown-header">
-            <h3>AI Model Configuration</h3>
+            <h3>AI Configuration</h3>
             <button class="close-btn" id="close-dropdown">✕</button>
           </div>
 
@@ -213,22 +261,70 @@ class TopNavModelSelector {
                 </div>
               </div>
             ` : ''}
+            
+            <!-- Sort Tabs moved into left column -->
+            <div style="margin-top: 16px;">
+              <div class="section-label">Browse Models</div>
+              <div class="sort-tabs">
+                <button class="sort-tab active" data-sort="price">
+                  💰 By Price
+                </button>
+                <button class="sort-tab" data-sort="performance">
+                  ⚡ By Performance
+                </button>
+              </div>
+            </div>
+            
+            <!-- Model List in left column -->
+            <div class="model-list" id="model-list">
+              <div class="loading">Loading models...</div>
+            </div>
           </div>
+          
+          <!-- RIGHT COLUMN: Target Image Platform -->
+          <div class="invoice-right">
+            <div class="section-label">Target Image Platform</div>
+            <div class="target-platform-list" id="target-platform-list">
+              <div class="platform-item selected" data-platform="midjourney">
+                <div class="platform-icon">🎨</div>
+                <div class="platform-info">
+                  <div class="platform-name">Midjourney</div>
+                  <div class="platform-desc">Artistic, creative imagery</div>
+                </div>
+                <div class="platform-check"><i class="fas fa-check-circle"></i></div>
+              </div>
+              
+              <div class="platform-item" data-platform="ideogram">
+                <div class="platform-icon">📝</div>
+                <div class="platform-info">
+                  <div class="platform-name">Ideogram</div>
+                  <div class="platform-desc">Text rendering expert</div>
+                </div>
+                <div class="platform-check"><i class="fas fa-check-circle"></i></div>
+              </div>
+              
+              <div class="platform-item" data-platform="firefly">
+                <div class="platform-icon">🔥</div>
+                <div class="platform-info">
+                  <div class="platform-name">Adobe Firefly</div>
+                  <div class="platform-desc">Commercial-safe prompts</div>
+                </div>
+                <div class="platform-check"><i class="fas fa-check-circle"></i></div>
+              </div>
+              
+              <div class="platform-item" data-platform="generic">
+                <div class="platform-icon">✨</div>
+                <div class="platform-info">
+                  <div class="platform-name">Other / Generic</div>
+                  <div class="platform-desc">Grok, Nano Banana, etc.</div>
+                </div>
+                <div class="platform-check"><i class="fas fa-check-circle"></i></div>
+              </div>
+            </div>
+          </div>
+          
+        </div>
 
-          <!-- Sort Tabs -->
-          <div class="sort-tabs">
-            <button class="sort-tab active" data-sort="price">
-              � By Price
-            </button>
-            <button class="sort-tab" data-sort="performance">
-              ⚡ By Performance
-            </button>
-          </div>
-
-          <!-- Model List -->
-          <div class="model-list" id="model-list">
-            <div class="loading">Loading models...</div>
-          </div>
         </div>
       </div>
     `;
@@ -267,6 +363,15 @@ class TopNavModelSelector {
       if (e.key === 'Escape' && this.isExpanded) {
         this.closeDropdown();
       }
+    });
+    
+    // Platform selection
+    const platformItems = document.querySelectorAll('.platform-item');
+    platformItems.forEach(item => {
+      item.addEventListener('click', () => {
+        const platform = item.dataset.platform;
+        this.selectPlatform(platform);
+      });
     });
   }
 
@@ -307,6 +412,69 @@ class TopNavModelSelector {
 
     // Re-render model list
     this.renderModelList();
+  }
+  
+  /**
+   * Select a target platform
+   */
+  async selectPlatform(platform) {
+    this.currentPlatform = platform;
+    
+    // Save to database
+    try {
+      const response = await fetch('/api/preferences/target-platform', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ platform })
+      });
+      
+      if (response.ok) {
+        console.log('💾 Target platform saved to database:', platform);
+      } else {
+        console.warn('Failed to save target platform to database');
+      }
+    } catch (error) {
+      console.error('Error saving target platform:', error);
+    }
+    
+    // Update UI
+    document.querySelectorAll('.platform-item').forEach(item => {
+      item.classList.toggle('selected', item.dataset.platform === platform);
+    });
+    
+    // Apply platform-specific changes
+    const config = window.Config?.targetModels?.[platform];
+    if (config) {
+      // Update parameter panel visibility
+      const parameterPanel = document.getElementById('mj-parameters');
+      if (parameterPanel) {
+        if (config.supportsParameters) {
+          parameterPanel.style.display = '';
+        } else {
+          parameterPanel.style.display = 'none';
+        }
+      }
+      
+      // Dispatch event for other modules
+      window.dispatchEvent(new CustomEvent('target-platform-changed', {
+        detail: { platform, config }
+      }));
+      
+      console.log('🎨 Target platform changed:', platform, config);
+    }
+  }
+  
+  /**
+   * Get current platform
+   */
+  getCurrentPlatform() {
+    if (!this.currentPlatform) {
+      this.currentPlatform = localStorage.getItem('target_platform') || 'midjourney';
+    }
+    return this.currentPlatform;
   }
 
   async fetchCredits() {
@@ -453,17 +621,28 @@ class TopNavModelSelector {
     if (detailId) detailId.textContent = this.currentModel.id;
   }
 
-  selectModel(model) {
+  async selectModel(model) {
     this.currentModel = model;
     
-    // Save to localStorage
-    localStorage.setItem('selectedAIModel', JSON.stringify({
-      id: model.id,
-      name: model.name,
-      displayLabelShort: model.displayLabelShort,
-      priceLabel: model.priceLabel,
-      pricing: model.pricing
-    }));
+    // Save to database
+    try {
+      const response = await fetch('/api/preferences/ai-model', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ aiModel: model.id })
+      });
+      
+      if (response.ok) {
+        console.log('💾 AI model saved to database:', model.id);
+      } else {
+        console.warn('Failed to save AI model to database');
+      }
+    } catch (error) {
+      console.error('Error saving AI model:', error);
+    }
 
     // Update UI
     this.updateHeaderDisplay();

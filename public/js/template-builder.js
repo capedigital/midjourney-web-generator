@@ -295,16 +295,14 @@ window.TemplateBuilder = {
 
         const count = promptCount ? parseInt(promptCount.value) : 3;
         
-        // Get target platform from AI Config Manager
-        const targetModelValue = window.AIConfigManager ? 
-            window.AIConfigManager.getCurrentPlatform() : 'midjourney';
+        // Get target platform from TopNavModelSelector
+        const targetModelValue = window.topNavModelSelector ? 
+            window.topNavModelSelector.getCurrentPlatform() : 'midjourney';
         
         const userContent = copywriterBrief ? copywriterBrief.value.trim() : '';
         
-        // Get AI model from AI Config Manager
-        const aiModel = window.AIConfigManager ? 
-            window.AIConfigManager.getCurrentAIModel() : 
-            (window.globalModelSync?.getCurrentModel()?.id || 'openai/gpt-4o-mini');
+        // Get AI model from global sync
+        const aiModel = window.globalModelSync?.getCurrentModel()?.id || 'openai/gpt-4o-mini';
 
         // Build AI prompt from selected template, target model, and user content
         const aiPrompt = window.Config.getDefaultAIPrompt(count, selectedTemplate, targetModelValue, userContent);
@@ -333,16 +331,14 @@ window.TemplateBuilder = {
 
         const count = promptCount ? parseInt(promptCount.value) : 3;
         
-        // Get target platform from AI Config Manager
-        const targetModelValue = window.AIConfigManager ? 
-            window.AIConfigManager.getCurrentPlatform() : 'midjourney';
+        // Get target platform from TopNavModelSelector
+        const targetModelValue = window.topNavModelSelector ? 
+            window.topNavModelSelector.getCurrentPlatform() : 'midjourney';
         
         const userContent = copywriterBrief ? copywriterBrief.value.trim() : '';
         
-        // Get AI model from AI Config Manager (falls back to global sync)
-        const aiModel = window.AIConfigManager ? 
-            window.AIConfigManager.getCurrentAIModel() : 
-            (window.globalModelSync?.getCurrentModel()?.id || 'openai/gpt-4o-mini');
+        // Get AI model from global sync
+        const aiModel = window.globalModelSync?.getCurrentModel()?.id || 'openai/gpt-4o-mini';
 
         // Disable button during generation
         generateBtn.disabled = true;

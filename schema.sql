@@ -10,7 +10,10 @@ CREATE TABLE IF NOT EXISTS users (
     is_admin BOOLEAN DEFAULT FALSE,
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT NOW(),
-    last_login TIMESTAMP
+    last_login TIMESTAMP,
+    -- AI Configuration preferences
+    preferred_ai_model VARCHAR(100) DEFAULT 'openai/gpt-4o-mini',
+    target_platform VARCHAR(50) DEFAULT 'midjourney'
 );
 
 -- Password reset tokens for forgot password functionality

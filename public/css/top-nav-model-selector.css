@@ -30,13 +30,14 @@
 /* Header - Robot Icon Trigger */
 .model-selector-header {
   cursor: pointer;
-  padding: 8px;
+  padding: 8px 12px;
   background: transparent;
   border-radius: var(--radius-md);
   transition: all 0.2s ease;
   user-select: none;
   display: flex;
   align-items: center;
+  gap: 8px;
   justify-content: center;
 }
 
@@ -50,6 +51,13 @@
   line-height: 1;
   color: var(--primary);
   flex-shrink: 0;
+}
+
+.model-selector-header .model-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
 }
 
 /* Dropdown - Invoice-like Layout */
@@ -439,9 +447,72 @@
   .invoice-summary {
     grid-template-columns: 1fr;
   }
-  
-  .invoice-left {
-    border-right: none;
-    border-bottom: 1px solid var(--border);
-  }
+}
+
+/* ============================================
+   Target Platform Styles
+   ============================================ */
+
+.target-platform-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.platform-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.platform-item:hover {
+  background: rgba(74, 144, 226, 0.1);
+  border-color: var(--primary);
+}
+
+.platform-item.selected {
+  background: rgba(74, 144, 226, 0.15);
+  border-color: var(--primary);
+  border-width: 2px;
+  padding: 11px; /* Compensate for thicker border */
+}
+
+.platform-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.platform-info {
+  flex: 1;
+}
+
+.platform-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.platform-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.3;
+}
+
+.platform-check {
+  color: var(--border);
+  font-size: 18px;
+  flex-shrink: 0;
+  transition: color 0.2s ease;
+}
+
+.platform-item.selected .platform-check {
+  color: var(--primary);
 }
