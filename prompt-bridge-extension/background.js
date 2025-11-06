@@ -573,12 +573,14 @@ async function findOrCreateFireflyTab() {
     // Activate existing tab
     await chrome.tabs.update(tabs[0].id, { active: true });
     await chrome.windows.update(tabs[0].windowId, { focused: true });
+    // Give page a moment to be interactive
+    await new Promise(resolve => setTimeout(resolve, 1000));
     return tabs[0];
   }
   
   // Create new tab
   const tab = await chrome.tabs.create({
-    url: 'https://firefly.adobe.com/generate/images',
+    url: 'https://firefly.adobe.com/generate/image',
     active: true
   });
   
@@ -592,6 +594,9 @@ async function findOrCreateFireflyTab() {
     };
     chrome.tabs.onUpdated.addListener(listener);
   });
+  
+  // Extra delay for Firefly's heavy JS app to initialize
+  await new Promise(resolve => setTimeout(resolve, 2000));
   
   return tab;
 }
