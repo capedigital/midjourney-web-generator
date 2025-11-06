@@ -633,22 +633,30 @@ function submitPromptToFirefly(prompt) {
     textarea.dispatchEvent(new Event('change', { bubbles: true }));
     console.log('✅ Prompt set to:', prompt.substring(0, 50) + '...');
     
-    // Try to find and click generate button first
-    let generateButton = document.querySelector('button[data-testid="generate-button"]');
-    if (!generateButton) generateButton = document.querySelector('button:has-text("Generate")');
+    // Try to find the custom generate button
+    console.log('🔍 Looking for generate button...');
+    let generateButton = document.querySelector('firefly-image-generation-generate-button');
+    if (!generateButton) generateButton = document.querySelector('button[data-testid="generate-button"]');
     if (!generateButton) generateButton = document.querySelector('button[aria-label*="Generate"]');
     
     if (generateButton) {
-      console.log('🖱️ Clicking generate button...');
+      console.log('🖱️ Found generate button, clicking after 500ms delay...');
       setTimeout(() => {
-        generateButton.click();
-        console.log('✅ Generate button clicked');
-      }, 300);
+        // Click the button or its inner button if it's a web component
+        const innerButton = generateButton.querySelector('button');
+        if (innerButton) {
+          innerButton.click();
+          console.log('✅ Clicked inner button');
+        } else {
+          generateButton.click();
+          console.log('✅ Clicked generate button');
+        }
+      }, 500);
       return { success: true, method: 'button' };
     }
     
-    // Fallback: Try Enter key
-    console.log('⌨️ No button found, submitting with Enter key (300ms delay)...');
+    // Fallback: Try Enter key (Firefly might auto-enable button on input)
+    console.log('⌨️ No button found, trying Enter key (500ms delay)...');
     setTimeout(() => {
       const enterEvent = new KeyboardEvent('keydown', {
         key: 'Enter',
@@ -659,7 +667,7 @@ function submitPromptToFirefly(prompt) {
       });
       textarea.dispatchEvent(enterEvent);
       console.log('✅ Enter key dispatched');
-    }, 300);
+    }, 500);
     
     return { success: true, method: 'keyboard' };
     
