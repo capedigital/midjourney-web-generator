@@ -143,7 +143,7 @@ class TopNavModelSelector {
             this.updateHeaderDisplay();
             // Sync with global model sync
             if (window.globalModelSync) {
-              window.globalModelSync.setModel(aiModel);
+              window.globalModelSync.updateModel(aiModel);
             }
           }
           
@@ -542,7 +542,7 @@ class TopNavModelSelector {
       item.addEventListener('click', () => {
         const modelId = item.dataset.modelId;
         const modelIndex = parseInt(item.dataset.modelIndex);
-        this.selectModel(this.models[this.currentSort][modelIndex]);
+        this.selectModel(this.models.price[modelIndex]);
       });
     });
   }
