@@ -235,6 +235,20 @@ window.TemplateBuilder = {
                 this.updateOutputPreview();
             });
         }
+
+        // Target model selector
+        const targetModel = document.getElementById('target-model');
+        if (targetModel) {
+            targetModel.addEventListener('change', () => {
+                this.updateOutputPreview();
+                
+                // Show helpful tip based on model
+                const modelInfo = window.Config.targetModels[targetModel.value];
+                if (modelInfo) {
+                    logger.debug(`Target model changed to: ${modelInfo.name} - ${modelInfo.description}`);
+                }
+            });
+        }
     },
 
     /**
@@ -269,6 +283,7 @@ window.TemplateBuilder = {
         const templateSelect = document.getElementById('templateSelect');
         const outputPreview = document.getElementById('outputPreview');
         const promptCount = document.getElementById('prompt-count');
+        const targetModel = document.getElementById('target-model');
         
         if (!templateSelect || !outputPreview) return;
 
@@ -279,13 +294,19 @@ window.TemplateBuilder = {
         }
 
         const count = promptCount ? parseInt(promptCount.value) : 3;
-        // Get model from global sync (top nav selector)
-        const model = window.globalModelSync?.getCurrentModel()?.id || 'openai/gpt-4o-mini';
-
-        // Build AI prompt from selected template
-        const aiPrompt = window.Config.getDefaultAIPrompt(count, selectedTemplate);
+        const targetModelValue = targetModel ? targetModel.value : 'midjourney';
         
-        outputPreview.value = `AI Model: ${model}\nPrompts to generate: ${count}\n\n${aiPrompt}`;
+        // Get AI model from global sync (top nav selector)
+        const aiModel = window.globalModelSync?.getCurrentModel()?.id || 'openai/gpt-4o-mini';
+
+        // Build AI prompt from selected template and target model
+        const aiPrompt = window.Config.getDefaultAIPrompt(count, selectedTemplate, targetModelValue);
+        
+        // Show model info in preview
+        const modelInfo = window.Config.targetModels[targetModelValue];
+        const modelName = modelInfo ? `${modelInfo.icon} ${modelInfo.name}` : targetModelValue;
+        
+        outputPreview.value = `Target Platform: ${modelName}\nAI Model: ${aiModel}\nPrompts: ${count}\n\n${aiPrompt}`;
     },
 
     /**
@@ -295,6 +316,7 @@ window.TemplateBuilder = {
         const templateSelect = document.getElementById('templateSelect');
         const generateBtn = document.getElementById('generate-image-prompts');
         const promptCount = document.getElementById('prompt-count');
+        const targetModel = document.getElementById('target-model');
         
         if (!templateSelect || !templateSelect.value) {
             window.Utils.showToast('Please select a template first', 'error');
@@ -302,23 +324,30 @@ window.TemplateBuilder = {
         }
 
         const count = promptCount ? parseInt(promptCount.value) : 3;
-        // Get model from global sync (top nav selector)
-        const model = window.globalModelSync?.getCurrentModel()?.id || 'openai/gpt-4o-mini';
+        const targetModelValue = targetModel ? targetModel.value : 'midjourney';
+        
+        // Get AI model from global sync (top nav selector)
+        const aiModel = window.globalModelSync?.getCurrentModel()?.id || 'openai/gpt-4o-mini';
 
         // Disable button during generation
         generateBtn.disabled = true;
         generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
 
         try {
-            // Build the AI prompt using the selected template
+            // Build the AI prompt using the selected template and target model
             const selectedTemplate = templateSelect.value;
-            const aiPrompt = window.Config.getDefaultAIPrompt(count, selectedTemplate);
+            const aiPrompt = window.Config.getDefaultAIPrompt(count, selectedTemplate, targetModelValue);
             
             if (!aiPrompt || aiPrompt.trim() === '') {
                 throw new Error('Failed to build prompt from template');
             }
             
-            logger.debug('Generating prompts with AI:', { count, model, template: selectedTemplate });
+            logger.debug('Generating prompts with AI:', { 
+                count, 
+                aiModel, 
+                template: selectedTemplate,
+                targetPlatform: targetModelValue 
+            });
             
             // Call the proper generate endpoint that saves to database
             const response = await fetch('/api/prompts/generate', {
@@ -330,7 +359,8 @@ window.TemplateBuilder = {
                 body: JSON.stringify({
                     promptText: aiPrompt,
                     count: count,
-                    model: model
+                    model: aiModel,
+                    targetPlatform: targetModelValue  // Send target model to backend
                 })
             });
 

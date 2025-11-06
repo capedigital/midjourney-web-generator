@@ -239,14 +239,25 @@
                     <div class="content-card">
                         <div class="output-header">
                             <h3>Output Preview</h3>
-                            <select id="prompt-count">
-                                <option value="1">1 Prompt</option>
-                                <option value="3" selected>3 Prompts</option>
-                                <option value="5">5 Prompts</option>
-                                <option value="10">10 Prompts</option>
-                                <option value="15">15 Prompts</option>
-                                <option value="20">20 Prompts</option>
-                            </select>
+                            <div style="display: flex; gap: 12px; align-items: center;">
+                                <div>
+                                    <label for="target-model" style="margin: 0; font-size: 12px; color: var(--text-secondary);">Target Model:</label>
+                                    <select id="target-model" style="padding: 6px 10px; border-radius: 4px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-primary); font-size: 13px;">
+                                        <option value="midjourney">🎨 Midjourney</option>
+                                        <option value="ideogram">📝 Ideogram</option>
+                                        <option value="firefly">🔥 Adobe Firefly</option>
+                                        <option value="generic">✨ Other (Grok, Nano Banana)</option>
+                                    </select>
+                                </div>
+                                <select id="prompt-count">
+                                    <option value="1">1 Prompt</option>
+                                    <option value="3" selected>3 Prompts</option>
+                                    <option value="5">5 Prompts</option>
+                                    <option value="10">10 Prompts</option>
+                                    <option value="15">15 Prompts</option>
+                                    <option value="20">20 Prompts</option>
+                                </select>
+                            </div>
                         </div>
                         <textarea id="outputPreview" class="preview-textarea" readonly placeholder="Generated prompt will appear here..."></textarea>
                         

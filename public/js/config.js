@@ -12,6 +12,34 @@ defaultMJParams: {
     version: "raw"   // Default style version - you can change to "standard"
   },
 
+  // Target AI Model Configurations
+  targetModels: {
+    midjourney: {
+      name: 'Midjourney',
+      icon: '🎨',
+      description: 'Artistic, detailed, creative - excels at variety',
+      supportsParameters: true
+    },
+    ideogram: {
+      name: 'Ideogram',
+      icon: '📝',
+      description: 'Text rendering expert, literal interpretation',
+      supportsParameters: false
+    },
+    firefly: {
+      name: 'Adobe Firefly',
+      icon: '🔥',
+      description: 'Commercial-safe, professional, brand-friendly',
+      supportsParameters: false
+    },
+    generic: {
+      name: 'Other (Nano Banana, Grok, etc.)',
+      icon: '✨',
+      description: 'Generic prompts for new/experimental models',
+      supportsParameters: false
+    }
+  },
+
   // Convert config values to UI dropdown values
   getUIDefaults: function() {
     return {
@@ -56,28 +84,78 @@ defaultMJParams: {
         'whitespace-hint'
     ],
 
-    getDefaultAIPrompt: function(count = 5, templateType = "") {
+    getDefaultAIPrompt: function(count = 5, templateType = "", targetModel = "midjourney") {
         const selectedTemplate = this.templateFormulas[templateType] || this.templateFormulas['general-conceptual'];
-
-        return `Write ${count} unique MidJourney V7 prompts using this template:
+        
+        // Model-specific prompting instructions
+        const modelInstructions = {
+            midjourney: {
+                intro: `Generate ${count} Midjourney image prompts using this template:`,
+                rules: `MIDJOURNEY BEST PRACTICES (from official docs):
+- Short and simple works best - avoid long lists or detailed instructions
+- Be specific: use precise words (huge/gigantic vs "big")
+- Include: subject, medium, environment, lighting, color, mood, composition
+- Artistic vocabulary works: time periods (1950s), mediums (watercolor), emotions (joyful)
+- Use collective nouns (flock of birds) and specific numbers (three cats)
+- Focus on what you WANT, not what you don't
+- NO parameters (--ar, --v, etc.) - those are added separately
+- NO /imagine prefix, NO quotes, NO numbering`,
+                example: `Colored pencil illustration of bright orange California poppies`
+            },
+            
+            ideogram: {
+                intro: `Generate ${count} Ideogram image prompts using this template:`,
+                rules: `IDEOGRAM BEST PRACTICES:
+- Clear, direct, literal language - say exactly what you want
+- EXCELLENT for text - always specify exact text if needed (use quotes for text)
+- Simpler language than Midjourney - be straightforward
+- Great for logos, posters, graphics with typography
+- Use specific color descriptions
+- Avoid complex artistic movements or abstract concepts
+- NO parameters, NO /imagine prefix, NO quotes around whole prompt, NO numbering`,
+                example: `Vintage travel poster with bold text "VISIT PARIS" in art deco lettering, Eiffel Tower silhouette against orange sunset, geometric shapes, navy blue and cream colors`
+            },
+            
+            firefly: {
+                intro: `Generate ${count} Adobe Firefly image prompts using this template:`,
+                rules: `ADOBE FIREFLY BEST PRACTICES (official guidelines):
+- Be SPECIFIC: at least 3 words, simple direct language (subject + descriptors + keywords)
+- Be DESCRIPTIVE: more detail = closer to your vision
+- Be ORIGINAL: add feeling, style, lighting to make it unique
+- Be EMPATHETIC: use emotional words (love, gentle, playful, powerful, strong)
+- Avoid words like "generate" or "create" - just describe the image
+- Great for commercial, professional, brand-friendly imagery
+- NO parameters, NO /imagine prefix, NO quotes, NO numbering`,
+                example: `Studio shot of futuristic high heels, warm red blue gel lighting, shallow depth of field, mechanical materials as props`
+            },
+            
+            generic: {
+                intro: `Generate ${count} image prompts using this template:`,
+                rules: `GENERIC PROMPTING (for Nano Banana, Grok, and other models):
+- Clear, descriptive language focusing on visual details
+- Include: subject, style, colors, mood, composition
+- Be specific about what you want to see
+- Simple, direct descriptions work best
+- NO parameters, NO /imagine prefix, NO quotes, NO numbering`,
+                example: `Futuristic cityscape at sunset with neon lights, cyberpunk aesthetic, vibrant purples and blues`
+            }
+        };
+        
+        const config = modelInstructions[targetModel] || modelInstructions.generic;
+        
+        return `${config.intro}
 
 "${selectedTemplate}"
 
-CRITICAL RULES:
-- Replace every placeholder with 2–8 vivid words (or a tight clause for {ContentBlock}).
-- Expand weak inputs with concrete visual detail (materials, texture, era, camera/medium cues).
-- Start with the visual subject. Put whitespace/format notes near the end.
-- Output PLAIN TEXT ONLY - no "/imagine", no "prompt:", no quotes, no parameters
-- DO NOT include: --ar, --v, --style, --stylize, --c, --relax, --draft, or ANY dashes
-- Parameters will be added automatically later
-- Output exactly ${count} prompts, one per line
-- No numbering (1., 2., etc.), no bullets, no extra commentary
-- Keep each prompt under ~70 words
+${config.rules}
 
-Example output format:
-A vibrant garden overflowing with colorful wildflowers; palette lush greens and sunny yellows; soft morning light
-A vintage steam locomotive chugging through a mountain pass; nostalgic sepia-toned digital illustration
-A breathtaking mountain range silhouetted at sunset; minimalist modern graphic design`;
+CRITICAL OUTPUT FORMAT:
+- Plain text only, one prompt per line
+- NO numbering (1., 2., etc.), NO bullets, NO extra text
+- Keep each prompt under ~70 words
+- Example: ${config.example}
+
+Generate exactly ${count} prompts now:`;
     },
 
     updateAIPromptWithEnhancers: function() {
