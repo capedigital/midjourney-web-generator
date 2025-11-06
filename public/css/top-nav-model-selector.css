@@ -46,6 +46,12 @@
   transform: scale(1.05);
 }
 
+.model-selector-header .header-text {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .model-selector-header .model-icon {
   font-size: 24px;
   line-height: 1;
@@ -53,11 +59,27 @@
   flex-shrink: 0;
 }
 
+.model-selector-header .header-labels {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
 .model-selector-header .model-label {
   font-size: 14px;
   font-weight: 600;
   color: var(--text-primary);
   white-space: nowrap;
+  line-height: 1;
+}
+
+.model-selector-header .current-selection {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text-muted);
+  white-space: nowrap;
+  line-height: 1;
 }
 
 /* Dropdown - Invoice-like Layout */

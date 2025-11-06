@@ -217,8 +217,13 @@ class TopNavModelSelector {
       <div class="top-nav-model-selector">
         <!-- Collapsed View: Just the robot icon -->
         <div class="model-selector-header" id="model-header">
-          <span class="model-icon"><i class="fas fa-robot"></i></span>
-          <span class="model-label">AI Config</span>
+          <div class="header-text">
+            <span class="model-icon"><i class="fas fa-robot"></i></span>
+            <div class="header-labels">
+              <span class="model-label">AI Config</span>
+              <span class="current-selection" id="current-selection">Loading...</span>
+            </div>
+          </div>
         </div>
 
         <!-- Expanded View: Invoice-like layout -->
@@ -264,14 +269,6 @@ class TopNavModelSelector {
               
               <div style="margin-top: 16px;">
                 <div class="section-label">Browse Models</div>
-                <div class="sort-tabs">
-                  <button class="sort-tab active" data-sort="price">
-                    💰 By Price
-                  </button>
-                  <button class="sort-tab" data-sort="performance">
-                    ⚡ By Performance
-                  </button>
-                </div>
               </div>
               
               <div class="model-list" id="model-list">
@@ -346,15 +343,6 @@ class TopNavModelSelector {
       if (!this.container.contains(e.target) && this.isExpanded) {
         this.closeDropdown();
       }
-    });
-
-    // Sort tabs
-    const sortTabs = document.querySelectorAll('.sort-tab');
-    sortTabs.forEach(tab => {
-      tab.addEventListener('click', () => {
-        const sort = tab.dataset.sort;
-        this.changeSortOrder(sort);
-      });
     });
 
     // Close on ESC key
@@ -444,6 +432,9 @@ class TopNavModelSelector {
       item.classList.toggle('selected', item.dataset.platform === platform);
     });
     
+    // Update collapsed header display
+    this.updateHeaderCollapsedDisplay();
+    
     // Apply platform-specific changes
     const config = window.Config?.targetModels?.[platform];
     if (config) {
@@ -508,7 +499,8 @@ class TopNavModelSelector {
     const modelList = document.getElementById('model-list');
     if (!modelList) return;
 
-    const models = this.models[this.currentSort] || [];
+    // Always show the 3 curated models from the price array
+    const models = this.models.price || [];
 
     if (models.length === 0) {
       modelList.innerHTML = '<div class="no-models">No models available</div>';
@@ -618,6 +610,21 @@ class TopNavModelSelector {
     if (detailPrice) detailPrice.textContent = this.currentModel.priceLabel;
     if (detailContext) detailContext.textContent = this.currentModel.contextLabel || '—';
     if (detailId) detailId.textContent = this.currentModel.id;
+    
+    // Update collapsed header display
+    this.updateHeaderCollapsedDisplay();
+  }
+
+  updateHeaderCollapsedDisplay() {
+    const currentSelection = document.getElementById('current-selection');
+    if (!currentSelection) return;
+    
+    const modelName = this.currentModel?.displayLabelShort || 'No model';
+    const platformName = this.currentPlatform ? 
+      this.currentPlatform.charAt(0).toUpperCase() + this.currentPlatform.slice(1) : 
+      'No platform';
+    
+    currentSelection.textContent = `${modelName} / ${platformName}`;
   }
 
   async selectModel(model) {
