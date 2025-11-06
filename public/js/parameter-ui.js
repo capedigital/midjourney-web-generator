@@ -77,6 +77,37 @@ window.ParameterUI = {
         // Start collapsed
         toggleParameters(false);
         
+        // Listen for platform changes to show/hide parameters
+        window.addEventListener('target-platform-changed', (e) => {
+            const { platform, config } = e.detail;
+            const container = document.getElementById('mj-parameters');
+            
+            if (container && config) {
+                if (config.supportsParameters) {
+                    container.style.display = '';
+                    logger.debug('✅ Parameters panel shown for', platform);
+                } else {
+                    container.style.display = 'none';
+                    logger.debug('🚫 Parameters panel hidden for', platform);
+                }
+            }
+        });
+        
+        // Check initial platform state
+        if (window.topNavModelSelector) {
+            const currentPlatform = window.topNavModelSelector.getCurrentPlatform();
+            const config = window.Config?.targetModels?.[currentPlatform];
+            const container = document.getElementById('mj-parameters');
+            
+            if (container && config) {
+                if (config.supportsParameters) {
+                    container.style.display = '';
+                } else {
+                    container.style.display = 'none';
+                }
+            }
+        }
+        
         logger.debug('✅ Collapsible parameters setup complete');
     },
     

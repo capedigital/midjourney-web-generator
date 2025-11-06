@@ -18,9 +18,18 @@ window.Generator = {
         
         container.innerHTML = '';
 
-        // Get the current parameter string ONCE after ensuring it's fresh.
-        const parameterSuffix = window.MidjourneyHandler.getCurrentMJParameters();
-        logger.debug('Using parameter suffix:', parameterSuffix);
+        // Get current platform from TopNavModelSelector
+        const currentPlatform = window.topNavModelSelector?.getCurrentPlatform() || 'midjourney';
+        const platformConfig = window.Config?.targetModels?.[currentPlatform];
+        
+        // Only use parameters if platform supports them (Midjourney only)
+        let parameterSuffix = '';
+        if (platformConfig?.supportsParameters) {
+            parameterSuffix = window.MidjourneyHandler.getCurrentMJParameters();
+            logger.debug('Using parameter suffix for', currentPlatform, ':', parameterSuffix);
+        } else {
+            logger.debug('Platform', currentPlatform, 'does not support parameters - skipping');
+        }
 
         // Create prompts
         cleanPrompts.forEach((basePrompt, index) => {
@@ -341,3 +350,28 @@ window.Generator = {
             });
     }
 };
+
+// Listen for platform changes and update displayed prompts
+window.addEventListener('target-platform-changed', () => {
+    // Find all existing prompts and regenerate their display with correct parameters
+    const container = document.getElementById('generatedPrompts') || document.getElementById('prompt-container');
+    if (!container) return;
+    
+    const promptItems = container.querySelectorAll('.prompt-item');
+    if (promptItems.length === 0) return;
+    
+    // Extract clean base prompts
+    const basePrompts = [];
+    promptItems.forEach(item => {
+        const textarea = item.querySelector('.prompt-text');
+        if (textarea && textarea.dataset.basePrompt) {
+            basePrompts.push(textarea.dataset.basePrompt);
+        }
+    });
+    
+    // Regenerate display with new platform's parameter settings
+    if (basePrompts.length > 0) {
+        window.Generator.displayGeneratedPrompts(basePrompts);
+        logger.debug('🔄 Regenerated prompts display for platform change');
+    }
+});
