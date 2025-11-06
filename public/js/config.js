@@ -84,7 +84,7 @@ defaultMJParams: {
         'whitespace-hint'
     ],
 
-    getDefaultAIPrompt: function(count = 5, templateType = "", targetModel = "midjourney") {
+    getDefaultAIPrompt: function(count = 5, templateType = "", targetModel = "midjourney", userContent = "") {
         const selectedTemplate = this.templateFormulas[templateType] || this.templateFormulas['general-conceptual'];
         
         // Model-specific prompting instructions
@@ -143,7 +143,8 @@ defaultMJParams: {
         
         const config = modelInstructions[targetModel] || modelInstructions.generic;
         
-        return `${config.intro}
+        // Build the complete prompt with user content
+        let fullPrompt = `${config.intro}
 
 "${selectedTemplate}"
 
@@ -153,9 +154,16 @@ CRITICAL OUTPUT FORMAT:
 - Plain text only, one prompt per line
 - NO numbering (1., 2., etc.), NO bullets, NO extra text
 - Keep each prompt under ~70 words
-- Example: ${config.example}
+- Example: ${config.example}`;
 
-Generate exactly ${count} prompts now:`;
+        // Add user content if provided
+        if (userContent && userContent.trim()) {
+            fullPrompt += `\n\nUSER'S CREATIVE BRIEF/CONTEXT:\n${userContent.trim()}\n\nUsing the above context, generate exactly ${count} prompts that fulfill this brief:`;
+        } else {
+            fullPrompt += `\n\nGenerate exactly ${count} prompts now:`;
+        }
+        
+        return fullPrompt;
     },
 
     updateAIPromptWithEnhancers: function() {

@@ -284,6 +284,7 @@ window.TemplateBuilder = {
         const outputPreview = document.getElementById('outputPreview');
         const promptCount = document.getElementById('prompt-count');
         const targetModel = document.getElementById('target-model');
+        const copywriterBrief = document.getElementById('copywriterBrief');
         
         if (!templateSelect || !outputPreview) return;
 
@@ -295,12 +296,13 @@ window.TemplateBuilder = {
 
         const count = promptCount ? parseInt(promptCount.value) : 3;
         const targetModelValue = targetModel ? targetModel.value : 'midjourney';
+        const userContent = copywriterBrief ? copywriterBrief.value.trim() : '';
         
         // Get AI model from global sync (top nav selector)
         const aiModel = window.globalModelSync?.getCurrentModel()?.id || 'openai/gpt-4o-mini';
 
-        // Build AI prompt from selected template and target model
-        const aiPrompt = window.Config.getDefaultAIPrompt(count, selectedTemplate, targetModelValue);
+        // Build AI prompt from selected template, target model, and user content
+        const aiPrompt = window.Config.getDefaultAIPrompt(count, selectedTemplate, targetModelValue, userContent);
         
         // Show model info in preview
         const modelInfo = window.Config.targetModels[targetModelValue];
@@ -317,6 +319,7 @@ window.TemplateBuilder = {
         const generateBtn = document.getElementById('generate-image-prompts');
         const promptCount = document.getElementById('prompt-count');
         const targetModel = document.getElementById('target-model');
+        const copywriterBrief = document.getElementById('copywriterBrief');
         
         if (!templateSelect || !templateSelect.value) {
             window.Utils.showToast('Please select a template first', 'error');
@@ -325,6 +328,7 @@ window.TemplateBuilder = {
 
         const count = promptCount ? parseInt(promptCount.value) : 3;
         const targetModelValue = targetModel ? targetModel.value : 'midjourney';
+        const userContent = copywriterBrief ? copywriterBrief.value.trim() : '';
         
         // Get AI model from global sync (top nav selector)
         const aiModel = window.globalModelSync?.getCurrentModel()?.id || 'openai/gpt-4o-mini';
@@ -334,9 +338,9 @@ window.TemplateBuilder = {
         generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
 
         try {
-            // Build the AI prompt using the selected template and target model
+            // Build the AI prompt using the selected template, target model, and user content
             const selectedTemplate = templateSelect.value;
-            const aiPrompt = window.Config.getDefaultAIPrompt(count, selectedTemplate, targetModelValue);
+            const aiPrompt = window.Config.getDefaultAIPrompt(count, selectedTemplate, targetModelValue, userContent);
             
             if (!aiPrompt || aiPrompt.trim() === '') {
                 throw new Error('Failed to build prompt from template');
@@ -346,7 +350,8 @@ window.TemplateBuilder = {
                 count, 
                 aiModel, 
                 template: selectedTemplate,
-                targetPlatform: targetModelValue 
+                targetPlatform: targetModelValue,
+                hasUserContent: !!userContent
             });
             
             // Call the proper generate endpoint that saves to database
