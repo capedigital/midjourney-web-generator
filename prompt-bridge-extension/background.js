@@ -606,79 +606,96 @@ async function findOrCreateFireflyTab() {
  * Note: This is injected code, not background script
  */
 function submitPromptToFirefly(prompt) {
-  try {
-    console.log('🔥 Looking for prompt input on Firefly...');
-    
-    // Firefly uses textarea in their generation interface
-    // Find the prompt input - try multiple selectors specific to Firefly
-    let textarea = document.querySelector('textarea[placeholder*="Describe"]');
-    if (!textarea) textarea = document.querySelector('textarea[placeholder*="describe"]');
-    if (!textarea) textarea = document.querySelector('textarea[placeholder*="prompt"]');
-    if (!textarea) textarea = document.querySelector('textarea[name="prompt"]');
-    if (!textarea) textarea = document.querySelector('#prompt-textarea');
-    if (!textarea) textarea = document.querySelector('textarea');
-    
-    console.log('🔍 Found textarea:', textarea);
-    
-    if (!textarea) {
-      const allTextareas = document.querySelectorAll('textarea');
-      console.log('❌ No textarea found. Total textareas on page:', allTextareas.length);
-      return { success: false, error: `Prompt input not found on Firefly. Found ${allTextareas.length} textareas total.` };
-    }
-    
-    // Set the prompt value
-    console.log('✏️ Setting prompt value...');
-    textarea.value = prompt;
-    
-    // Trigger React's onChange if it exists
-    const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value').set;
-    nativeInputValueSetter.call(textarea, prompt);
-    
-    textarea.dispatchEvent(new Event('input', { bubbles: true }));
-    textarea.dispatchEvent(new Event('change', { bubbles: true }));
-    console.log('✅ Prompt set to:', prompt.substring(0, 50) + '...');
-    
-    // Try to find the custom generate button
-    console.log('🔍 Looking for generate button...');
-    let generateButton = document.querySelector('firefly-image-generation-generate-button');
-    if (!generateButton) generateButton = document.querySelector('button[data-testid="generate-button"]');
-    if (!generateButton) generateButton = document.querySelector('button[aria-label*="Generate"]');
-    
-    if (generateButton) {
-      console.log('🖱️ Found generate button, clicking after 500ms delay...');
-      setTimeout(() => {
-        // Click the button or its inner button if it's a web component
-        const innerButton = generateButton.querySelector('button');
-        if (innerButton) {
-          innerButton.click();
-          console.log('✅ Clicked inner button');
+  return new Promise((resolve) => {
+    try {
+      console.log('🔥 Looking for prompt input on Firefly...');
+      
+      // Poll for textarea to appear (Firefly loads slowly)
+      let attempts = 0;
+      const maxAttempts = 20;
+      
+      const pollForTextarea = setInterval(() => {
+        attempts++;
+        
+        // Find the prompt input
+        let textarea = document.querySelector('textarea[placeholder*="Describe"]');
+        if (!textarea) textarea = document.querySelector('textarea[placeholder*="describe"]');
+        if (!textarea) textarea = document.querySelector('textarea[placeholder*="prompt"]');
+        if (!textarea) textarea = document.querySelector('textarea');
+        
+        if (textarea) {
+          clearInterval(pollForTextarea);
+          console.log('✅ Found textarea after', attempts, 'attempts');
+          
+          // Set the prompt value
+          console.log('✏️ Setting prompt value...');
+          textarea.value = prompt;
+          
+          // Trigger React's onChange
+          const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value').set;
+          nativeInputValueSetter.call(textarea, prompt);
+          
+          textarea.dispatchEvent(new Event('input', { bubbles: true }));
+          textarea.dispatchEvent(new Event('change', { bubbles: true }));
+          console.log('✅ Prompt set to:', prompt.substring(0, 50) + '...');
+          
+          // Wait for button to become enabled, then click
+          setTimeout(() => {
+            let generateButton = document.querySelector('firefly-image-generation-generate-button');
+            
+            if (generateButton) {
+              console.log('🖱️ Found generate button, clicking...');
+              const innerButton = generateButton.querySelector('button');
+              if (innerButton && !innerButton.disabled) {
+                innerButton.click();
+                console.log('✅ Clicked inner button');
+                resolve({ success: true, method: 'button' });
+              } else if (innerButton) {
+                console.log('⚠️ Button still disabled, trying Enter key...');
+                const enterEvent = new KeyboardEvent('keydown', {
+                  key: 'Enter',
+                  code: 'Enter',
+                  keyCode: 13,
+                  which: 13,
+                  bubbles: true
+                });
+                textarea.dispatchEvent(enterEvent);
+                console.log('✅ Enter key dispatched');
+                resolve({ success: true, method: 'keyboard' });
+              } else {
+                generateButton.click();
+                console.log('✅ Clicked generate button');
+                resolve({ success: true, method: 'button' });
+              }
+            } else {
+              console.log('⌨️ No button found, using Enter key...');
+              const enterEvent = new KeyboardEvent('keydown', {
+                key: 'Enter',
+                code: 'Enter',
+                keyCode: 13,
+                which: 13,
+                bubbles: true
+              });
+              textarea.dispatchEvent(enterEvent);
+              console.log('✅ Enter key dispatched');
+              resolve({ success: true, method: 'keyboard' });
+            }
+          }, 1000);
+          
+        } else if (attempts >= maxAttempts) {
+          clearInterval(pollForTextarea);
+          const allTextareas = document.querySelectorAll('textarea');
+          console.log('❌ Textarea not found after', maxAttempts, 'attempts. Total textareas:', allTextareas.length);
+          resolve({ success: false, error: `Prompt input not found on Firefly after ${maxAttempts} attempts.` });
         } else {
-          generateButton.click();
-          console.log('✅ Clicked generate button');
+          console.log('⏳ Waiting for textarea... attempt', attempts);
         }
-      }, 500);
-      return { success: true, method: 'button' };
+      }, 500); // Check every 500ms
+      
+    } catch (error) {
+      resolve({ success: false, error: error.message });
     }
-    
-    // Fallback: Try Enter key (Firefly might auto-enable button on input)
-    console.log('⌨️ No button found, trying Enter key (500ms delay)...');
-    setTimeout(() => {
-      const enterEvent = new KeyboardEvent('keydown', {
-        key: 'Enter',
-        code: 'Enter',
-        keyCode: 13,
-        which: 13,
-        bubbles: true
-      });
-      textarea.dispatchEvent(enterEvent);
-      console.log('✅ Enter key dispatched');
-    }, 500);
-    
-    return { success: true, method: 'keyboard' };
-    
-  } catch (error) {
-    return { success: false, error: error.message };
-  }
+  });
 }
 
 // Initialize on install
