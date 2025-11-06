@@ -75,6 +75,9 @@ window.Generator = {
                         <button class="ideogram-btn ${isInternal ? 'send-btn-internal' : 'send-btn-external'}" title="${modeTooltip}">
                             <i class="${isInternal ? 'fas fa-desktop' : 'fas fa-external-link-alt'}"></i> Ideogram
                         </button>
+                        <button class="firefly-btn ${isInternal ? 'send-btn-internal' : 'send-btn-external'}" title="${modeTooltip}">
+                            <i class="${isInternal ? 'fas fa-desktop' : 'fas fa-external-link-alt'}"></i> Firefly
+                        </button>
                         <button class="midjourney-btn ${isInternal ? 'send-btn-internal' : 'send-btn-external'}" title="${modeTooltip}">
                             <i class="${isInternal ? 'fas fa-desktop' : 'fas fa-external-link-alt'}"></i> Midjourney
                         </button>
@@ -112,9 +115,10 @@ window.Generator = {
         const editButtons = document.querySelectorAll('.edit-prompt');
         const deleteButtons = document.querySelectorAll('.delete-prompt');
         const ideogramButtons = document.querySelectorAll('.ideogram-btn');
+        const fireflyButtons = document.querySelectorAll('.firefly-btn');
         const midjourneyButtons = document.querySelectorAll('.midjourney-btn');
         
-        logger.debug(`Found buttons - Copy: ${copyButtons.length}, Edit: ${editButtons.length}, Delete: ${deleteButtons.length}, Ideogram: ${ideogramButtons.length}, Midjourney: ${midjourneyButtons.length}`);
+        logger.debug(`Found buttons - Copy: ${copyButtons.length}, Edit: ${editButtons.length}, Delete: ${deleteButtons.length}, Ideogram: ${ideogramButtons.length}, Firefly: ${fireflyButtons.length}, Midjourney: ${midjourneyButtons.length}`);
         
         // Individual prompt handlers
         document.querySelectorAll('.copy-prompt').forEach(btn => {
@@ -226,6 +230,38 @@ window.Generator = {
                 setTimeout(() => {
                     btn.disabled = false;
                     btn.innerHTML = '<i class="fas fa-image"></i> Ideogram';
+                }, 3000);
+            });
+        });
+
+        document.querySelectorAll('.firefly-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const promptDiv = e.target.closest('.prompt-item');
+                if (!promptDiv) return;
+                const textarea = promptDiv.querySelector('.prompt-text');
+                if (!textarea) return;
+                
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+                
+                // Get the clean basePrompt (without Midjourney formatting)
+                const cleanPrompt = textarea.dataset.basePrompt || textarea.value;
+                
+                try {
+                    if (!window.localBridge || !window.localBridge.isReady()) {
+                        throw new Error('Extension bridge not connected. Please connect the extension.');
+                    }
+                    
+                    await window.localBridge.submitPrompt(cleanPrompt, 'firefly');
+                    window.Utils.showToast('✅ Sent to Firefly!', 'success');
+                } catch (error) {
+                    window.Utils.showToast('❌ ' + error.message, 'error');
+                }
+                
+                // Re-enable button after delay
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-fire"></i> Firefly';
                 }, 3000);
             });
         });
