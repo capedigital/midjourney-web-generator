@@ -63,13 +63,21 @@ defaultMJParams: {
 
 "${selectedTemplate}"
 
-Rules:
+CRITICAL RULES:
 - Replace every placeholder with 2–8 vivid words (or a tight clause for {ContentBlock}).
 - Expand weak inputs with concrete visual detail (materials, texture, era, camera/medium cues).
 - Start with the visual subject. Put whitespace/format notes near the end.
-- No parameters (ar, v, etc.). Those get added later.
-- Output exactly ${count} prompts, one per line. No bullets, no extra text, no pipes.
-- Keep each prompt under ~70 words.`;
+- Output PLAIN TEXT ONLY - no "/imagine", no "prompt:", no quotes, no parameters
+- DO NOT include: --ar, --v, --style, --stylize, --c, --relax, --draft, or ANY dashes
+- Parameters will be added automatically later
+- Output exactly ${count} prompts, one per line
+- No numbering (1., 2., etc.), no bullets, no extra commentary
+- Keep each prompt under ~70 words
+
+Example output format:
+A vibrant garden overflowing with colorful wildflowers; palette lush greens and sunny yellows; soft morning light
+A vintage steam locomotive chugging through a mountain pass; nostalgic sepia-toned digital illustration
+A breathtaking mountain range silhouetted at sunset; minimalist modern graphic design`;
     },
 
     updateAIPromptWithEnhancers: function() {

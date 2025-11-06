@@ -64,12 +64,19 @@ class PromptGenerator {
             .filter(line => line && !line.startsWith("Here are") && !line.startsWith("Sure,"))
             .map(prompt => {
                 // CRITICAL: Strip EVERYTHING - only return base text
-                return prompt
+                let clean = prompt
                     .replace(/^\/imagine\s+prompt:\s*/i, '')  // Remove /imagine prefix
                     .replace(/^prompt:\s*/i, '')  // Remove standalone "prompt:" prefix
+                    .replace(/^["']|["']$/g, '')  // Remove surrounding quotes
                     .replace(/\s+--[\w-]+(?:\s+[\w:,.\/\-]+)?/g, '')  // Remove ALL parameters
                     .trim();
-            });
+                
+                // Remove quotes again in case parameters were inside quotes
+                clean = clean.replace(/^["']|["']$/g, '').trim();
+                
+                return clean;
+            })
+            .filter(prompt => prompt.length > 0);  // Remove empty prompts
     }
 }
 
