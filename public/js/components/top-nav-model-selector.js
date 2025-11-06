@@ -155,6 +155,9 @@ class TopNavModelSelector {
             item.classList.toggle('selected', item.dataset.platform === this.currentPlatform);
           });
           
+          // Update collapsed header to show current selections
+          this.updateHeaderCollapsedDisplay();
+          
           console.log('📥 Loaded preferences from database:', data.preferences);
           return;
         }
@@ -170,6 +173,9 @@ class TopNavModelSelector {
         item.classList.toggle('selected', item.dataset.platform === 'midjourney');
       });
       
+      // Update collapsed header
+      this.updateHeaderCollapsedDisplay();
+      
     } catch (error) {
       console.error('Error loading preferences:', error);
       this.loadSavedModel();
@@ -179,6 +185,9 @@ class TopNavModelSelector {
       document.querySelectorAll('.platform-item').forEach(item => {
         item.classList.toggle('selected', item.dataset.platform === 'midjourney');
       });
+      
+      // Update collapsed header
+      this.updateHeaderCollapsedDisplay();
     }
   }
 
