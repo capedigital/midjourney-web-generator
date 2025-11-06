@@ -19,7 +19,7 @@ async function runMigration() {
   
   try {
     // Read migration file
-    const migrationPath = path.join(__dirname, '../migrations/add_ai_preferences.sql');
+    const migrationPath = path.join(__dirname, '../../migrations/add_ai_preferences.sql');
     const migrationSQL = fs.readFileSync(migrationPath, 'utf8');
     
     // Execute migration

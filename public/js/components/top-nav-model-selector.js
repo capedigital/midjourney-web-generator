@@ -140,7 +140,7 @@ class TopNavModelSelector {
           const model = this.models.price.find(m => m.id === aiModel);
           if (model) {
             this.currentModel = model;
-            this.updateDisplay();
+            this.updateHeaderDisplay();
             // Sync with global model sync
             if (window.globalModelSync) {
               window.globalModelSync.setModel(aiModel);
