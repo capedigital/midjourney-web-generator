@@ -12,6 +12,7 @@
   "host_permissions": [
     "https://www.midjourney.com/*",
     "https://ideogram.ai/*",
+    "https://firefly.adobe.com/*",
     "https://discord.com/*"
   ],
   "background": {
@@ -24,7 +25,8 @@
     {
       "matches": [
         "https://www.midjourney.com/*",
-        "https://ideogram.ai/*"
+        "https://ideogram.ai/*",
+        "https://firefly.adobe.com/*"
       ],
       "js": ["content.js"],
       "run_at": "document_idle"
