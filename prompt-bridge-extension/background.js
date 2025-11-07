@@ -308,7 +308,8 @@ async function handleSubmitBatch(message) {
             func: (svc) => {
               return new Promise((resolve) => {
               let checkCount = 0;
-              const maxChecks = svc === 'firefly' ? 150 : 30; // Firefly needs more time (30 seconds) due to image generation
+              let lastPendingState = null; // Track state changes
+              const maxChecks = svc === 'firefly' ? 100 : 30; // Firefly: 100 checks at 1s = 100 seconds max due to image generation
               
               const checkReady = () => {
                 checkCount++;
@@ -338,6 +339,10 @@ async function handleSubmitBatch(message) {
                       }
                     }
                   }
+                } else if (svc === 'gemini') {
+                  // Gemini uses ms-autosize-textarea with textarea inside
+                  inputElement = document.querySelector('ms-autosize-textarea textarea');
+                  if (!inputElement) inputElement = document.querySelector('textarea');
                 } else {
                   // Other services use textarea
                   inputElement = document.querySelector('textarea');
@@ -386,27 +391,40 @@ async function handleSubmitBatch(message) {
                       
                       // Check if the button component exists and check its state
                       if (generateBtn) {
-                        // The button might have a disabled property or attribute
-                        const isDisabled = generateBtn.hasAttribute('disabled') || 
-                                         generateBtn.getAttribute('aria-disabled') === 'true' ||
-                                         generateBtn.disabled === true;
+                        // Check multiple possible disabled states
+                        const hasDisabledAttr = generateBtn.hasAttribute('disabled');
+                        const ariaDisabled = generateBtn.getAttribute('aria-disabled') === 'true';
+                        const disabledProp = generateBtn.disabled === true;
+                        const isLoadingAttr = generateBtn.hasAttribute('loading');
+                        const loadingClass = generateBtn.className.includes('loading') || generateBtn.className.includes('disabled');
                         
-                        // If it has shadow DOM, check the actual button element inside
+                        // Check the SP-BUTTON inside for pending state
+                        let innerButtonDisabled = false;
+                        let isPending = false;
                         if (generateBtn.shadowRoot) {
-                          const actualButton = generateBtn.shadowRoot.querySelector('button');
-                          if (actualButton) {
-                            btnReady = !actualButton.disabled && !actualButton.hasAttribute('disabled');
-                          } else {
-                            btnReady = !isDisabled;
+                          const spButton = generateBtn.shadowRoot.querySelector('sp-button');
+                          if (spButton) {
+                            // SP-BUTTON has "pending" attribute when generating!
+                            isPending = spButton.hasAttribute('pending');
+                            innerButtonDisabled = isPending || 
+                                                spButton.hasAttribute('disabled') || 
+                                                spButton.getAttribute('aria-disabled') === 'true' ||
+                                                spButton.disabled === true;
+                            
+                            // Only log when state changes
+                            if (lastPendingState !== isPending) {
+                              console.log(`[Firefly Batch] Button state changed: ${isPending ? 'PENDING ⏳' : 'READY ✓'} (at check ${checkCount})`);
+                              lastPendingState = isPending;
+                            }
                           }
-                        } else {
-                          btnReady = !isDisabled;
                         }
                         
-                        if (checkCount % 10 === 0) {
-                          console.log(`[Firefly Batch] Generate button state: ${btnReady ? 'READY' : 'DISABLED'}`);
-                        }
+                        // Button is ready if NONE of the disabled conditions are true
+                        btnReady = !hasDisabledAttr && !ariaDisabled && !disabledProp && !isLoadingAttr && !loadingClass && !innerButtonDisabled;
                       } else {
+                        if (checkCount % 10 === 0) {
+                          console.log('[Firefly Batch] Generate button NOT FOUND');
+                        }
                         // If we can't find the button, assume it's ready
                         btnReady = true;
                       }
@@ -419,13 +437,31 @@ async function handleSubmitBatch(message) {
                   
                   const isReady = (!inputElement.value || inputElement.value === '') && !inputElement.disabled;
                   
-                  if (isReady && btnReady) {
-                    console.log('✅ Firefly UI ready for next prompt (textarea clear + button enabled)');
+                  // For Firefly, only check button state - textarea doesn't clear automatically
+                  if (btnReady) {
+                    console.log('✅ Firefly UI ready for next prompt (button no longer pending)');
                     resolve();
                   } else {
                     if (checkCount >= maxChecks) {
                       console.log('⏰ Max wait time reached for Firefly, continuing anyway');
                       console.log(`   Textarea ready: ${isReady}, Button ready: ${btnReady}`);
+                      resolve();
+                    } else {
+                      setTimeout(checkReady, 200);
+                    }
+                  }
+                } else if (svc === 'gemini') {
+                  // For Gemini: check if the Run button is ready
+                  const runBtn = document.querySelector('ms-run-button button.run-button');
+                  const isReady = inputElement.value === '' && !inputElement.disabled;
+                  const btnReady = !runBtn || (!runBtn.disabled && runBtn.getAttribute('aria-disabled') !== 'true');
+                  
+                  if (isReady && btnReady) {
+                    console.log('✅ Gemini UI ready for next prompt');
+                    resolve();
+                  } else {
+                    if (checkCount >= maxChecks) {
+                      console.log('⏰ Max wait time reached, continuing anyway');
                       resolve();
                     } else {
                       setTimeout(checkReady, 200);
@@ -448,7 +484,7 @@ async function handleSubmitBatch(message) {
               };
               
               // Start checking after brief delay to let submission process
-              setTimeout(checkReady, 500);
+              setTimeout(checkReady, 1000); // Start after 1 second for Firefly
             });
           },
           args: [service]
@@ -1053,56 +1089,104 @@ async function findOrCreateGeminiTab() {
 }
 
 function submitPromptToGemini(prompt) {
-  try {
+  return new Promise((resolve) => {
     console.log('🔷 Looking for prompt input on Gemini AI Studio...');
     
-    // Find the prompt input - try multiple selectors
-    let textarea = document.querySelector('textarea[placeholder*="Enter a prompt"]');
-    if (!textarea) textarea = document.querySelector('textarea[placeholder*="prompt"]');
-    if (!textarea) textarea = document.querySelector('textarea[aria-label*="prompt"]');
-    if (!textarea) textarea = document.querySelector('textarea');
+    let attempts = 0;
+    const maxAttempts = 50;
     
-    console.log('🔍 Found textarea:', textarea);
+    const waitForElement = () => {
+      attempts++;
+      
+      if (attempts % 10 === 0) {
+        console.log(`[Gemini] Attempt ${attempts}/${maxAttempts}: Looking for prompt input...`);
+      }
+      
+      // Find the textarea inside ms-autosize-textarea
+      let textarea = document.querySelector('ms-autosize-textarea textarea');
+      
+      // Fallback selectors
+      if (!textarea) textarea = document.querySelector('textarea[aria-label*="Type something"]');
+      if (!textarea) textarea = document.querySelector('textarea[placeholder*="Enter"]');
+      if (!textarea) textarea = document.querySelector('.text-input-wrapper textarea');
+      if (!textarea) textarea = document.querySelector('textarea');
+      
+      if (!textarea) {
+        if (attempts >= maxAttempts) {
+          const allTextareas = document.querySelectorAll('textarea');
+          console.log('❌ No textarea found after all attempts. Total textareas:', allTextareas.length);
+          resolve({ success: false, error: `Prompt input not found on Gemini. Found ${allTextareas.length} textareas total.` });
+          return;
+        }
+        setTimeout(waitForElement, 200);
+        return;
+      }
+      
+      console.log(`✅ Found textarea after ${attempts} attempts`);
+      
+      try {
+        // Focus the textarea first
+        textarea.focus();
+        textarea.click();
+        
+        // Small delay to ensure focus is registered
+        setTimeout(() => {
+          // Clear any existing value
+          textarea.value = '';
+          
+          // Set the new value
+          textarea.value = prompt;
+          
+          // Trigger Angular's change detection
+          const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value').set;
+          if (nativeInputValueSetter) {
+            nativeInputValueSetter.call(textarea, prompt);
+          }
+          
+          // Trigger all relevant events
+          textarea.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+          textarea.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
+          textarea.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true, composed: true }));
+          
+          console.log('✅ Prompt set to:', prompt.substring(0, 50) + '...');
+          
+          // Find the Run button - it's inside ms-run-button
+          let runButton = document.querySelector('ms-run-button button.run-button');
+          if (!runButton) runButton = document.querySelector('button[aria-label="Run"]');
+          if (!runButton) runButton = document.querySelector('button[type="submit"]');
+          
+          if (runButton && !runButton.disabled && !runButton.getAttribute('aria-disabled')) {
+            setTimeout(() => {
+              runButton.click();
+              console.log('✅ Run button clicked');
+            }, 300);
+            resolve({ success: true, method: 'button' });
+          } else {
+            // Fallback to Ctrl+Enter (Gemini's keyboard shortcut)
+            setTimeout(() => {
+              // Try Cmd+Enter for Mac
+              textarea.dispatchEvent(new KeyboardEvent('keydown', {
+                key: 'Enter',
+                code: 'Enter',
+                keyCode: 13,
+                metaKey: true, // Cmd on Mac
+                bubbles: true,
+                composed: true
+              }));
+              console.log('✅ Cmd+Enter sent');
+            }, 300);
+            resolve({ success: true, method: 'keyboard' });
+          }
+        }, 100);
+        
+      } catch (error) {
+        console.error('❌ Error:', error);
+        resolve({ success: false, error: error.message });
+      }
+    };
     
-    if (!textarea) {
-      const allTextareas = document.querySelectorAll('textarea');
-      console.log('❌ No textarea found. Total textareas on page:', allTextareas.length);
-      return { success: false, error: `Prompt input not found on Gemini. Found ${allTextareas.length} textareas total.` };
-    }
-    
-    // Set the prompt value
-    console.log('✏️ Setting prompt value...');
-    textarea.value = prompt;
-    
-    // Trigger React's onChange if it exists
-    const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value').set;
-    nativeInputValueSetter.call(textarea, prompt);
-    
-    textarea.dispatchEvent(new Event('input', { bubbles: true }));
-    textarea.dispatchEvent(new Event('change', { bubbles: true }));
-    console.log('✅ Prompt set to:', prompt.substring(0, 50) + '...');
-    
-    // Submit with Enter key (like Ideogram)
-    console.log('⌨️ Submitting with Enter key (300ms delay)...');
-    
-    setTimeout(() => {
-      const enterEvent = new KeyboardEvent('keydown', {
-        key: 'Enter',
-        code: 'Enter',
-        keyCode: 13,
-        which: 13,
-        bubbles: true
-      });
-      textarea.dispatchEvent(enterEvent);
-      console.log('✅ Enter key dispatched');
-    }, 300);
-    
-    return { success: true, method: 'keyboard' };
-    
-  } catch (error) {
-    console.error('❌ Error in submitPromptToGemini:', error);
-    return { success: false, error: error.message };
-  }
+    waitForElement();
+  });
 }
 
 // Initialize on install
