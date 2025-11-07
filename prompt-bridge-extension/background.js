@@ -6,54 +6,24 @@
 let ws = null;
 let connected = false;
 let authenticated = false;
-let authToken = null;
 let reconnectAttempts = 0;
 const MAX_RECONNECT_ATTEMPTS = 10;
 const RECONNECT_DELAY = 3000;
 let keepAliveInterval = null;
 
-// Auto-fetch token and connect
-async function autoConnect() {
-  try {
-    const response = await fetch('http://127.0.0.1:3001/token');
-    if (response.ok) {
-      const token = await response.text();
-      authToken = token.trim();
-      chrome.storage.local.set({ bridgeToken: authToken });
-      connect();
-      console.log('🔑 Auto-fetched token and connecting...');
-    }
-  } catch (error) {
-    console.log('⏳ Local bridge not ready, will retry...');
-    // Retry in 2 seconds
-    setTimeout(autoConnect, 2000);
-  }
-}
+// Auto-connect on startup (no token needed!)
+connect();
 
-// Load saved token or auto-fetch
-chrome.storage.local.get(['bridgeToken'], (result) => {
-  if (result.bridgeToken) {
-    authToken = result.bridgeToken;
-    connect();
-  } else {
-    // Try to auto-fetch token
-    autoConnect();
-  }
-});
-
-// Listen for token updates from popup
+// Listen for messages from popup
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.type === 'SET_TOKEN') {
-    authToken = message.token;
-    chrome.storage.local.set({ bridgeToken: authToken });
-    connect();
-    sendResponse({ success: true });
-  } else if (message.type === 'GET_STATUS') {
+  if (message.type === 'GET_STATUS') {
     sendResponse({
       connected,
-      authenticated,
-      hasToken: !!authToken
+      authenticated
     });
+  } else if (message.type === 'RECONNECT') {
+    connect();
+    sendResponse({ success: true });
   } else if (message.type === 'DISCONNECT') {
     disconnect();
     sendResponse({ success: true });
@@ -62,10 +32,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 function connect() {
-  if (!authToken) {
-    return;
-  }
-
   if (ws && (ws.readyState === WebSocket.CONNECTING || ws.readyState === WebSocket.OPEN)) {
     return;
   }
@@ -77,10 +43,10 @@ function connect() {
       connected = true;
       reconnectAttempts = 0;
       
-      // Authenticate
+      // Authenticate with simple extension token
       send({
         type: 'auth',
-        token: authToken,
+        token: 'extension-auto-' + Date.now(), // Simple token, just needs to be present
         clientType: 'extension'
       });
       
@@ -130,22 +96,7 @@ function connect() {
       // Auto-reconnect for other errors
       if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
         reconnectAttempts++;
-        console.log(`🔄 Reconnecting (${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})...`);
-        setTimeout(async () => {
-          // Try to fetch fresh token before reconnecting
-          try {
-            const response = await fetch('http://127.0.0.1:3001/token');
-            if (response.ok) {
-              const token = await response.text();
-              authToken = token.trim();
-              chrome.storage.local.set({ bridgeToken: authToken });
-              console.log('🔑 Refreshed token before reconnect');
-            }
-          } catch (e) {
-            console.log('⚠️ Could not refresh token, using existing');
-          }
-          connect();
-        }, RECONNECT_DELAY);
+        setTimeout(() => connect(), RECONNECT_DELAY);
       }
     };
 
@@ -357,16 +308,43 @@ async function handleSubmitBatch(message) {
             func: (svc) => {
               return new Promise((resolve) => {
               let checkCount = 0;
-              const maxChecks = 30; // 6 seconds max wait (30 * 200ms)
+              const maxChecks = svc === 'firefly' ? 150 : 30; // Firefly needs more time (30 seconds) due to image generation
               
               const checkReady = () => {
                 checkCount++;
                 
-                // Find the textarea
-                const textarea = document.querySelector('textarea');
+                // Log progress every 10 checks for Firefly
+                if (svc === 'firefly' && checkCount % 10 === 0) {
+                  console.log(`[Firefly Batch] Waiting for UI ready... check ${checkCount}/${maxChecks}`);
+                }
                 
-                if (!textarea) {
-                  console.warn('⚠️ Textarea not found during ready check');
+                // Find the input based on service
+                let inputElement = null;
+                
+                if (svc === 'firefly') {
+                  // Firefly uses 5 nested Shadow DOMs:
+                  // firefly-image-generation -> firefly-image-generation-prompt-panel -> firefly-prompt -> firefly-textfield -> textarea
+                  const fireflyContainer = document.querySelector('firefly-image-generation');
+                  if (fireflyContainer && fireflyContainer.shadowRoot) {
+                    const promptPanel = fireflyContainer.shadowRoot.querySelector('firefly-image-generation-prompt-panel');
+                    if (promptPanel && promptPanel.shadowRoot) {
+                      const fireflyPrompt = promptPanel.shadowRoot.querySelector('firefly-prompt');
+                      if (fireflyPrompt && fireflyPrompt.shadowRoot) {
+                        const fireflyTextField = fireflyPrompt.shadowRoot.querySelector('firefly-textfield#prompt-input') ||
+                                                fireflyPrompt.shadowRoot.querySelector('firefly-textfield');
+                        if (fireflyTextField && fireflyTextField.shadowRoot) {
+                          inputElement = fireflyTextField.shadowRoot.querySelector('textarea');
+                        }
+                      }
+                    }
+                  }
+                } else {
+                  // Other services use textarea
+                  inputElement = document.querySelector('textarea');
+                }
+                
+                if (!inputElement) {
+                  console.warn('⚠️ Input element not found during ready check for', svc);
                   if (checkCount >= maxChecks) {
                     console.log('⏰ Max wait time reached, continuing anyway');
                     resolve();
@@ -379,9 +357,8 @@ async function handleSubmitBatch(message) {
                 // Different ready checks for different services
                 if (svc === 'ideogram') {
                   // For Ideogram: textarea is ready when it's empty AND not disabled
-                  // Also check if a Generate button exists and is enabled
                   const generateBtn = document.querySelector('button.MuiButton-root');
-                  const isReady = textarea.value === '' && !textarea.disabled;
+                  const isReady = inputElement.value === '' && !inputElement.disabled;
                   const btnReady = !generateBtn || !generateBtn.disabled;
                   
                   if (isReady && btnReady) {
@@ -395,9 +372,68 @@ async function handleSubmitBatch(message) {
                       setTimeout(checkReady, 200);
                     }
                   }
+                } else if (svc === 'firefly') {
+                  // For Firefly: check if firefly-textfield is empty AND Generate button is not disabled
+                  // Navigate to the Generate button in Shadow DOM
+                  const fireflyContainer = document.querySelector('firefly-image-generation');
+                  let generateBtn = null;
+                  let btnReady = false;
+                  
+                  if (fireflyContainer && fireflyContainer.shadowRoot) {
+                    const promptPanel = fireflyContainer.shadowRoot.querySelector('firefly-image-generation-prompt-panel');
+                    if (promptPanel && promptPanel.shadowRoot) {
+                      generateBtn = promptPanel.shadowRoot.querySelector('firefly-image-generation-generate-button');
+                      
+                      // Check if the button component exists and check its state
+                      if (generateBtn) {
+                        // The button might have a disabled property or attribute
+                        const isDisabled = generateBtn.hasAttribute('disabled') || 
+                                         generateBtn.getAttribute('aria-disabled') === 'true' ||
+                                         generateBtn.disabled === true;
+                        
+                        // If it has shadow DOM, check the actual button element inside
+                        if (generateBtn.shadowRoot) {
+                          const actualButton = generateBtn.shadowRoot.querySelector('button');
+                          if (actualButton) {
+                            btnReady = !actualButton.disabled && !actualButton.hasAttribute('disabled');
+                          } else {
+                            btnReady = !isDisabled;
+                          }
+                        } else {
+                          btnReady = !isDisabled;
+                        }
+                        
+                        if (checkCount % 10 === 0) {
+                          console.log(`[Firefly Batch] Generate button state: ${btnReady ? 'READY' : 'DISABLED'}`);
+                        }
+                      } else {
+                        // If we can't find the button, assume it's ready
+                        btnReady = true;
+                      }
+                    } else {
+                      btnReady = true; // Can't check, assume ready
+                    }
+                  } else {
+                    btnReady = true; // Can't check, assume ready
+                  }
+                  
+                  const isReady = (!inputElement.value || inputElement.value === '') && !inputElement.disabled;
+                  
+                  if (isReady && btnReady) {
+                    console.log('✅ Firefly UI ready for next prompt (textarea clear + button enabled)');
+                    resolve();
+                  } else {
+                    if (checkCount >= maxChecks) {
+                      console.log('⏰ Max wait time reached for Firefly, continuing anyway');
+                      console.log(`   Textarea ready: ${isReady}, Button ready: ${btnReady}`);
+                      resolve();
+                    } else {
+                      setTimeout(checkReady, 200);
+                    }
+                  }
                 } else {
                   // For Midjourney: textarea is ready when it's empty
-                  if (textarea.value === '') {
+                  if (inputElement.value === '') {
                     console.log('✅ Midjourney UI ready for next prompt');
                     resolve();
                   } else {
@@ -661,8 +697,87 @@ async function findOrCreateFireflyTab() {
     chrome.tabs.onUpdated.addListener(listener);
   });
   
-  // Extra delay for Firefly's heavy JS app to initialize
-  await new Promise(resolve => setTimeout(resolve, 2000));
+  // Wait for Firefly's custom element to actually be in the DOM
+  console.log('⏳ Waiting for Firefly UI to initialize...');
+  await chrome.scripting.executeScript({
+    target: { tabId: tab.id },
+    func: () => {
+      return new Promise((resolve) => {
+        let attempts = 0;
+        const maxAttempts = 100; // 20 seconds max
+        
+        const checkForFirefly = () => {
+          attempts++;
+          
+          // Navigate through 5 Shadow DOM levels:
+          // 1. firefly-image-generation (main DOM)
+          // 2. firefly-image-generation-prompt-panel (inside #1's shadowRoot)
+          // 3. firefly-prompt (inside #2's shadowRoot)
+          // 4. firefly-textfield (inside #3's shadowRoot)
+          // 5. textarea (inside #4's shadowRoot)
+          
+          const fireflyContainer = document.querySelector('firefly-image-generation');
+          if (!fireflyContainer || !fireflyContainer.shadowRoot) {
+            if (attempts >= maxAttempts) {
+              console.log(`❌ Firefly container not ready after ${attempts} checks`);
+              resolve(false);
+              return;
+            }
+            setTimeout(checkForFirefly, 200);
+            return;
+          }
+          
+          const promptPanel = fireflyContainer.shadowRoot.querySelector('firefly-image-generation-prompt-panel');
+          if (!promptPanel || !promptPanel.shadowRoot) {
+            if (attempts >= maxAttempts) {
+              console.log(`❌ Prompt panel not ready after ${attempts} checks`);
+              resolve(false);
+              return;
+            }
+            setTimeout(checkForFirefly, 200);
+            return;
+          }
+          
+          const fireflyPrompt = promptPanel.shadowRoot.querySelector('firefly-prompt');
+          if (!fireflyPrompt || !fireflyPrompt.shadowRoot) {
+            if (attempts >= maxAttempts) {
+              console.log(`❌ Firefly prompt not ready after ${attempts} checks`);
+              resolve(false);
+              return;
+            }
+            setTimeout(checkForFirefly, 200);
+            return;
+          }
+          
+          const fireflyElement = fireflyPrompt.shadowRoot.querySelector('firefly-textfield');
+          if (!fireflyElement || !fireflyElement.shadowRoot) {
+            if (attempts >= maxAttempts) {
+              console.log(`❌ Textfield not ready after ${attempts} checks`);
+              resolve(false);
+              return;
+            }
+            setTimeout(checkForFirefly, 200);
+            return;
+          }
+          
+          const textarea = fireflyElement.shadowRoot.querySelector('textarea');
+          if (textarea) {
+            console.log(`✅ Firefly ready after ${attempts} checks`);
+            resolve(true);
+          } else {
+            if (attempts >= maxAttempts) {
+              console.log(`❌ Textarea not ready after ${attempts} checks`);
+              resolve(false);
+              return;
+            }
+            setTimeout(checkForFirefly, 200);
+          }
+        };
+        
+        checkForFirefly();
+      });
+    }
+  });
   
   return tab;
 }
@@ -672,58 +787,238 @@ async function findOrCreateFireflyTab() {
  * Note: This is injected code, not background script
  */
 function submitPromptToFirefly(prompt) {
-  try {
+  return new Promise((resolve) => {
     console.log('🔥 Looking for prompt input on Firefly...');
     
-    // Find the prompt input - try multiple selectors
-    let textarea = document.querySelector('textarea[placeholder*="Describe"]');
-    if (!textarea) textarea = document.querySelector('textarea[placeholder*="describe"]');
-    if (!textarea) textarea = document.querySelector('textarea[placeholder*="prompt"]');
-    if (!textarea) textarea = document.querySelector('textarea[name="prompt"]');
-    if (!textarea) textarea = document.querySelector('#prompt-input');
-    if (!textarea) textarea = document.querySelector('textarea');
+    let attempts = 0;
+    const maxAttempts = 150;
     
-    console.log('🔍 Found textarea:', textarea);
+    const waitForElement = () => {
+      attempts++;
+      
+      if (attempts % 10 === 0) {
+        console.log(`[Firefly] Attempt ${attempts}/${maxAttempts}: Looking for prompt panel...`);
+        
+        // On attempt 10, dump diagnostic info
+        if (attempts === 10) {
+          const allElements = document.querySelectorAll('*');
+          const customElements = Array.from(allElements).filter(el => el.tagName.includes('-'));
+          const fireflyElements = customElements.filter(el => el.tagName.toLowerCase().includes('firefly'));
+          
+          console.log(`[Firefly] Total elements: ${allElements.length}`);
+          console.log(`[Firefly] Custom elements: ${customElements.length}`);
+          console.log(`[Firefly] Firefly elements: ${fireflyElements.length}`, fireflyElements.map(el => el.tagName));
+          console.log(`[Firefly] Textareas on page: ${document.querySelectorAll('textarea').length}`);
+          
+          // Check the firefly-image-generation container
+          const fireflyContainer = document.querySelector('firefly-image-generation');
+          if (fireflyContainer) {
+            console.log(`[Firefly] Found firefly-image-generation!`);
+            console.log(`[Firefly] Has shadowRoot: ${!!fireflyContainer.shadowRoot}`);
+            if (fireflyContainer.shadowRoot) {
+              const shadowChildren = Array.from(fireflyContainer.shadowRoot.querySelectorAll('*'))
+                .filter(el => el.tagName.includes('-'))
+                .map(el => el.tagName);
+              console.log(`[Firefly] Shadow DOM children (${shadowChildren.length}):`, shadowChildren);
+              
+              // Check specifically for the prompt panel
+              const promptPanel = fireflyContainer.shadowRoot.querySelector('firefly-image-generation-prompt-panel');
+              console.log(`[Firefly] Looking for firefly-image-generation-prompt-panel:`, !!promptPanel);
+              if (promptPanel) {
+                console.log(`[Firefly] Prompt panel has shadowRoot:`, !!promptPanel.shadowRoot);
+                if (promptPanel.shadowRoot) {
+                  const promptPanelChildren = Array.from(promptPanel.shadowRoot.querySelectorAll('*'))
+                    .filter(el => el.tagName.includes('-'))
+                    .map(el => el.tagName);
+                  console.log(`[Firefly] Prompt panel shadow children (${promptPanelChildren.length}):`, promptPanelChildren);
+                }
+              }
+            }
+          } else {
+            console.log(`[Firefly] firefly-image-generation NOT FOUND!`);
+          }
+          
+          // Check if we're in the right context
+          console.log(`[Firefly] Document URL: ${document.location.href}`);
+          console.log(`[Firefly] Document title: ${document.title}`);
+        }
+      }
+      
+      // LAYER 1: First find the main firefly-image-generation container (in main DOM)
+      const fireflyContainer = document.querySelector('firefly-image-generation');
+      
+      if (!fireflyContainer) {
+        if (attempts >= maxAttempts) {
+          console.log('[Firefly] ERROR: firefly-image-generation not found after all attempts');
+          resolve({ success: false, error: 'Firefly container not found' });
+          return;
+        }
+        setTimeout(waitForElement, 200);
+        return;
+      }
+      
+      // LAYER 2: Navigate into its shadow DOM to find the prompt panel
+      if (!fireflyContainer.shadowRoot) {
+        if (attempts >= maxAttempts) {
+          console.log('[Firefly] ERROR: firefly-image-generation shadowRoot not initialized');
+          resolve({ success: false, error: 'Firefly container shadow DOM not ready' });
+          return;
+        }
+        setTimeout(waitForElement, 200);
+        return;
+      }
+      
+      const promptPanel = fireflyContainer.shadowRoot.querySelector('firefly-image-generation-prompt-panel');
+      
+      if (!promptPanel) {
+        if (attempts >= maxAttempts) {
+          console.log('[Firefly] ERROR: firefly-image-generation-prompt-panel not found in container shadow DOM');
+          resolve({ success: false, error: 'Prompt panel not found in shadow DOM' });
+          return;
+        }
+        setTimeout(waitForElement, 200);
+        return;
+      }
+      
+      // LAYER 3: The prompt panel has its own Shadow DOM with firefly-prompt-container inside
+      if (!promptPanel.shadowRoot) {
+        if (attempts >= maxAttempts) {
+          console.log('[Firefly] ERROR: Prompt panel shadowRoot not initialized');
+          resolve({ success: false, error: 'Prompt panel shadow DOM not ready' });
+          return;
+        }
+        setTimeout(waitForElement, 200);
+        return;
+      }
+      
+      // LAYER 4: Look for FIREFLY-PROMPT inside the prompt panel's shadow DOM  
+      const fireflyPrompt = promptPanel.shadowRoot.querySelector('firefly-prompt');
+      
+      if (!fireflyPrompt) {
+        if (attempts >= maxAttempts) {
+          console.log('[Firefly] ERROR: firefly-prompt not found in prompt panel shadow DOM');
+          resolve({ success: false, error: 'Firefly prompt element not found' });
+          return;
+        }
+        setTimeout(waitForElement, 200);
+        return;
+      }
+      
+      // LAYER 5: firefly-prompt also has Shadow DOM with firefly-textfield inside
+      if (!fireflyPrompt.shadowRoot) {
+        if (attempts >= maxAttempts) {
+          console.log('[Firefly] ERROR: Firefly prompt shadowRoot not initialized');
+          resolve({ success: false, error: 'Firefly prompt shadow DOM not ready' });
+          return;
+        }
+        setTimeout(waitForElement, 200);
+        return;
+      }
+      
+      // Now find firefly-textfield inside the firefly-prompt's shadow DOM
+      const fireflyTextField = fireflyPrompt.shadowRoot.querySelector('firefly-textfield#prompt-input') ||
+                               fireflyPrompt.shadowRoot.querySelector('firefly-textfield');
+      
+      if (!fireflyTextField) {
+        if (attempts >= maxAttempts) {
+          console.log('❌ firefly-textfield not found in container shadow DOM');
+          resolve({ success: false, error: 'Firefly textfield not found' });
+          return;
+        }
+        setTimeout(waitForElement, 200);
+        return;
+      }
+      
+      // firefly-textfield ALSO has Shadow DOM with the actual textarea
+      if (!fireflyTextField.shadowRoot) {
+        if (attempts >= maxAttempts) {
+          console.log('❌ Textfield shadowRoot not initialized');
+          resolve({ success: false, error: 'Textfield shadow DOM not ready' });
+          return;
+        }
+        setTimeout(waitForElement, 200);
+        return;
+      }
+      
+      // Finally, get the textarea from inside the textfield's shadow DOM
+      const textarea = fireflyTextField.shadowRoot.querySelector('textarea');
+      
+      if (!textarea) {
+        if (attempts >= maxAttempts) {
+          console.log('❌ textarea not found in textfield shadow DOM');
+          resolve({ success: false, error: 'Textarea not found' });
+          return;
+        }
+        setTimeout(waitForElement, 200);
+        return;
+      }
+      
+      // Success! We found the textarea through 4 levels of Shadow DOM
+      console.log(`✅ Found textarea after ${attempts} attempts (through 4 Shadow DOM levels)`);
+      
+      try {
+        // Focus the textarea first (many modern apps require focus before accepting input)
+        textarea.focus();
+        textarea.click(); // Some apps also need a click event
+        
+        // Small delay to ensure focus is registered, then set value
+        setTimeout(() => {
+          // Clear any existing value
+          textarea.value = '';
+          
+          // Set the new value
+          textarea.value = prompt;
+          
+          // Trigger all relevant events to ensure the app detects the change
+          const inputEvent = new Event('input', { bubbles: true, composed: true });
+          const changeEvent = new Event('change', { bubbles: true, composed: true });
+          const keyupEvent = new KeyboardEvent('keyup', { bubbles: true, composed: true });
+          
+          textarea.dispatchEvent(inputEvent);
+          textarea.dispatchEvent(changeEvent);
+          textarea.dispatchEvent(keyupEvent);
+          
+          console.log('✅ Prompt set and events dispatched:', prompt.substring(0, 50) + '...');
+        }, 100);
+        
+        // Find Generate button (likely in the main DOM or prompt panel shadow DOM)
+        let generateBtn = document.querySelector('button[type="submit"]');
+        if (!generateBtn && promptPanel.shadowRoot) {
+          generateBtn = promptPanel.shadowRoot.querySelector('button[type="submit"]');
+        }
+        if (!generateBtn) {
+          const buttons = Array.from(document.querySelectorAll('button'));
+          generateBtn = buttons.find(btn => btn.textContent.includes('Generate'));
+        }
+        
+        if (generateBtn && !generateBtn.disabled) {
+          setTimeout(() => {
+            generateBtn.click();
+            console.log('✅ Generate button clicked');
+          }, 300);
+          resolve({ success: true, method: 'button' });
+        } else {
+          // Fallback to Enter key
+          setTimeout(() => {
+            textarea.dispatchEvent(new KeyboardEvent('keydown', {
+              key: 'Enter',
+              code: 'Enter',
+              keyCode: 13,
+              bubbles: true,
+              composed: true
+            }));
+            console.log('✅ Enter key sent');
+          }, 300);
+          resolve({ success: true, method: 'keyboard' });
+        }
+      } catch (error) {
+        console.error('❌ Error:', error);
+        resolve({ success: false, error: error.message });
+      }
+    };
     
-    if (!textarea) {
-      const allTextareas = document.querySelectorAll('textarea');
-      console.log('❌ No textarea found. Total textareas on page:', allTextareas.length);
-      return { success: false, error: `Prompt input not found on Firefly. Found ${allTextareas.length} textareas total.` };
-    }
-    
-    // Set the prompt value
-    console.log('✏️ Setting prompt value...');
-    textarea.value = prompt;
-    
-    // Trigger React's onChange if it exists
-    const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value').set;
-    nativeInputValueSetter.call(textarea, prompt);
-    
-    textarea.dispatchEvent(new Event('input', { bubbles: true }));
-    textarea.dispatchEvent(new Event('change', { bubbles: true }));
-    console.log('✅ Prompt set to:', prompt.substring(0, 50) + '...');
-    
-    // Submit with Enter key (like Ideogram)
-    console.log('⌨️ Submitting with Enter key (300ms delay)...');
-    
-    setTimeout(() => {
-      const enterEvent = new KeyboardEvent('keydown', {
-        key: 'Enter',
-        code: 'Enter',
-        keyCode: 13,
-        which: 13,
-        bubbles: true
-      });
-      textarea.dispatchEvent(enterEvent);
-      console.log('✅ Enter key dispatched');
-    }, 300);
-    
-    return { success: true, method: 'keyboard' };
-    
-  } catch (error) {
-    console.error('❌ Error in submitPromptToFirefly:', error);
-    return { success: false, error: error.message };
-  }
+    waitForElement();
+  });
 }
 
 async function findOrCreateGeminiTab() {

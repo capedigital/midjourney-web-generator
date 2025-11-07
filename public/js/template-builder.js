@@ -375,40 +375,32 @@ window.TemplateBuilder = {
                 hasUserContent: !!userContent
             });
             
-            // Call OpenRouter AI directly (like AI Chat does)
-            const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            // Call backend API which handles OpenRouter authentication
+            const response = await fetch('/api/prompts/generate', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${window.Config.openRouterKey}`
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    model: aiModel,
-                    messages: [{
-                        role: 'user',
-                        content: aiPrompt
-                    }]
+                    promptText: aiPrompt,
+                    model: aiModel
                 })
             });
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
-                throw new Error(`AI API error: ${response.status} - ${errorData.error?.message || 'Unknown error'}`);
+                throw new Error(`AI API error: ${response.status} - ${errorData.error || errorData.message || 'Unknown error'}`);
             }
 
             const data = await response.json();
-            const generatedText = data.choices[0].message.content;
-            
-            logger.debug('📝 AI Response:', generatedText);
-            
-            // Parse the prompts (clean them up)
-            const prompts = this.parseGeneratedPrompts(generatedText);
+            // Backend returns { success: true, prompts: [...] }
+            const prompts = data.prompts;
             
             if (!prompts || prompts.length === 0) {
                 throw new Error('No valid prompts were generated');
             }
             
-            logger.debug('✅ Parsed prompts:', prompts.length);
+            logger.debug('✅ Generated prompts:', prompts.length);
             
             // Use the PromptImporter to import them (same as AI Chat!)
             // This ensures consistent display format

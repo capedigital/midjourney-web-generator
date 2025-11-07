@@ -76,9 +76,6 @@ const server = http.createServer((req, res) => {
       connections: wss.clients ? wss.clients.size : 0,
       authenticated: authenticatedClients.size
     }));
-  } else if (req.url === '/token') {
-    res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.end(AUTH_TOKEN);
   } else {
     res.writeHead(404);
     res.end('Not Found');
@@ -263,16 +260,13 @@ server.listen(PORT, HOST, () => {
   console.log('✅ Local Bridge Server running');
   console.log(`🌐 WebSocket: ws://${HOST}:${PORT}`);
   console.log(`🏥 Health: http://${HOST}:${PORT}/health`);
-  console.log(`🔑 Auth Token: ${AUTH_TOKEN}`);
-  console.log(`🔗 Token URL: http://${HOST}:${PORT}/token`);
+  console.log(`🔑 Token: http://${HOST}:${PORT}/token`);
   console.log('');
   console.log('🔒 Security:');
   console.log('   ✓ Localhost only (not exposed to network)');
   console.log('   ✓ Origin verification enabled');
   console.log('   ✓ Authentication required');
   console.log('   ✓ Connection limit:', MAX_CONNECTIONS);
-  console.log('');
-  console.log('📋 Copy this token to extension popup:', AUTH_TOKEN);
   console.log('');
   console.log('Press Ctrl+C to stop');
 });
