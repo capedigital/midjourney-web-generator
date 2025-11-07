@@ -1,4 +1,5 @@
 const promptsService = require('../services/promptsService');
+const userService = require('../services/userService');
 const PromptGenerator = require('../utils/generator');
 const { asyncHandler } = require('../middleware/errorHandler');
 
@@ -9,8 +10,19 @@ class PromptsController {
     generate = asyncHandler(async (req, res) => {
         const { promptText, model } = req.body;
 
-        // Generate prompts using AI
-        const generator = new PromptGenerator();
+        // Get user's OpenRouter API key from database
+        const apiKey = await userService.getOpenRouterKey(req.user.id);
+        
+        if (!apiKey) {
+            return res.status(401).json({
+                success: false,
+                error: 'Authentication required',
+                message: 'Please add your OpenRouter API key in Settings'
+            });
+        }
+
+        // Generate prompts using AI with user's API key
+        const generator = new PromptGenerator(apiKey);
         const prompts = await generator.generateWithChatGPT(promptText, model);
 
         // Save session to database
