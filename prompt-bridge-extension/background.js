@@ -12,11 +12,32 @@ const MAX_RECONNECT_ATTEMPTS = 10;
 const RECONNECT_DELAY = 3000;
 let keepAliveInterval = null;
 
-// Load saved token
+// Auto-fetch token and connect
+async function autoConnect() {
+  try {
+    const response = await fetch('http://127.0.0.1:3001/token');
+    if (response.ok) {
+      const token = await response.text();
+      authToken = token.trim();
+      chrome.storage.local.set({ bridgeToken: authToken });
+      connect();
+      console.log('🔑 Auto-fetched token and connecting...');
+    }
+  } catch (error) {
+    console.log('⏳ Local bridge not ready, will retry...');
+    // Retry in 2 seconds
+    setTimeout(autoConnect, 2000);
+  }
+}
+
+// Load saved token or auto-fetch
 chrome.storage.local.get(['bridgeToken'], (result) => {
   if (result.bridgeToken) {
     authToken = result.bridgeToken;
     connect();
+  } else {
+    // Try to auto-fetch token
+    autoConnect();
   }
 });
 
@@ -109,7 +130,22 @@ function connect() {
       // Auto-reconnect for other errors
       if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
         reconnectAttempts++;
-        setTimeout(() => connect(), RECONNECT_DELAY);
+        console.log(`🔄 Reconnecting (${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})...`);
+        setTimeout(async () => {
+          // Try to fetch fresh token before reconnecting
+          try {
+            const response = await fetch('http://127.0.0.1:3001/token');
+            if (response.ok) {
+              const token = await response.text();
+              authToken = token.trim();
+              chrome.storage.local.set({ bridgeToken: authToken });
+              console.log('🔑 Refreshed token before reconnect');
+            }
+          } catch (e) {
+            console.log('⚠️ Could not refresh token, using existing');
+          }
+          connect();
+        }, RECONNECT_DELAY);
       }
     };
 
