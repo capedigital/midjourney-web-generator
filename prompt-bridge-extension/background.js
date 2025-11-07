@@ -284,9 +284,16 @@ async function handleSubmitBatch(message) {
         
         // Re-find or refresh tab (in case it reloaded)
         try {
-          const tabs = await chrome.tabs.query({ 
-            url: service === 'ideogram' ? 'https://ideogram.ai/*' : 'https://www.midjourney.com/*'
-          });
+          let queryUrl;
+          if (service === 'ideogram') {
+            queryUrl = 'https://ideogram.ai/*';
+          } else if (service === 'firefly') {
+            queryUrl = 'https://firefly.adobe.com/*';
+          } else {
+            queryUrl = 'https://www.midjourney.com/*';
+          }
+          
+          const tabs = await chrome.tabs.query({ url: queryUrl });
           
           if (tabs.length > 0) {
             tab = tabs[0];
