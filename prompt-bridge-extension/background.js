@@ -249,11 +249,14 @@ async function handleSubmitBatch(message) {
       const prompt = message.prompts[i];
       
       try {
+        console.log('💉 Injecting script for prompt', i + 1, ':', prompt.substring(0, 50) + '...');
         const result = await chrome.scripting.executeScript({
           target: { tabId: tab.id },
           func: submitFunc,
           args: [prompt]
         });
+        
+        console.log('📋 Script result:', result);
         
         results.push({
           prompt,
@@ -262,6 +265,7 @@ async function handleSubmitBatch(message) {
         });
         
       } catch (error) {
+        console.error('❌ Script injection failed:', error);
         // Frame removed is expected - means page reloaded (Ideogram accepted prompt)
         if (error.message.includes('Frame with ID') || error.message.includes('was removed')) {
           results.push({
