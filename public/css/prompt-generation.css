@@ -7,16 +7,23 @@
 #prompt-generation-module {
     width: 100%;
     height: 100%;
+    box-sizing: border-box;
 }
 
 #normal-view-content {
     width: 100%;
+    max-width: 100%;
     padding: 20px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
 }
 
 /* Parameters Section - Collapsible */
 .parameters-container {
     margin-bottom: 20px;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .parameters-header {
@@ -98,6 +105,8 @@
     max-height: 0;
     overflow: hidden;
     transition: max-height 0.3s ease;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .parameters-content.expanded {
@@ -110,6 +119,8 @@
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 16px;
     margin-bottom: 20px;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .param-field {
