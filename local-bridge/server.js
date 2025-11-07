@@ -76,6 +76,9 @@ const server = http.createServer((req, res) => {
       connections: wss.clients ? wss.clients.size : 0,
       authenticated: authenticatedClients.size
     }));
+  } else if (req.url === '/token') {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end(AUTH_TOKEN);
   } else {
     res.writeHead(404);
     res.end('Not Found');
