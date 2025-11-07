@@ -210,13 +210,15 @@ class LocalBridgeClient {
             this.on('onPromptResult', resultHandler);
             
             // Send batch
-            this.send({
+            const batchMessage = {
                 type: 'submit_batch',
                 messageId: messageId,
                 prompts: prompts,
                 delayMs: delayMs,
                 service: service
-            });
+            };
+            console.log('📤 Sending batch to extension:', batchMessage);
+            this.send(batchMessage);
             
             // Timeout after 5 minutes (long batches)
             setTimeout(() => {
