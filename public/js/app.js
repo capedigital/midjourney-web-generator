@@ -1006,17 +1006,23 @@ class App {
         btn.disabled = true;
         btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Sending to Firefly...`;
 
+        console.log('🔥 sendAllToFirefly called with', allPrompts.length, 'prompts');
+        console.log('📋 Prompts:', allPrompts);
+
         try {
             // Check if local bridge is available
             if (!window.localBridge || !window.localBridge.isReady()) {
+                console.error('❌ Local bridge not ready');
                 window.Utils.showToast('❌ Local bridge extension not connected. Click status indicator to connect.', 'error');
                 btn.disabled = false;
                 btn.innerHTML = `<i class="fas fa-fire"></i> Send All to Firefly`;
                 return;
             }
 
+            console.log('✅ Local bridge ready, submitting batch...');
             // Use local bridge to submit prompts to Firefly
             const data = await window.localBridge.submitBatch(allPrompts, 5000, 'firefly'); // 5 second delay, firefly service
+            console.log('📦 Batch response:', data);
 
             if (data.success) {
                 const successful = data.results.filter(r => r.success).length;
@@ -1042,7 +1048,7 @@ class App {
                 throw new Error(data.error || 'Failed to send');
             }
         } catch (error) {
-            logger.error('Firefly batch send failed:', error);
+            console.error('❌ Firefly batch send failed:', error);
             window.Utils.showToast('❌ Error: ' + error.message, 'error');
             btn.innerHTML = '<i class="fas fa-fire"></i> Send to Firefly';
             btn.disabled = false;
