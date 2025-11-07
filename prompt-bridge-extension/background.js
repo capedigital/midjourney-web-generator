@@ -223,20 +223,27 @@ async function handleSubmitBatch(message) {
   const results = [];
   const delayMs = message.delayMs || 5000;
   
+  console.log('🔥 handleSubmitBatch starting for service:', service, 'with', message.prompts.length, 'prompts');
+  
   try {
     let tab, submitFunc;
     
     // Determine which service to use
     if (service === 'ideogram') {
+      console.log('📱 Using Ideogram service');
       tab = await findOrCreateIdeogramTab();
       submitFunc = submitPromptToIdeogram;
     } else if (service === 'firefly') {
+      console.log('🔥 Using Firefly service');
       tab = await findOrCreateFireflyTab();
       submitFunc = submitPromptToFirefly;
     } else {
+      console.log('🎨 Using Midjourney service (default)');
       tab = await findOrCreateMidjourneyTab();
       submitFunc = submitPromptToMidjourney;
     }
+    
+    console.log('✅ Tab created/found:', tab.id, tab.url);
     
     for (let i = 0; i < message.prompts.length; i++) {
       const prompt = message.prompts[i];
