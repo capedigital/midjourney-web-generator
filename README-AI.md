@@ -20,6 +20,34 @@ When adding a new platform and getting errors:
    - "Cannot access contents" = manifest permissions
    - "prompts going to wrong platform" = hardcoded routing logic
 
+### Local Development Setup
+
+**IMPORTANT: You need TWO processes running for testing:**
+
+1. **Main web app** (port 3000):
+   ```bash
+   cd /Users/jdemott/Applications/midjourneyGenerator/web-app
+   npm start
+   ```
+
+2. **Local bridge server** (port 3001):
+   ```bash
+   cd /Users/jdemott/Applications/midjourneyGenerator/web-app/local-bridge
+   npm start
+   ```
+
+3. **Get auth token**:
+   ```bash
+   curl -s http://127.0.0.1:3001/token
+   ```
+
+4. **Configure extension**:
+   - Go to extension popup
+   - Paste token from step 3
+   - Connect to local bridge
+
+**Without the local bridge, the extension won't work and you can't test platform automation!**
+
 ### Step-by-Step Process (should take 15 minutes max)
 
 #### 1. Backend/Database (if needed)
