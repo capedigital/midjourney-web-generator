@@ -187,6 +187,9 @@ async function handleSubmitPrompt(message) {
     } else if (service === 'firefly') {
       tab = await findOrCreateFireflyTab();
       submitFunc = submitPromptToFirefly;
+    } else if (service === 'gemini') {
+      tab = await findOrCreateGeminiTab();
+      submitFunc = submitPromptToGemini;
     } else {
       tab = await findOrCreateMidjourneyTab();
       submitFunc = submitPromptToMidjourney;
@@ -237,6 +240,10 @@ async function handleSubmitBatch(message) {
       console.log('🔥 Using Firefly service');
       tab = await findOrCreateFireflyTab();
       submitFunc = submitPromptToFirefly;
+    } else if (service === 'gemini') {
+      console.log('🔷 Using Gemini service');
+      tab = await findOrCreateGeminiTab();
+      submitFunc = submitPromptToGemini;
     } else {
       console.log('🎨 Using Midjourney service (default)');
       tab = await findOrCreateMidjourneyTab();
@@ -293,6 +300,8 @@ async function handleSubmitBatch(message) {
             queryUrl = 'https://ideogram.ai/*';
           } else if (service === 'firefly') {
             queryUrl = 'https://firefly.adobe.com/*';
+          } else if (service === 'gemini') {
+            queryUrl = 'https://aistudio.google.com/*';
           } else {
             queryUrl = 'https://www.midjourney.com/*';
           }
@@ -677,6 +686,90 @@ function submitPromptToFirefly(prompt) {
     
   } catch (error) {
     console.error('❌ Error in submitPromptToFirefly:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+async function findOrCreateGeminiTab() {
+  // Try to find existing Gemini tab
+  const tabs = await chrome.tabs.query({ url: 'https://aistudio.google.com/*' });
+  
+  if (tabs.length > 0) {
+    // Activate existing tab
+    await chrome.tabs.update(tabs[0].id, { active: true });
+    await chrome.windows.update(tabs[0].windowId, { focused: true });
+    return tabs[0];
+  }
+  
+  // Create new tab
+  const tab = await chrome.tabs.create({
+    url: 'https://aistudio.google.com/prompts/new_chat?model=gemini-2.5-flash-image',
+    active: true
+  });
+  
+  // Wait for page to load
+  await new Promise(resolve => {
+    const listener = (tabId, info) => {
+      if (tabId === tab.id && info.status === 'complete') {
+        chrome.tabs.onUpdated.removeListener(listener);
+        resolve();
+      }
+    };
+    chrome.tabs.onUpdated.addListener(listener);
+  });
+  
+  return tab;
+}
+
+function submitPromptToGemini(prompt) {
+  try {
+    console.log('🔷 Looking for prompt input on Gemini AI Studio...');
+    
+    // Find the prompt input - try multiple selectors
+    let textarea = document.querySelector('textarea[placeholder*="Enter a prompt"]');
+    if (!textarea) textarea = document.querySelector('textarea[placeholder*="prompt"]');
+    if (!textarea) textarea = document.querySelector('textarea[aria-label*="prompt"]');
+    if (!textarea) textarea = document.querySelector('textarea');
+    
+    console.log('🔍 Found textarea:', textarea);
+    
+    if (!textarea) {
+      const allTextareas = document.querySelectorAll('textarea');
+      console.log('❌ No textarea found. Total textareas on page:', allTextareas.length);
+      return { success: false, error: `Prompt input not found on Gemini. Found ${allTextareas.length} textareas total.` };
+    }
+    
+    // Set the prompt value
+    console.log('✏️ Setting prompt value...');
+    textarea.value = prompt;
+    
+    // Trigger React's onChange if it exists
+    const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value').set;
+    nativeInputValueSetter.call(textarea, prompt);
+    
+    textarea.dispatchEvent(new Event('input', { bubbles: true }));
+    textarea.dispatchEvent(new Event('change', { bubbles: true }));
+    console.log('✅ Prompt set to:', prompt.substring(0, 50) + '...');
+    
+    // Submit with Enter key (like Ideogram)
+    console.log('⌨️ Submitting with Enter key (300ms delay)...');
+    
+    setTimeout(() => {
+      const enterEvent = new KeyboardEvent('keydown', {
+        key: 'Enter',
+        code: 'Enter',
+        keyCode: 13,
+        which: 13,
+        bubbles: true
+      });
+      textarea.dispatchEvent(enterEvent);
+      console.log('✅ Enter key dispatched');
+    }, 300);
+    
+    return { success: true, method: 'keyboard' };
+    
+  } catch (error) {
+    console.error('❌ Error in submitPromptToGemini:', error);
     return { success: false, error: error.message };
   }
 }

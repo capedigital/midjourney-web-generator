@@ -331,6 +331,15 @@ class TopNavModelSelector {
                   <div class="platform-check"><i class="fas fa-check-circle"></i></div>
                 </div>
                 
+                <div class="platform-item" data-platform="gemini">
+                  <div class="platform-icon">🔷</div>
+                  <div class="platform-info">
+                    <div class="platform-name">Google Gemini</div>
+                    <div class="platform-desc">Imagen 3 via AI Studio</div>
+                  </div>
+                  <div class="platform-check"><i class="fas fa-check-circle"></i></div>
+                </div>
+                
                 <div class="platform-item" data-platform="generic">
                   <div class="platform-icon">✨</div>
                   <div class="platform-info">

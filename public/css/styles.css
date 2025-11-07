@@ -249,7 +249,7 @@ input#login-email, input#login-password {
     color: #c9ff00 !important;
     font-family: var(--font-mono);
     font-style: italic;
-    font-size: 14px !important;
+    font-size: 12px !important;
     min-height: 40px;
     max-height: 40px;
     display: flex !important;

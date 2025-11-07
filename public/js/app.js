@@ -213,6 +213,14 @@ class App {
                 this.sendAllToFirefly();
             });
         }
+        
+        // Batch send to Gemini
+        const sendAllGeminiBtn = document.getElementById('send-all-gemini-btn');
+        if (sendAllGeminiBtn) {
+            sendAllGeminiBtn.addEventListener('click', () => {
+                this.sendAllToGemini();
+            });
+        }
     }
 
     loadUserSettings() {
@@ -1051,6 +1059,76 @@ class App {
             console.error('❌ Firefly batch send failed:', error);
             window.Utils.showToast('❌ Error: ' + error.message, 'error');
             btn.innerHTML = '<i class="fas fa-fire"></i> Send to Firefly';
+            btn.disabled = false;
+        }
+    }
+
+    async sendAllToGemini() {
+        // Get ALL prompts - use clean basePrompt (no Midjourney parameters)
+        const allPrompts = [];
+        document.querySelectorAll('.prompt-text').forEach(textarea => {
+            if (textarea && textarea.dataset.basePrompt) {
+                // Use the clean basePrompt stored in dataset (no /imagine prefix, no parameters)
+                allPrompts.push(textarea.dataset.basePrompt);
+            }
+        });
+
+        if (allPrompts.length === 0) {
+            window.Utils.showToast('No prompts to send', 'error');
+            return;
+        }
+
+        const btn = document.getElementById('send-all-gemini-btn');
+        if (!btn) return;
+
+        btn.disabled = true;
+        btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Sending to Gemini...`;
+
+        console.log('🔷 sendAllToGemini called with', allPrompts.length, 'prompts');
+        console.log('📋 Prompts:', allPrompts);
+
+        try {
+            // Check if local bridge is available
+            if (!window.localBridge || !window.localBridge.isReady()) {
+                console.error('❌ Local bridge not ready');
+                window.Utils.showToast('❌ Local bridge extension not connected. Click status indicator to connect.', 'error');
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fas fa-gem"></i> Send All to Gemini`;
+                return;
+            }
+
+            console.log('✅ Local bridge ready, submitting batch...');
+            // Use local bridge to submit prompts to Gemini
+            const data = await window.localBridge.submitBatch(allPrompts, 5000, 'gemini'); // 5 second delay, gemini service
+            console.log('📦 Batch response:', data);
+
+            if (data.success) {
+                const successful = data.results.filter(r => r.success).length;
+                const failed = data.results.length - successful;
+                
+                // Save to history using centralized service
+                if (window.HistoryService) {
+                    await window.HistoryService.saveBatch('gemini', allPrompts);
+                }
+                
+                if (failed === 0) {
+                    window.Utils.showToast(`✅ All ${successful} prompts sent to Gemini!`, 'success');
+                } else {
+                    window.Utils.showToast(`⚠️ Sent ${successful}/${allPrompts.length} prompts. ${failed} failed.`, 'warning');
+                }
+                
+                btn.innerHTML = '<i class="fas fa-check"></i> Sent!';
+                setTimeout(() => {
+                    btn.innerHTML = '<i class="fas fa-gem"></i> Send to Gemini';
+                    btn.disabled = false;
+                }, 3000);
+            } else {
+                throw new Error(data.error || 'Failed to send');
+            }
+        } catch (error) {
+            console.error('❌ Gemini batch send failed:', error);
+            window.Utils.showToast('❌ Error: ' + error.message, 'error');
+            btn.innerHTML = '<i class="fas fa-gem"></i> Send to Gemini';
             btn.disabled = false;
         }
     }

@@ -13,6 +13,7 @@
     "https://www.midjourney.com/*",
     "https://ideogram.ai/*",
     "https://firefly.adobe.com/*",
+    "https://aistudio.google.com/*",
     "https://discord.com/*"
   ],
   "background": {
@@ -26,7 +27,8 @@
       "matches": [
         "https://www.midjourney.com/*",
         "https://ideogram.ai/*",
-        "https://firefly.adobe.com/*"
+        "https://firefly.adobe.com/*",
+        "https://aistudio.google.com/*"
       ],
       "js": ["content.js"],
       "run_at": "document_idle"

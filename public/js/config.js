@@ -32,6 +32,12 @@ defaultMJParams: {
       description: 'Commercial-safe, professional, brand-friendly',
       supportsParameters: false
     },
+    gemini: {
+      name: 'Google Gemini',
+      icon: '🔷',
+      description: 'Imagen 3 via AI Studio - advanced image generation',
+      supportsParameters: false
+    },
     generic: {
       name: 'Other (Nano Banana, Grok, etc.)',
       icon: '✨',
@@ -127,6 +133,19 @@ defaultMJParams: {
 - Great for commercial, professional, brand-friendly imagery
 - NO parameters, NO /imagine prefix, NO quotes, NO numbering`,
                 example: `Studio shot of futuristic high heels, warm red blue gel lighting, shallow depth of field, mechanical materials as props`
+            },
+            
+            gemini: {
+                intro: `Generate ${count} Google Gemini (Imagen 3) prompts using this template:`,
+                rules: `GOOGLE GEMINI/IMAGEN 3 BEST PRACTICES:
+- Clear, descriptive language with rich visual details
+- Excels at photorealistic images and complex compositions
+- Include specific camera settings for photo-like results (aperture, focal length)
+- Mention lighting conditions, materials, and textures
+- Be specific about style (photographic, artistic, etc.)
+- Good at understanding technical photography terms
+- NO parameters, NO /imagine prefix, NO quotes, NO numbering`,
+                example: `Professional portrait of a chef in modern kitchen, shot with 85mm lens, warm natural lighting from large window, shallow depth of field, rustic wooden textures`
             },
             
             generic: {
