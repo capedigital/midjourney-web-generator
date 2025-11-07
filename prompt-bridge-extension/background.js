@@ -147,6 +147,8 @@ function send(message) {
 }
 
 async function handleMessage(message) {
+  console.log('🔍 Extension received message:', message);
+  
   switch (message.type) {
     case 'auth_success':
       authenticated = true;
@@ -161,6 +163,7 @@ async function handleMessage(message) {
       break;
 
     case 'submit_batch':
+      console.log('🔥 Handling batch submission for service:', message.service);
       await handleSubmitBatch(message);
       break;
 
