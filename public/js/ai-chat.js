@@ -819,10 +819,12 @@ class AIChatAssistant {
             });
             
             if (!response.ok) {
-                throw new Error('Failed to save chat session');
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to save chat session');
             }
             
-            logger.debug('💾 Chat session saved to database:', this.currentSessionId);
+            const result = await response.json();
+            logger.debug('💾 Chat session saved to database:', this.currentSessionId, '- Messages:', this.messages.length);
         } catch (error) {
             console.error('❌ Failed to save chat session:', error);
         }
