@@ -167,28 +167,27 @@
   </div>
   
   <div id="disconnectedInfo" class="section">
-    <div class="form-group">
-      <label for="token">Bridge Auth Token</label>
-      <input 
-        type="text" 
-        id="token" 
-        placeholder="Paste token from bridge server..."
-      >
-      <div class="help-text">
-        Get this from the local bridge server terminal
+    <div style="background: #fff3cd; color: #856404; padding: 12px; border-radius: 6px; font-size: 13px; margin-bottom: 16px;">
+      ⚠️ Bridge server not running
+    </div>
+    
+    <div style="font-size: 13px; color: #34495e; line-height: 1.6;">
+      <strong>✨ Automatic Connection</strong>
+      <p style="margin: 8px 0; color: #7f8c8d;">
+        This extension connects automatically to your local bridge server - no tokens needed!
+      </p>
+      
+      <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; margin-top: 12px;">
+        <strong style="color: #2c3e50; display: block; margin-bottom: 8px;">To start:</strong>
+        <ol style="padding-left: 20px; margin: 8px 0; font-size: 12px; color: #7f8c8d;">
+          <li>Bridge server is running automatically via LaunchAgent</li>
+          <li>If not connected, check: <code style="background: #e9ecef; padding: 2px 6px; border-radius: 3px;">curl localhost:3001/health</code></li>
+          <li>View logs: <code style="background: #e9ecef; padding: 2px 6px; border-radius: 3px;">~/Library/Logs/local-bridge.log</code></li>
+        </ol>
       </div>
     </div>
     
-    <button id="connectBtn" class="btn btn-primary">Connect to Bridge</button>
-    
-    <div style="margin-top: 16px; font-size: 12px; color: #7f8c8d;">
-      <strong>Quick Setup:</strong>
-      <ol style="padding-left: 20px; margin: 8px 0;">
-        <li>Start bridge: <code>npm start</code></li>
-        <li>Copy token from terminal</li>
-        <li>Paste above and connect</li>
-      </ol>
-    </div>
+    <button id="reconnectBtn" class="btn btn-primary" style="margin-top: 16px;">Reconnect</button>
   </div>
   
   <script src="popup.js"></script>

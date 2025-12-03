@@ -45,11 +45,13 @@ class LocalBridgeClient {
             this.ws = new WebSocket('ws://127.0.0.1:3001');
 
             this.ws.onopen = () => {
+                console.log('🌉 Bridge: WebSocket connected to localhost:3001');
                 this.connected = true;
                 this.reconnectAttempts = 0;
                 
                 // Authenticate with JWT token
                 const authToken = this.getAuthToken();
+                console.log('🌉 Bridge: Sending auth as webapp...');
                 this.send({
                     type: 'auth',
                     token: authToken,
@@ -87,7 +89,10 @@ class LocalBridgeClient {
             };
 
             this.ws.onerror = (error) => {
-                console.error('❌ WebSocket error:', error);
+                console.error('❌ WebSocket error - Check if:', error);
+                console.error('  1. Bridge server is running (lsof -i :3001)');
+                console.error('  2. Brave shields are down for this site');
+                console.error('  3. You are logged into the web app');
             };
 
         } catch (error) {
@@ -263,6 +268,37 @@ class LocalBridgeClient {
             extensionAvailable: this.extensionAvailable,
             ready: this.isReady()
         };
+    }
+    
+    // Debug helper
+    debug() {
+        const status = this.getStatus();
+        console.log('🌉 Local Bridge Status:');
+        console.log('  WebSocket Connected:', status.connected ? '✅' : '❌');
+        console.log('  Authenticated:', status.authenticated ? '✅' : '❌');
+        console.log('  Extension Available:', status.extensionAvailable ? '✅' : '❌');
+        console.log('  Ready to Send:', status.ready ? '✅' : '❌');
+        console.log('  Has Login Token:', !!localStorage.getItem('token') ? '✅' : '❌');
+        console.log('  WebSocket State:', this.ws ? ['CONNECTING', 'OPEN', 'CLOSING', 'CLOSED'][this.ws.readyState] : 'NULL');
+        
+        if (!status.ready) {
+            console.log('\n💡 Troubleshooting:');
+            if (!localStorage.getItem('token')) {
+                console.log('  ⚠️ Not logged in - login to the web app first');
+            }
+            if (!status.connected) {
+                console.log('  ⚠️ Check: lsof -i :3001 (bridge server running?)');
+                console.log('  ⚠️ Check: Brave shields down for this site?');
+            }
+            if (status.connected && !status.authenticated) {
+                console.log('  ⚠️ Authentication failed - check server logs');
+            }
+            if (status.authenticated && !status.extensionAvailable) {
+                console.log('  ⚠️ Extension not connected - reload extension');
+            }
+        }
+        
+        return status;
     }
 }
 

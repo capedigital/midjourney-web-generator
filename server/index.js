@@ -127,6 +127,7 @@ app.get('/health', asyncHandler(async (req, res) => {
 const aiRoutes = require('./routes/ai');
 const openrouterRoutes = require('./routes/openrouter');
 const userPreferencesRoutes = require('./routes/userPreferences');
+const chatSessionsRoutes = require('./routes/chatSessions');
 
 // API routes
 app.use('/api/auth', authRoutes);
@@ -135,6 +136,7 @@ app.use('/api/templates', templatesRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/openrouter', openrouterRoutes);
 app.use('/api/preferences', userPreferencesRoutes);
+app.use('/api/chat-sessions', chatSessionsRoutes);
 
 // Serve frontend for all other routes (SPA support)
 app.get('*', (req, res) => {

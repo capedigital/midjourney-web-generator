@@ -15,19 +15,25 @@ class LocalBridgeUI {
         
         // Listen to bridge events
         window.localBridge.on('onConnect', () => {
+            console.log('🌉 Bridge: Web app authenticated');
             this.updateStatus('connected');
         });
         
         window.localBridge.on('onDisconnect', () => {
+            console.log('🌉 Bridge: Web app disconnected');
             this.updateStatus('disconnected');
         });
         
         window.localBridge.on('onExtensionStatus', (available) => {
+            console.log('🌉 Bridge: Extension', available ? 'available' : 'unavailable');
             this.updateStatus(available ? 'ready' : 'connected');
         });
         
         // Check initial status
         setTimeout(() => this.updateStatus(), 100);
+        
+        // Update status every 2 seconds to keep UI in sync
+        setInterval(() => this.updateStatus(), 2000);
     }
 
     createStatusIndicator() {

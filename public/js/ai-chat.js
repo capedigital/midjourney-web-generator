@@ -302,14 +302,14 @@ class AIChatAssistant {
         }
     }
 
-    populateChatSessions() {
+    async populateChatSessions() {
         const sessionsList = document.getElementById('chat-sessions-list');
         if (!sessionsList) {
             console.error('❌ chat-sessions-list element not found');
             return;
         }
 
-        const sessions = this.getSavedSessions();
+        const sessions = await this.getSavedSessions();
         logger.debug('🔍 Loading chat sessions for History modal:', sessions.length);
         logger.debug('🔍 Raw saved sessions:', sessions);
         
@@ -743,23 +743,23 @@ class AIChatAssistant {
         }
     }
 
-    restoreSelectedChat() {
+    async restoreSelectedChat() {
         const previewActions = document.getElementById('chat-preview-actions');
         if (!previewActions || !previewActions.dataset.sessionId) return;
 
         const sessionId = previewActions.dataset.sessionId;
-        this.loadSession(sessionId);
+        await this.loadSession(sessionId);
         this.closeChatHistoryModal();
     }
 
-    deleteSelectedChat() {
+    async deleteSelectedChat() {
         const previewActions = document.getElementById('chat-preview-actions');
         if (!previewActions || !previewActions.dataset.sessionId) return;
 
         const sessionId = previewActions.dataset.sessionId;
         if (confirm('Are you sure you want to delete this chat session?')) {
-            if (this.deleteSession(sessionId)) {
-                this.populateChatSessions(); // Refresh the list
+            if (await this.deleteSession(sessionId)) {
+                await this.populateChatSessions(); // Refresh the list
                 // Clear preview
                 const previewContent = document.getElementById('chat-preview-content');
                 const previewTitle = document.getElementById('chat-preview-title');
@@ -785,50 +785,60 @@ class AIChatAssistant {
         logger.debug('Started new chat session:', this.currentSessionId);
     }
 
-    saveCurrentSession() {
-        // DISABLED: No longer saving to localStorage
-        return;
-        
+    async saveCurrentSession() {
         if (!this.currentSessionId || this.messages.length === 0) return;
 
-        const sessionData = {
-            id: this.currentSessionId,
-            title: this.generateSessionTitle(),
-            messages: [...this.messages],
-            timestamp: Date.now(),
-            model: this.currentModel
-        };
-
-        // Get existing sessions
-        const existingSessions = this.getSavedSessions();
+        const title = this.generateSessionTitle();
         
-        // Add or update current session
-        const existingIndex = existingSessions.findIndex(s => s.id === this.currentSessionId);
-        if (existingIndex >= 0) {
-            existingSessions[existingIndex] = sessionData;
-        } else {
-            existingSessions.unshift(sessionData); // Add to beginning
-        }
-
-        // Trim to max limit
-        const trimmedSessions = existingSessions.slice(0, this.maxStoredChats);
-
-        // Save to localStorage
         try {
-            localStorage.setItem('ai-chat-history', JSON.stringify(trimmedSessions));
-            logger.debug('Chat session auto-saved:', this.currentSessionId);
+            const response = await fetch('/api/chat-sessions/save', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({
+                    sessionId: this.currentSessionId,
+                    title: title,
+                    messages: this.messages,
+                    model: this.currentModel
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to save chat session');
+            }
+            
+            logger.debug('💾 Chat session saved to database:', this.currentSessionId);
         } catch (error) {
-            console.error('Failed to save chat session:', error);
+            console.error('❌ Failed to save chat session:', error);
         }
     }
 
-    getSavedSessions() {
+    async getSavedSessions() {
         try {
-            const saved = localStorage.getItem('ai-chat-history');
-            const sessions = saved ? JSON.parse(saved) : [];
-            logger.debug('🔍 getSavedSessions: Found', sessions.length, 'sessions in localStorage');
-            logger.debug('🔍 Raw localStorage data:', saved);
-            return sessions;
+            const response = await fetch('/api/chat-sessions/list', {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to fetch chat sessions');
+            }
+            
+            const data = await response.json();
+            logger.debug('🔍 getSavedSessions: Found', data.sessions.length, 'sessions from database');
+            
+            // Convert to old format for compatibility
+            return data.sessions.map(s => ({
+                id: s.sessionId,
+                title: s.title,
+                messages: [],  // Don't load full messages in list view
+                timestamp: new Date(s.updatedAt).getTime(),
+                model: s.model,
+                messageCount: s.messageCount
+            }));
         } catch (error) {
             console.error('❌ Failed to load chat sessions:', error);
             return [];
@@ -852,11 +862,21 @@ class AIChatAssistant {
         return 'New Chat';
     }
 
-    loadSession(sessionId) {
-        const sessions = this.getSavedSessions();
-        const session = sessions.find(s => s.id === sessionId);
-        
-        if (session) {
+    async loadSession(sessionId) {
+        try {
+            const response = await fetch(`/api/chat-sessions/${sessionId}`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to load chat session');
+            }
+            
+            const data = await response.json();
+            const session = data.session;
+            
             this.clearChat(false); // Clear without starting new session
             this.currentSessionId = sessionId;
             this.messages = [...session.messages];
@@ -888,7 +908,9 @@ class AIChatAssistant {
                 }
             }
             
-            logger.debug('Loaded chat session:', sessionId);
+            logger.debug('✅ Loaded chat session:', sessionId);
+        } catch (error) {
+            console.error('❌ Failed to load session:', error);
         }
     }
 
@@ -933,16 +955,23 @@ class AIChatAssistant {
         }
     }
 
-    deleteSession(sessionId) {
-        const sessions = this.getSavedSessions();
-        const filteredSessions = sessions.filter(s => s.id !== sessionId);
-        
+    async deleteSession(sessionId) {
         try {
-            localStorage.setItem('ai-chat-history', JSON.stringify(filteredSessions));
-            logger.debug('Deleted chat session:', sessionId);
+            const response = await fetch(`/api/chat-sessions/${sessionId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to delete chat session');
+            }
+            
+            logger.debug('🗑️ Deleted chat session:', sessionId);
             return true;
         } catch (error) {
-            console.error('Failed to delete chat session:', error);
+            console.error('❌ Failed to delete chat session:', error);
             return false;
         }
     }

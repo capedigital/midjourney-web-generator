@@ -1,20 +1,13 @@
 /**
  * Popup UI Controller
+ * Updated for automatic authentication
  */
 
 const statusEl = document.getElementById('status');
-const tokenInput = document.getElementById('token');
-const connectBtn = document.getElementById('connectBtn');
+const reconnectBtn = document.getElementById('reconnectBtn');
 const disconnectBtn = document.getElementById('disconnectBtn');
 const connectedInfo = document.getElementById('connectedInfo');
 const disconnectedInfo = document.getElementById('disconnectedInfo');
-
-// Load saved token
-chrome.storage.local.get(['bridgeToken'], (result) => {
-  if (result.bridgeToken) {
-    tokenInput.value = result.bridgeToken;
-  }
-});
 
 // Get initial status
 updateStatus();
@@ -22,35 +15,18 @@ updateStatus();
 // Update status every 2 seconds
 setInterval(updateStatus, 2000);
 
-connectBtn.addEventListener('click', () => {
-  const token = tokenInput.value.trim();
+reconnectBtn.addEventListener('click', () => {
+  reconnectBtn.textContent = 'Reconnecting...';
+  reconnectBtn.disabled = true;
   
-  if (!token) {
-    alert('Please enter an auth token');
-    return;
-  }
-  
-  // Send token to background script
   chrome.runtime.sendMessage(
-    { type: 'SET_TOKEN', token },
+    { type: 'RECONNECT' },
     (response) => {
-      if (chrome.runtime.lastError) {
-        alert('Error connecting: ' + chrome.runtime.lastError.message);
-        return;
-      }
-      
-      if (response && response.success) {
-        connectBtn.textContent = 'Connecting...';
-        connectBtn.disabled = true;
-        
-        setTimeout(() => {
-          updateStatus();
-          connectBtn.textContent = 'Connect';
-          connectBtn.disabled = false;
-        }, 1000);
-      } else {
-        alert('Failed to connect. Check the background console.');
-      }
+      setTimeout(() => {
+        updateStatus();
+        reconnectBtn.textContent = 'Reconnect';
+        reconnectBtn.disabled = false;
+      }, 1000);
     }
   );
 });
@@ -82,12 +58,8 @@ function updateStatus() {
           <div class="status-dot"></div>
           <span>Connected & Ready</span>
         `;
-        connectBtn.style.display = 'none';
-        disconnectBtn.style.display = 'block';
-        infoSection.style.display = 'block';
-        
-        infoStatus.textContent = 'Connected';
-        infoAuth.textContent = 'Authenticated';
+        connectedInfo.style.display = 'block';
+        disconnectedInfo.style.display = 'none';
       } else if (status.connected) {
         statusEl.className = 'status';
         statusEl.style.background = '#fff3cd';
@@ -96,18 +68,16 @@ function updateStatus() {
           <div class="status-dot"></div>
           <span>Connected (authenticating...)</span>
         `;
-        infoSection.style.display = 'block';
-        infoStatus.textContent = 'Connected';
-        infoAuth.textContent = 'Waiting...';
+        connectedInfo.style.display = 'none';
+        disconnectedInfo.style.display = 'block';
       } else {
         statusEl.className = 'status status-disconnected';
         statusEl.innerHTML = `
           <div class="status-dot"></div>
           <span>Disconnected</span>
         `;
-        connectBtn.style.display = 'block';
-        disconnectBtn.style.display = 'none';
-        infoSection.style.display = 'none';
+        connectedInfo.style.display = 'none';
+        disconnectedInfo.style.display = 'block';
       }
     }
   );
