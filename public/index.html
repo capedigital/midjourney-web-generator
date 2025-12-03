@@ -365,6 +365,43 @@ Example ChatGPT output:
                             <div class="chat-status" id="chat-status"></div>
                         </div>
                     </div>
+                    
+                    <!-- Chat History Modal -->
+                    <div id="chat-history-modal" class="modal" style="display: none;">
+                        <div class="modal-content chat-history-modal">
+                            <div class="modal-header">
+                                <h2>Chat History</h2>
+                                <button class="close-btn" id="close-chat-history">✕</button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="chat-history-layout">
+                                    <div class="chat-sessions-sidebar">
+                                        <div class="chat-sessions-header">
+                                            <h3>Saved Chats</h3>
+                                        </div>
+                                        <div class="chat-sessions-list" id="chat-sessions-list">
+                                            <!-- Sessions populated by JS -->
+                                        </div>
+                                    </div>
+                                    <div class="chat-preview-area">
+                                        <div class="chat-preview-header">
+                                            <h3 id="chat-preview-title">Select a chat to view</h3>
+                                            <div class="chat-preview-actions" id="chat-preview-actions" style="display: none;">
+                                                <button class="btn-primary" id="restore-chat-btn">Restore</button>
+                                                <button class="btn-danger" id="delete-chat-btn">Delete</button>
+                                            </div>
+                                        </div>
+                                        <div class="chat-preview-content" id="chat-preview-content">
+                                            <div class="chat-preview-empty">
+                                                <i class="fas fa-comments"></i>
+                                                <div>Select a chat session from the left to preview it here</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 
                 <!-- Prompt Generation module -->
