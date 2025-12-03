@@ -384,6 +384,76 @@ async function getCredits(req, res) {
 }
 
 /**
+ * Get top 10 models from Big 4 providers only (OpenAI, Anthropic, Google, X.AI)
+ * Sorted by price (free first, then cheapest)
+ */
+async function getTopBigFour(req, res) {
+  try {
+    // Check cache first
+    const cached = modelCache.get('top_big_four');
+    if (cached) {
+      return res.json({
+        success: true,
+        models: cached,
+        sortBy: 'big_four',
+        cached: true
+      });
+    }
+
+    const response = await fetch(`${OPENROUTER_BASE_URL}/models`, {
+      headers: {
+        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+        'HTTP-Referer': req.headers.origin || 'http://localhost:3000',
+        'X-Title': 'Midjourney Generator'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`OpenRouter API error: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    const allModels = data.data || [];
+
+    // Filter for Big 4 providers only
+    const bigFourProviders = ['openai', 'anthropic', 'google', 'x-ai'];
+    
+    const bigFourModels = allModels
+      .filter(model => {
+        // Check if model ID starts with any of the big four providers
+        const provider = model.id.split('/')[0].toLowerCase();
+        return bigFourProviders.includes(provider);
+      })
+      .map(model => formatModelWithDetails(model))
+      .filter(m => m.pricing.avgCostPer1M >= 0) // Include free models
+      .sort((a, b) => {
+        // Sort: Free first, then by price
+        if (a.pricing.avgCostPer1M === 0 && b.pricing.avgCostPer1M > 0) return -1;
+        if (a.pricing.avgCostPer1M > 0 && b.pricing.avgCostPer1M === 0) return 1;
+        return a.pricing.avgCostPer1M - b.pricing.avgCostPer1M;
+      })
+      .slice(0, 10); // Top 10
+
+    // Cache the results
+    modelCache.set('top_big_four', bigFourModels);
+
+    res.json({
+      success: true,
+      models: bigFourModels,
+      count: bigFourModels.length,
+      sortBy: 'big_four',
+      cached: false
+    });
+  } catch (error) {
+    console.error('Error fetching Big Four models from OpenRouter:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+}
+
+/**
  * Get generation statistics for a specific request
  */
 async function getGenerationStats(req, res) {
@@ -420,6 +490,7 @@ module.exports = {
   getTopModels,
   getTopPopular,
   getTopCheapest,
+  getTopBigFour,
   getCredits,
   getGenerationStats
 };

@@ -8,6 +8,7 @@ router.get('/models', openrouterController.getModels);
 router.get('/models/top', openrouterController.getTopModels); // Legacy - returns popular
 router.get('/models/popular', openrouterController.getTopPopular);
 router.get('/models/cheapest', openrouterController.getTopCheapest);
+router.get('/models/big-four', openrouterController.getTopBigFour);
 
 // Semi-protected routes (auth optional - returns limited info if not authenticated)
 router.get('/credits', openrouterController.getCredits);

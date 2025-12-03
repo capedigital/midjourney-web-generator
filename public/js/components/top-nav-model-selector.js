@@ -22,17 +22,69 @@ class TopNavModelSelector {
   }
 
   /**
-   * Curated model list from Electron app
-   * Manually maintained with current pricing
+   * Load top 10 models dynamically from OpenRouter API
+   * Fetches Big 4 providers (OpenAI, Anthropic, Google, X.AI) only
+   * Real-time pricing, always current
    */
-  getCuratedModels() {
+  async loadDynamicModels() {
+    try {
+      const response = await fetch('/api/openrouter/models/big-four');
+      
+      if (!response.ok) {
+        console.warn('⚠️ Could not fetch Big Four models, using fallback');
+        return this.getFallbackModels();
+      }
+
+      const data = await response.json();
+      
+      if (data.success && data.models && data.models.length > 0) {
+        const models = data.models.map(m => ({
+          id: m.id,
+          name: m.name,
+          displayLabelShort: m.name.split(' ').slice(0, 3).join(' '), // Shorten name
+          provider: m.id.split('/')[0],
+          priceLabel: m.pricing.avgCostPer1M === 0 ? 'FREE' : `$${m.pricing.avgCostPer1M.toFixed(3)}/M`,
+          promptPrice: m.pricing.promptPer1M,
+          completionPrice: m.pricing.completionPer1M,
+          promptPriceLabel: `Prompt: $${m.pricing.promptPer1M.toFixed(3)}/M`,
+          completionPriceLabel: `Completion: $${m.pricing.completionPer1M.toFixed(3)}/M`,
+          contextLabel: m.context_length ? `${(m.context_length / 1000).toFixed(0)}k tokens` : 'Unknown',
+          category: m.pricing.avgCostPer1M < 1 ? 'budget' : m.pricing.avgCostPer1M < 10 ? 'balanced' : 'premium',
+          isFree: m.pricing.avgCostPer1M === 0,
+          isDefault: m.pricing.avgCostPer1M === 0 // Default to free model if available
+        }));
+
+        console.log(`✅ Loaded ${models.length} Big 4 models dynamically from OpenRouter`);
+        
+        return {
+          price: [...models], // Already sorted by price from API
+          performance: [...models].sort((a, b) => {
+            const order = { premium: 0, balanced: 1, budget: 2 };
+            return order[a.category] - order[b.category];
+          })
+        };
+      }
+      
+      return this.getFallbackModels();
+    } catch (error) {
+      console.error('❌ Error loading dynamic models:', error);
+      return this.getFallbackModels();
+    }
+  }
+
+  /**
+   * Fallback models if API fails - minimal set
+   * Big 4 providers only: OpenAI, Anthropic, Google, X.AI
+   */
+  getFallbackModels() {
+    console.log('⚠️ Using fallback model list (API unavailable)');
     const models = [
       {
         id: 'openai/gpt-4o-mini',
         name: 'GPT-4o Mini',
         displayLabelShort: 'GPT-4o Mini',
         provider: 'OpenAI',
-        priceLabel: '$0.375/M',
+        priceLabel: 'Loading...',
         promptPrice: 0.15,
         completionPrice: 0.60,
         promptPriceLabel: 'Prompt: $0.15/M',
@@ -40,50 +92,12 @@ class TopNavModelSelector {
         contextLabel: '128k tokens',
         category: 'balanced',
         isDefault: true
-      },
-      {
-        id: 'google/gemini-2.0-flash-001',
-        name: 'Gemini 2.0 Flash',
-        displayLabelShort: 'Gemini 2.0 Flash',
-        provider: 'Google',
-        priceLabel: '$0.25/M',
-        promptPrice: 0.125,
-        completionPrice: 0.50,
-        promptPriceLabel: 'Prompt: $0.125/M',
-        completionPriceLabel: 'Completion: $0.50/M',
-        contextLabel: '1M tokens',
-        category: 'budget',
-        isFree: true // Has free tier!
-      },
-      {
-        id: 'x-ai/grok-4-fast',
-        name: 'Grok 4 Fast',
-        displayLabelShort: 'Grok 4 Fast',
-        provider: 'X.AI',
-        priceLabel: '$2.00/M',
-        promptPrice: 1.00,
-        completionPrice: 3.00,
-        promptPriceLabel: 'Prompt: $1.00/M',
-        completionPriceLabel: 'Completion: $3.00/M',
-        contextLabel: '128k tokens',
-        category: 'premium'
       }
     ];
-
-    // Sort models by price (cheapest first) and by performance
+    
     return {
-      price: [...models].sort((a, b) => {
-        // Free models first!
-        if (a.isFree && !b.isFree) return -1;
-        if (!a.isFree && b.isFree) return 1;
-        if (a.isFree && b.isFree) return 0;
-        return a.promptPrice - b.promptPrice;
-      }),
-      performance: [...models].sort((a, b) => {
-        // Premium models first, then balanced, then budget, then free
-        const order = { premium: 0, balanced: 1, budget: 2, free: 3 };
-        return order[a.category] - order[b.category];
-      })
+      price: models,
+      performance: models
     };
   }
 
@@ -97,16 +111,16 @@ class TopNavModelSelector {
     // Build UI
     this.render();
 
+    // Load models dynamically from OpenRouter API (Big 4 only, top 10)
+    this.models = await this.loadDynamicModels();
+
     // Load user preferences from database
     await this.loadUserPreferences();
 
-    // Render curated model list
+    // Render model list with live data
     this.renderModelList();
 
-    // Fetch current pricing from OpenRouter and update models
-    await this.updateModelPricing();
-
-    // Fetch credits (no need to fetch models - using curated list)
+    // Fetch credits
     if (this.options.showCredits) {
       await this.fetchCredits();
     }
@@ -114,7 +128,7 @@ class TopNavModelSelector {
     // Setup event listeners
     this.setupEventListeners();
 
-    console.log('🎯 Top Nav Model Selector initialized with', this.models.price.length, 'curated models');
+    console.log('🎯 Top Nav Model Selector initialized with', this.models.price.length, 'models (Big 4 only)');
     if (this.currentModel) {
       console.log('✅ Default model selected:', this.currentModel.id);
     }
@@ -191,50 +205,7 @@ class TopNavModelSelector {
     }
   }
 
-  /**
-   * Fetch current pricing from OpenRouter API and update our curated models
-   */
-  async updateModelPricing() {
-    try {
-      const response = await fetch('/api/openrouter/models');
-      if (!response.ok) {
-        console.warn('Could not fetch current pricing, using defaults');
-        return;
-      }
 
-      const data = await response.json();
-      const apiModels = data.data || [];
-
-      // Update pricing for each of our curated models
-      ['price', 'performance'].forEach(sortKey => {
-        this.models[sortKey] = this.models[sortKey].map(model => {
-          const apiModel = apiModels.find(m => m.id === model.id);
-          if (apiModel && apiModel.pricing) {
-            const promptPrice = parseFloat(apiModel.pricing.prompt) * 1000000;
-            const completionPrice = parseFloat(apiModel.pricing.completion) * 1000000;
-            
-            return {
-              ...model,
-              promptPrice: promptPrice,
-              completionPrice: completionPrice,
-              priceLabel: `$${((promptPrice + completionPrice) / 2).toFixed(3)}/M`,
-              promptPriceLabel: `Prompt: $${promptPrice.toFixed(3)}/M`,
-              completionPriceLabel: `Completion: $${completionPrice.toFixed(3)}/M`,
-              contextLabel: apiModel.context_length ? `${(apiModel.context_length / 1000).toFixed(0)}k tokens` : model.contextLabel
-            };
-          }
-          return model;
-        });
-      });
-
-      // Re-render with updated prices
-      this.renderModelList();
-      console.log('✅ Model pricing updated from OpenRouter API');
-    } catch (error) {
-      console.warn('⚠️ Could not update model pricing:', error.message);
-      // Continue with default pricing
-    }
-  }
 
   render() {
     this.container.innerHTML = `
@@ -723,11 +694,12 @@ class TopNavModelSelector {
   }
 
   /**
-   * Manually refresh models list (re-renders curated list with updated pricing)
+   * Manually refresh models list from OpenRouter API
+   * Reloads top 10 Big 4 models with current pricing
    */
   async refreshModelsNow() {
     console.log('🔄 Manual models refresh triggered');
-    await this.updateModelPricing();
+    this.models = await this.loadDynamicModels();
     this.renderModelList();
   }
 
