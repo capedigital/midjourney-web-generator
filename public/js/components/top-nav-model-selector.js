@@ -57,12 +57,12 @@ class TopNavModelSelector {
         
         // Second pass: determine default model
         const hasGpt4oMini = models.some(m => m.id === 'openai/gpt-4o-mini');
-        const hasAffordableGpt5 = models.some(m => m.id === 'openai/gpt-5.1' && m.pricing.avgCostPer1M < 1);
+        const hasAffordableGpt5 = models.some(m => m.id === 'openai/gpt-5.1' && m.promptPrice < 1);
         
         models.forEach(m => {
           if (m.id === 'openai/gpt-4o-mini') {
             m.isDefault = true;
-          } else if (!hasGpt4oMini && m.id === 'openai/gpt-5.1' && m.pricing.avgCostPer1M < 1) {
+          } else if (!hasGpt4oMini && m.id === 'openai/gpt-5.1' && m.promptPrice < 1) {
             m.isDefault = true;
           } else if (!hasGpt4oMini && !hasAffordableGpt5 && m.isFree && !models.some(model => model.isDefault)) {
             m.isDefault = true; // First free model as fallback
