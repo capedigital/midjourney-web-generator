@@ -38,6 +38,7 @@ class TopNavModelSelector {
       const data = await response.json();
       
       if (data.success && data.models && data.models.length > 0) {
+        // First pass: convert API models to our format
         const models = data.models.map(m => ({
           id: m.id,
           name: m.name,
@@ -51,11 +52,22 @@ class TopNavModelSelector {
           contextLabel: m.context_length ? `${(m.context_length / 1000).toFixed(0)}k tokens` : 'Unknown',
           category: m.pricing.avgCostPer1M < 1 ? 'budget' : m.pricing.avgCostPer1M < 10 ? 'balanced' : 'premium',
           isFree: m.pricing.avgCostPer1M === 0,
-          // Default: GPT-4o Mini (or GPT-5.1 if affordable), or first free model
-          isDefault: m.id === 'openai/gpt-4o-mini' || 
-                     (m.id === 'openai/gpt-5.1' && m.pricing.avgCostPer1M < 1) ||
-                     (m.pricing.avgCostPer1M === 0 && !models.some(model => model.id === 'openai/gpt-4o-mini'))
+          isDefault: false // Set in second pass
         }));
+        
+        // Second pass: determine default model
+        const hasGpt4oMini = models.some(m => m.id === 'openai/gpt-4o-mini');
+        const hasAffordableGpt5 = models.some(m => m.id === 'openai/gpt-5.1' && m.pricing.avgCostPer1M < 1);
+        
+        models.forEach(m => {
+          if (m.id === 'openai/gpt-4o-mini') {
+            m.isDefault = true;
+          } else if (!hasGpt4oMini && m.id === 'openai/gpt-5.1' && m.pricing.avgCostPer1M < 1) {
+            m.isDefault = true;
+          } else if (!hasGpt4oMini && !hasAffordableGpt5 && m.isFree && !models.some(model => model.isDefault)) {
+            m.isDefault = true; // First free model as fallback
+          }
+        });
 
         console.log(`✅ Loaded ${models.length} Big 4 models dynamically from OpenRouter`);
         
