@@ -267,8 +267,8 @@ class AIChatAssistant {
         }
 
         // Restore and delete chat buttons
-        const restoreBtn = document.getElementById('restore-chat');
-        const deleteBtn = document.getElementById('delete-chat');
+        const restoreBtn = document.getElementById('restore-chat-btn');
+        const deleteBtn = document.getElementById('delete-chat-btn');
         
         if (restoreBtn) {
             restoreBtn.addEventListener('click', () => this.restoreSelectedChat());
@@ -394,6 +394,7 @@ class AIChatAssistant {
         sessionItem.classList.add('selected');
 
         const sessionId = sessionItem.dataset.sessionId;
+        this.selectedSessionId = sessionId; // Store for restore/delete
         
         // Fetch full session with messages from API
         try {
@@ -424,6 +425,12 @@ class AIChatAssistant {
             
             // Then populate with fresh content
             this.previewChatSession(session);
+            
+            // Show action buttons
+            const previewActions = document.getElementById('chat-preview-actions');
+            if (previewActions) {
+                previewActions.style.display = 'flex';
+            }
         } catch (error) {
             console.error('❌ Failed to load session for preview:', error);
         }
@@ -777,21 +784,25 @@ class AIChatAssistant {
     }
 
     async restoreSelectedChat() {
-        const previewActions = document.getElementById('chat-preview-actions');
-        if (!previewActions || !previewActions.dataset.sessionId) return;
+        if (!this.selectedSessionId) {
+            console.warn('No session selected');
+            return;
+        }
 
-        const sessionId = previewActions.dataset.sessionId;
-        await this.loadSession(sessionId);
+        await this.loadSession(this.selectedSessionId);
         this.closeChatHistoryModal();
+        logger.debug('✅ Restored chat session:', this.selectedSessionId);
     }
 
     async deleteSelectedChat() {
-        const previewActions = document.getElementById('chat-preview-actions');
-        if (!previewActions || !previewActions.dataset.sessionId) return;
+        if (!this.selectedSessionId) {
+            console.warn('No session selected');
+            return;
+        }
 
-        const sessionId = previewActions.dataset.sessionId;
         if (confirm('Are you sure you want to delete this chat session?')) {
-            if (await this.deleteSession(sessionId)) {
+            if (await this.deleteSession(this.selectedSessionId)) {
+                this.selectedSessionId = null;
                 await this.populateChatSessions(); // Refresh the list
                 // Clear preview
                 const previewContent = document.getElementById('chat-preview-content');
@@ -803,6 +814,7 @@ class AIChatAssistant {
                     previewActions.style.display = 'none';
                     previewContent.innerHTML = '<div class="chat-preview-empty"><i class="fas fa-comments"></i><div>Select a chat session from the left to preview it here</div></div>';
                 }
+                logger.debug('✅ Deleted chat session');
             }
         }
     }
