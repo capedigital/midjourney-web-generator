@@ -959,7 +959,12 @@ class AIChatAssistant {
         if (!this.chatMessages) return;
         
         messages.forEach(message => {
-            this.addMessageToUI(message.content, message.role);
+            // Handle both string and object content
+            let content = message.content;
+            if (typeof content === 'object' && content !== null) {
+                content = content.text || JSON.stringify(content);
+            }
+            this.addMessageToUI(content, message.role);
         });
     }
 
@@ -983,8 +988,11 @@ class AIChatAssistant {
             messageText.style.color = 'white';
         }
 
+        // Ensure content is a string
+        const textContent = typeof content === 'string' ? content : String(content);
+        
         // Format message content
-        messageText.innerHTML = this.formatMessageContent(content);
+        messageText.innerHTML = this.formatMessageContent(textContent);
 
         messageContent.appendChild(messageText);
         messageDiv.appendChild(avatar);
