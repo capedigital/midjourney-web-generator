@@ -437,40 +437,37 @@ class AIChatAssistant {
     }
 
     previewChatSession(session) {
-        // Initialize global prompts storage if not exists
-        if (!window.chatHistoryPrompts) {
-            window.chatHistoryPrompts = {};
-        }
-        
         const previewContent = document.getElementById('chat-preview-content');
         const previewTitle = document.getElementById('chat-preview-title');
         const previewActions = document.getElementById('chat-preview-actions');
 
         if (!previewContent || !previewTitle || !previewActions) return;
 
-        logger.debug('Previewing chat session with CSS classes (not inline styles)');
-
         previewTitle.textContent = session.title;
         previewActions.style.display = 'flex';
-        previewActions.dataset.sessionId = session.id;
 
-        // Generate preview HTML with better formatting and proper classes
-        const messagesHTML = session.messages.map(message => {
+        // Clean, readable preview with truncated content
+        const messagesHTML = session.messages.map((message, index) => {
             const role = message.role;
-            const content = typeof message.content === 'string' 
+            let content = typeof message.content === 'string' 
                 ? message.content 
-                : (message.content.text || JSON.stringify(message.content, null, 2));
+                : (message.content.text || '');
             
-            // Detect JSON content for import functionality
-            const formattedContent = this.formatPreviewContent(content);
+            // Truncate long messages for preview
+            const truncated = content.length > 300 ? content.substring(0, 300) + '...' : content;
+            const escaped = truncated
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/\n/g, '<br>');
             
             return `
-                <div class="chat-preview-message ${role}-message">
-                    <div class="message-role">
-                        <span class="role-icon">${role === 'user' ? '👤' : '🤖'}</span>
-                        <span class="role-text">${role === 'user' ? 'You' : 'Assistant'}</span>
+                <div class="preview-msg ${role}">
+                    <div class="preview-msg-header">
+                        <span class="preview-role">${role === 'user' ? '👤 You' : '🤖 Assistant'}</span>
+                        <span class="preview-msg-num">#${index + 1}</span>
                     </div>
-                    <div class="message-content">${formattedContent}</div>
+                    <div class="preview-msg-content">${escaped}</div>
                 </div>
             `;
         }).join('');
@@ -481,9 +478,6 @@ class AIChatAssistant {
                 <div>No messages in this chat</div>
             </div>
         `;
-        
-        // Add event listeners for prompt import buttons
-        this.attachPromptImportListeners();
     }
 
     formatPreviewContent(content) {
