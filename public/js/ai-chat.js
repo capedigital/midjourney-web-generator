@@ -918,6 +918,16 @@ class AIChatAssistant {
             const data = await response.json();
             const session = data.session;
             
+            // Validate session data
+            if (!session || !Array.isArray(session.messages)) {
+                throw new Error('Invalid session data structure');
+            }
+            
+            // Log warning if session has excessive messages
+            if (session.messages.length > 100) {
+                logger.warn(`⚠️ Session has ${session.messages.length} messages - this may take a moment to load`);
+            }
+            
             this.clearChat(false); // Clear without starting new session
             this.currentSessionId = sessionId;
             this.messages = [...session.messages];
@@ -961,9 +971,47 @@ class AIChatAssistant {
         messages.forEach(message => {
             // Handle both string and object content
             let content = message.content;
+            
             if (typeof content === 'object' && content !== null) {
-                content = content.text || JSON.stringify(content);
+                // Check if it's an array (multi-part message like image + text)
+                if (Array.isArray(content)) {
+                    // Extract text parts only, skip images
+                    const textParts = content
+                        .filter(part => part.type === 'text')
+                        .map(part => part.text)
+                        .join('\n');
+                    
+                    const imageParts = content.filter(part => part.type === 'image_url');
+                    
+                    if (textParts) {
+                        content = textParts;
+                    } else if (imageParts.length > 0) {
+                        content = `[${imageParts.length} image(s) attached]`;
+                    } else {
+                        // Fallback for unknown structure - truncate stringified version
+                        const jsonStr = JSON.stringify(content);
+                        content = jsonStr.length > 500 
+                            ? jsonStr.substring(0, 500) + '... [truncated]' 
+                            : jsonStr;
+                    }
+                } else {
+                    // Single object - try to extract text property
+                    content = content.text || content.content || '[Complex message data]';
+                }
             }
+            
+            // Ensure content is a string
+            if (typeof content !== 'string') {
+                content = String(content);
+            }
+            
+            // Truncate excessively long content (likely corrupted data)
+            const MAX_LENGTH = 50000; // ~50KB of text
+            if (content.length > MAX_LENGTH) {
+                logger.warn(`⚠️ Truncating message content from ${content.length} to ${MAX_LENGTH} characters`);
+                content = content.substring(0, MAX_LENGTH) + '\n\n... [Content truncated due to length]';
+            }
+            
             this.addMessageToUI(content, message.role);
         });
     }
@@ -1849,12 +1897,41 @@ IMPORTANT: Only include the JSON prompt block when explicitly requested by the u
     }
 
     formatMessageContent(content) {
+        // Ensure content is a string
+        if (typeof content !== 'string') {
+            content = String(content);
+        }
+        
+        // Check for potential base64 image data or other binary content
+        if (content.startsWith('data:image') || content.startsWith('iVBORw0KGgo')) {
+            return '[Image data - not displayed]';
+        }
+        
+        // Escape HTML to prevent injection
+        const escapeHtml = (text) => {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        };
+        
+        // Limit line breaks to prevent excessive DOM expansion
+        const lineCount = (content.match(/\n/g) || []).length;
+        if (lineCount > 1000) {
+            logger.warn(`⚠️ Message has ${lineCount} line breaks - limiting formatting`);
+            return escapeHtml(content);
+        }
+        
+        // Escape HTML first, then apply formatting
+        let formatted = escapeHtml(content);
+        
         // Basic formatting for prompts and lists
-        return content
+        formatted = formatted
             .replace(/\n/g, '<br>')
             .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
             .replace(/\*(.*?)\*/g, '<em>$1</em>')
             .replace(/`(.*?)`/g, '<code>$1</code>');
+            
+        return formatted;
     }
 
     detectAndOfferPrompts(response) {
