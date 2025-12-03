@@ -384,7 +384,7 @@ class AIChatAssistant {
         }
     }
 
-    selectChatSession(sessionItem) {
+    async selectChatSession(sessionItem) {
         // Remove previous selection
         document.querySelectorAll('.chat-session-item').forEach(item => {
             item.classList.remove('selected');
@@ -394,10 +394,28 @@ class AIChatAssistant {
         sessionItem.classList.add('selected');
 
         const sessionId = sessionItem.dataset.sessionId;
-        const sessions = this.getSavedSessions();
-        const session = sessions.find(s => s.id === sessionId);
-
-        if (session) {
+        
+        // Fetch full session with messages from API
+        try {
+            const response = await fetch(`/api/chat-sessions/${sessionId}`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to load session');
+            }
+            
+            const data = await response.json();
+            const session = {
+                id: data.session.sessionId,
+                title: data.session.title,
+                messages: data.session.messages,
+                model: data.session.model,
+                timestamp: new Date(data.session.updatedAt).getTime()
+            };
+            
             // Force clear the preview content first
             const previewContent = document.getElementById('chat-preview-content');
             if (previewContent) {
@@ -406,6 +424,8 @@ class AIChatAssistant {
             
             // Then populate with fresh content
             this.previewChatSession(session);
+        } catch (error) {
+            console.error('❌ Failed to load session for preview:', error);
         }
     }
 
