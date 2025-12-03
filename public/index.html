@@ -319,6 +319,10 @@ Example ChatGPT output:
                             <select id="chat-template-select" class="model-selector" style="display: none;">
                                 <option value="">Select Template...</option>
                             </select>
+                            <label class="toggle-label" title="AI will remember and learn from your past conversations">
+                                <input type="checkbox" id="context-memory-toggle" checked>
+                                <span class="toggle-text">🧠 Context Memory</span>
+                            </label>
                             <button id="history-chat-btn" class="secondary-btn chat-history-btn"><i class="fas fa-history"></i> History</button>
                             <button id="clear-chat-btn" class="primary-btn" style="background: var(--accent-color); color: white;" title="Start a fresh conversation to avoid accumulating token costs"><i class="fas fa-plus-circle"></i> New Chat</button>
                         </div>

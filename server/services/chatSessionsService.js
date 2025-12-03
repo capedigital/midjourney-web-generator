@@ -95,6 +95,61 @@ class ChatSessionsService {
         const result = await pool.query(query, [userId, keepCount]);
         return result.rowCount;
     }
+
+    /**
+     * Search sessions by keywords in title or messages
+     * Returns relevant snippets for context injection
+     */
+    async searchSessionsForContext(userId, keywords, limit = 5) {
+        // Simple keyword search using ILIKE for PostgreSQL
+        // In production, you'd use full-text search or vector embeddings
+        const searchPattern = `%${keywords.join('%')}%`;
+        
+        const query = `
+            SELECT 
+                session_id,
+                title,
+                messages,
+                created_at,
+                CASE 
+                    WHEN title ILIKE $2 THEN 3
+                    WHEN messages::text ILIKE $2 THEN 2
+                    ELSE 1
+                END as relevance
+            FROM ai_chat_sessions
+            WHERE user_id = $1
+            AND (
+                title ILIKE $2 
+                OR messages::text ILIKE $2
+            )
+            ORDER BY relevance DESC, updated_at DESC
+            LIMIT $3
+        `;
+        
+        const result = await pool.query(query, [userId, searchPattern, limit]);
+        return result.rows;
+    }
+
+    /**
+     * Get recent sessions for context (fallback if no keyword matches)
+     */
+    async getRecentSessionsForContext(userId, excludeSessionId, limit = 3) {
+        const query = `
+            SELECT 
+                session_id,
+                title,
+                messages,
+                created_at
+            FROM ai_chat_sessions
+            WHERE user_id = $1
+            AND session_id != $2
+            ORDER BY updated_at DESC
+            LIMIT $3
+        `;
+        
+        const result = await pool.query(query, [userId, excludeSessionId, limit]);
+        return result.rows;
+    }
 }
 
 module.exports = new ChatSessionsService();

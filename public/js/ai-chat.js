@@ -220,6 +220,19 @@ class AIChatAssistant {
         // Clear chat
         this.clearChatBtn?.addEventListener('click', () => this.clearChat());
 
+        // Context memory toggle
+        const contextToggle = document.getElementById('context-memory-toggle');
+        if (contextToggle) {
+            // Load saved preference
+            const enabled = localStorage.getItem('context-memory-enabled') !== 'false';
+            contextToggle.checked = enabled;
+            
+            contextToggle.addEventListener('change', (e) => {
+                localStorage.setItem('context-memory-enabled', e.target.checked);
+                logger.debug('🧠 Context memory:', e.target.checked ? 'enabled' : 'disabled');
+            });
+        }
+
         // Chat history modal handlers
         this.setupChatHistoryModal();
     }
@@ -1091,8 +1104,22 @@ class AIChatAssistant {
             // Get context about current app state
             const context = this.getAppContext();
             
-            // Create system prompt with context
-            const systemPrompt = this.createSystemPrompt(context);
+            // CONTEXT MEMORY: Fetch relevant past conversations
+            let pastContext = '';
+            if (localStorage.getItem('context-memory-enabled') !== 'false') {
+                try {
+                    const contextData = await this.fetchRelevantContext(message);
+                    if (contextData && contextData.length > 0) {
+                        pastContext = this.formatContextMemory(contextData);
+                        logger.debug('🧠 Injected context from', contextData.length, 'past conversations');
+                    }
+                } catch (err) {
+                    logger.debug('⚠️ Context memory fetch failed:', err.message);
+                }
+            }
+            
+            // Create system prompt with context and past memory
+            const systemPrompt = this.createSystemPrompt(context) + pastContext;
             
             // SESSION ISOLATION: Only send recent messages to avoid token accumulation
             // Limit to last 6 messages (3 exchanges) to keep costs low
@@ -2641,6 +2668,60 @@ IMPORTANT: Only include the JSON prompt block when explicitly requested by the u
             logger.error('❌ Error saving AI Chat prompts to history:', error);
             // Don't throw - we don't want to interrupt the import flow
         }
+    }
+    /**
+     * Fetch relevant context from past conversations
+     */
+    async fetchRelevantContext(message) {
+        try {
+            const response = await fetch('/api/chat-sessions/context', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({
+                    message,
+                    currentSessionId: this.currentSessionId,
+                    limit: 3
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to fetch context');
+            }
+            
+            const data = await response.json();
+            return data.context;
+        } catch (error) {
+            console.error('❌ Failed to fetch context:', error);
+            return [];
+        }
+    }
+
+    /**
+     * Format past context for injection into system prompt
+     */
+    formatContextMemory(contextData) {
+        if (!contextData || contextData.length === 0) return '';
+        
+        let formatted = '\n\n--- RELEVANT PAST CONTEXT ---\n';
+        formatted += 'The user has discussed similar topics before. Here are relevant snippets:\n\n';
+        
+        contextData.forEach((session, idx) => {
+            formatted += `[Past Conversation ${idx + 1}: "${session.title}"]\n`;
+            session.exchanges.forEach(exchange => {
+                const role = exchange.role === 'user' ? 'User' : 'Assistant';
+                const content = exchange.content.substring(0, 300); // Limit length
+                formatted += `${role}: ${content}${exchange.content.length > 300 ? '...' : ''}\n`;
+            });
+            formatted += '\n';
+        });
+        
+        formatted += '--- END PAST CONTEXT ---\n';
+        formatted += 'Use this context to provide more personalized and consistent assistance.\n';
+        
+        return formatted;
     }
 }
 

@@ -117,4 +117,65 @@ router.delete('/:sessionId', asyncHandler(async (req, res) => {
     });
 }));
 
+/**
+ * POST /api/chat-sessions/context
+ * Get relevant past conversation context for the current message
+ */
+router.post('/context', asyncHandler(async (req, res) => {
+    const { message, currentSessionId, limit } = req.body;
+    
+    if (!message || typeof message !== 'string') {
+        return res.status(400).json({
+            success: false,
+            error: 'Message is required'
+        });
+    }
+    
+    // Extract keywords from message (simple approach - split and filter)
+    const keywords = message
+        .toLowerCase()
+        .split(/\s+/)
+        .filter(word => word.length > 3) // Only words longer than 3 chars
+        .slice(0, 5); // Limit to 5 keywords
+    
+    let relevantSessions = [];
+    
+    // Try keyword search first
+    if (keywords.length > 0) {
+        relevantSessions = await chatSessionsService.searchSessionsForContext(
+            req.user.id,
+            keywords,
+            limit || 3
+        );
+    }
+    
+    // If no matches, get recent sessions as fallback
+    if (relevantSessions.length === 0) {
+        relevantSessions = await chatSessionsService.getRecentSessionsForContext(
+            req.user.id,
+            currentSessionId || '',
+            limit || 3
+        );
+    }
+    
+    // Extract relevant snippets from messages
+    const context = relevantSessions.map(session => {
+        // Get last few exchanges from each session
+        const messages = session.messages.slice(-4); // Last 2 exchanges
+        return {
+            title: session.title,
+            date: session.created_at,
+            exchanges: messages.map(m => ({
+                role: m.role,
+                content: typeof m.content === 'string' ? m.content : m.content.text || ''
+            }))
+        };
+    });
+    
+    res.json({
+        success: true,
+        context
+    });
+}));
+
 module.exports = router;
