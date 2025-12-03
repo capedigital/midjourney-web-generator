@@ -418,11 +418,53 @@ async function getTopBigFour(req, res) {
     // Filter for Big 4 providers only
     const bigFourProviders = ['openai', 'anthropic', 'google', 'x-ai'];
     
+    // Exclude unwanted models (experimental, preview, outdated versions)
+    const excludePatterns = [
+      /gemma-[0-9]/, // Exclude all Gemma models (too many variants)
+      /experimental/i,
+      /preview/i,
+      /alpha/i,
+      /test/i,
+      /-001$/,  // Exclude version suffixes
+      /-002$/,
+      /-instruct-/i, // Exclude specific instruct variants that have base models
+      /palm-2/i, // Old Google model
+      /claude-instant/i, // Old Claude
+      /claude-2\./i, // Old Claude 2.x
+      /gpt-3\.5/i, // Old GPT 3.5
+      /gpt-4-turbo-preview/i // Old preview
+    ];
+    
+    // Only include these specific high-quality models
+    const preferredModels = [
+      'openai/gpt-4o-mini',
+      'openai/gpt-4o',
+      'openai/o1-mini',
+      'openai/o1-preview',
+      'anthropic/claude-3.5-sonnet',
+      'anthropic/claude-3.5-haiku',
+      'anthropic/claude-3-opus',
+      'google/gemini-2.0-flash-exp',
+      'google/gemini-2.0-flash-exp:free',
+      'google/gemini-pro-1.5',
+      'google/gemini-flash-1.5',
+      'x-ai/grok-beta',
+      'x-ai/grok-2',
+      'x-ai/grok-vision-beta'
+    ];
+    
     const bigFourModels = allModels
       .filter(model => {
         // Check if model ID starts with any of the big four providers
         const provider = model.id.split('/')[0].toLowerCase();
-        return bigFourProviders.includes(provider);
+        if (!bigFourProviders.includes(provider)) return false;
+        
+        // Only include preferred models
+        if (!preferredModels.includes(model.id)) return false;
+        
+        // Exclude patterns
+        const shouldExclude = excludePatterns.some(pattern => pattern.test(model.id));
+        return !shouldExclude;
       })
       .map(model => formatModelWithDetails(model))
       .filter(m => m.pricing.avgCostPer1M >= 0) // Include free models
