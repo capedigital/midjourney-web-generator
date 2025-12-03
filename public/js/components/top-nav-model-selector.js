@@ -13,7 +13,7 @@ class TopNavModelSelector {
     };
 
     this.currentModel = null;
-    this.models = this.getCuratedModels();
+    this.models = this.getFallbackModels(); // Start with fallback, will load dynamic models in init()
     this.currentSort = this.options.defaultSort;
     this.credits = null;
     this.isExpanded = false;
