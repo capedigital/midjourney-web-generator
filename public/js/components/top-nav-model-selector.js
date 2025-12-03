@@ -51,7 +51,10 @@ class TopNavModelSelector {
           contextLabel: m.context_length ? `${(m.context_length / 1000).toFixed(0)}k tokens` : 'Unknown',
           category: m.pricing.avgCostPer1M < 1 ? 'budget' : m.pricing.avgCostPer1M < 10 ? 'balanced' : 'premium',
           isFree: m.pricing.avgCostPer1M === 0,
-          isDefault: m.pricing.avgCostPer1M === 0 // Default to free model if available
+          // Default: GPT-4o Mini (or GPT-5.1 if affordable), or first free model
+          isDefault: m.id === 'openai/gpt-4o-mini' || 
+                     (m.id === 'openai/gpt-5.1' && m.pricing.avgCostPer1M < 1) ||
+                     (m.pricing.avgCostPer1M === 0 && !models.some(model => model.id === 'openai/gpt-4o-mini'))
         }));
 
         console.log(`✅ Loaded ${models.length} Big 4 models dynamically from OpenRouter`);

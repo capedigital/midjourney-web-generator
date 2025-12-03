@@ -437,7 +437,17 @@ async function getTopBigFour(req, res) {
     
     // Only include these specific high-quality models
     const preferredModels = [
-      'openai/gpt-4o-mini',
+      // FREE MODELS - Always include if available
+      'google/gemini-2.0-flash-exp:free',
+      'google/gemini-flash-1.5-exp:free',
+      'google/gemini-pro-1.5-exp:free',
+      'anthropic/claude-3.5-sonnet:free',
+      'anthropic/claude-3-haiku:free',
+      'openai/gpt-4o-mini:free',
+      
+      // PAID MODELS - Best from each provider
+      'openai/gpt-4o-mini',  // Default model
+      'openai/gpt-5.1',      // If available
       'openai/gpt-4o',
       'openai/o1-mini',
       'openai/o1-preview',
@@ -445,7 +455,6 @@ async function getTopBigFour(req, res) {
       'anthropic/claude-3.5-haiku',
       'anthropic/claude-3-opus',
       'google/gemini-2.0-flash-exp',
-      'google/gemini-2.0-flash-exp:free',
       'google/gemini-pro-1.5',
       'google/gemini-flash-1.5',
       'x-ai/grok-beta',
