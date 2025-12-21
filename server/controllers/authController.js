@@ -1,13 +1,47 @@
 const jwt = require('jsonwebtoken');
 const userService = require('../services/userService');
-const { asyncHandler } = require('../middleware/errorHandler');
+const { asyncHandler, AuthorizationError } = require('../middleware/errorHandler');
+
+function parseBoolean(value, defaultValue = false) {
+    if (value === undefined || value === null || value === '') return defaultValue;
+    if (typeof value === 'boolean') return value;
+    const normalized = String(value).trim().toLowerCase();
+    if (['1', 'true', 'yes', 'y', 'on'].includes(normalized)) return true;
+    if (['0', 'false', 'no', 'n', 'off'].includes(normalized)) return false;
+    return defaultValue;
+}
+
+function parseList(value) {
+    if (!value) return [];
+    return String(value)
+        .split(',')
+        .map(v => v.trim())
+        .filter(Boolean);
+}
 
 class AuthController {
     /**
      * Register a new user
      */
     register = asyncHandler(async (req, res) => {
-        const { email, password, name } = req.body;
+        const { email, password, name, inviteCode, invite_code } = req.body;
+
+        // Defense-in-depth: block self-service registration unless explicitly allowed
+        const allowByDefault = (process.env.NODE_ENV || 'development') === 'development';
+        const allowPublicSignup = parseBoolean(process.env.ALLOW_PUBLIC_SIGNUP, allowByDefault);
+        const inviteCodes = [
+            ...parseList(process.env.SIGNUP_INVITE_CODES),
+            ...parseList(process.env.SIGNUP_INVITE_CODE)
+        ];
+        const providedInviteCode = (inviteCode || invite_code) ? String(inviteCode || invite_code).trim() : '';
+
+        if (!allowPublicSignup) {
+            const inviteOnlyEnabled = inviteCodes.length > 0;
+            const inviteValid = inviteOnlyEnabled && providedInviteCode && inviteCodes.includes(providedInviteCode);
+            if (!inviteValid) {
+                throw new AuthorizationError(inviteOnlyEnabled ? 'Registration is invite-only' : 'Public registration is disabled');
+            }
+        }
 
         // Create user
         const user = await userService.createUser({ email, password, name });

@@ -307,10 +307,12 @@ class App {
         const email = document.getElementById('register-email').value;
         const password = document.getElementById('register-password').value;
         const name = document.getElementById('register-name').value;
+        const inviteCodeEl = document.getElementById('register-invite-code');
+        const inviteCode = inviteCodeEl ? inviteCodeEl.value : '';
         const errorEl = document.getElementById('register-error');
 
         try {
-            const data = await window.api.register(email, password, name);
+            const data = await window.api.register(email, password, name, inviteCode);
             this.currentUser = data.user;
             
             // Show "access granted" message then proceed

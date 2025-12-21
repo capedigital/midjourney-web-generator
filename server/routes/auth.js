@@ -2,10 +2,11 @@ const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController');
 const auth = require('../middleware/auth');
+const signupGuard = require('../middleware/signupGuard');
 const { validateBody, schemas } = require('../middleware/validation');
 
 // Public routes
-router.post('/register', validateBody(schemas.register), authController.register);
+router.post('/register', signupGuard, validateBody(schemas.register), authController.register);
 router.post('/login', validateBody(schemas.login), authController.login);
 
 // Protected routes (require authentication)

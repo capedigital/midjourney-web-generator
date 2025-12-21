@@ -197,6 +197,11 @@ const schemas = {
             required: false,
             type: 'string',
             maxLength: 100
+        },
+        inviteCode: {
+            required: false,
+            type: 'string',
+            maxLength: 200
         }
     },
     login: {

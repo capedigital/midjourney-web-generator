@@ -1,6 +1,22 @@
 const { pool } = require('../config/database');
 const bcrypt = require('bcrypt');
+const crypto = require('crypto');
 const { ConflictError, NotFoundError, AuthenticationError } = require('../middleware/errorHandler');
+
+function toUsernameBaseFromEmail(email) {
+    const localPart = String(email || '').split('@')[0] || 'user';
+    const sanitized = localPart
+        .toLowerCase()
+        .replace(/[^a-z0-9._-]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .replace(/-{2,}/g, '-');
+
+    return (sanitized || 'user').slice(0, 60);
+}
+
+function randomSuffix(length = 4) {
+    return crypto.randomBytes(Math.ceil(length / 2)).toString('hex').slice(0, length);
+}
 
 class UserService {
     /**
@@ -16,8 +32,23 @@ class UserService {
         // Hash password
         const password_hash = await bcrypt.hash(password, 10);
 
-        // Create username from email if name not provided
-        const username = name || email.split('@')[0];
+        // Username is UNIQUE in the DB; don't use display names (they collide).
+        // Derive from email and ensure uniqueness with a short suffix if needed.
+        const baseUsername = toUsernameBaseFromEmail(email);
+        let username = baseUsername;
+
+        for (let attempt = 0; attempt < 5; attempt++) {
+            const existingUsername = await pool.query(
+                'SELECT id FROM users WHERE username = $1',
+                [username]
+            );
+
+            if (existingUsername.rows.length === 0) {
+                break;
+            }
+
+            username = `${baseUsername}-${randomSuffix(4)}`;
+        }
 
         // Insert user
         const result = await pool.query(

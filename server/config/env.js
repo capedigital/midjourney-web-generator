@@ -11,7 +11,10 @@ const optionalEnvVars = [
     'DATABASE_URL',
     'PORT',
     'NODE_ENV',
-    'FRONTEND_URL'
+    'FRONTEND_URL',
+    'ALLOW_PUBLIC_SIGNUP',
+    'SIGNUP_INVITE_CODE',
+    'SIGNUP_INVITE_CODES'
 ];
 
 function validateEnv() {
