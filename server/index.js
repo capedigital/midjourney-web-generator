@@ -119,7 +119,12 @@ app.get('/health', asyncHandler(async (req, res) => {
         timestamp: new Date(),
         uptime: process.uptime(),
         database: dbHealthy ? 'connected' : 'disconnected',
-        environment: config.nodeEnv
+        environment: config.nodeEnv,
+        deployment: {
+            railwayCommit: process.env.RAILWAY_GIT_COMMIT_SHA || null,
+            railwayDeploymentId: process.env.RAILWAY_DEPLOYMENT_ID || null,
+            railwayServiceId: process.env.RAILWAY_SERVICE_ID || null
+        }
     });
 }));
 
